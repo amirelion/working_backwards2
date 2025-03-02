@@ -1,0 +1,10 @@
+{
+  "name": "working-backwards-assistant-api",
+  "version": "1.0.0",
+  "description": "API functions for Working Backwards Assistant",
+  "dependencies": {
+    "openai": "^4.35.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^11.1.0"
+  }
+} 
