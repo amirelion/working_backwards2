@@ -7,16 +7,11 @@ import {
   Typography,
   Button,
   Container,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Divider,
   IconButton,
   useMediaQuery,
   useTheme,
-  ListItemButton,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -32,6 +27,7 @@ import { useRecoilState } from 'recoil';
 import { resetSession } from '../store/sessionSlice';
 import { initialThoughtsState } from '../atoms/initialThoughtsState';
 import { workingBackwardsQuestionsState } from '../atoms/workingBackwardsQuestionsState';
+import AuthMenu from './AuthMenu';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -40,24 +36,24 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [mobileMenuAnchor, setMobileMenuAnchor] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [initialThoughts, setInitialThoughts] = useRecoilState(initialThoughtsState);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [workingBackwardsQuestions, setWorkingBackwardsQuestions] = useRecoilState(workingBackwardsQuestionsState);
 
-  const handleDrawerToggle = () => {
-    setDrawerOpen(!drawerOpen);
+  const handleMobileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setMobileMenuAnchor(event.currentTarget);
+  };
+
+  const handleMobileMenuClose = () => {
+    setMobileMenuAnchor(null);
   };
 
   const handleNavigation = (path: string) => {
     navigate(path);
-    if (isMobile) {
-      setDrawerOpen(false);
-    }
+    handleMobileMenuClose();
   };
 
   const handleNewSession = () => {
@@ -74,6 +70,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       });
       navigate('/');
     }
+    handleMobileMenuClose();
   };
 
   const navItems = [
@@ -84,72 +81,33 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { text: 'Experiments', path: '/experiments', icon: <ScienceIcon /> },
   ];
 
-  const drawer = (
-    <Box sx={{ width: 250 }} role="presentation">
-      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
-          Working Backwards
-        </Typography>
-      </Box>
-      <Divider />
-      <List>
-        {navItems.map((item) => (
-          <ListItem
-            key={item.text}
-            disablePadding
-            sx={{
-              '&.Mui-selected': {
-                backgroundColor: 'rgba(255, 153, 0, 0.1)',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 153, 0, 0.2)',
-                },
-              },
-            }}
-          >
-            <ListItemButton 
-              selected={location.pathname === item.path}
-              onClick={() => handleNavigation(item.path)}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-      <Divider />
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton onClick={handleNewSession}>
-            <ListItemIcon>
-              <InfoIcon />
-            </ListItemIcon>
-            <ListItemText primary="New Session" />
-          </ListItemButton>
-        </ListItem>
-      </List>
-    </Box>
-  );
-
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <AppBar position="static">
+      <AppBar position="fixed">
         <Toolbar>
           {isMobile && (
             <IconButton
               color="inherit"
-              aria-label="open drawer"
+              aria-label="open menu"
               edge="start"
-              onClick={handleDrawerToggle}
+              onClick={handleMobileMenuOpen}
               sx={{ mr: 2 }}
             >
               <MenuIcon />
             </IconButton>
           )}
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          <Typography 
+            variant="h6" 
+            component="div" 
+            sx={{ 
+              flexGrow: 1,
+              textAlign: isMobile ? 'left' : 'center'
+            }}
+          >
             Working Backwards Innovation Assistant
           </Typography>
           {!isMobile && (
-            <Box sx={{ display: 'flex' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {navItems.map((item) => (
                 <Button
                   key={item.text}
@@ -169,61 +127,76 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Button color="secondary" variant="outlined" onClick={handleNewSession} sx={{ ml: 2 }}>
                 New Session
               </Button>
+              <AuthMenu />
             </Box>
           )}
+          {isMobile && <AuthMenu />}
         </Toolbar>
       </AppBar>
 
-      <Drawer
-        variant={isMobile ? 'temporary' : 'permanent'}
-        open={isMobile ? drawerOpen : true}
-        onClose={handleDrawerToggle}
-        ModalProps={{
-          keepMounted: true, // Better open performance on mobile
-        }}
+      {/* Mobile Menu */}
+      <Menu
+        anchorEl={mobileMenuAnchor}
+        open={Boolean(mobileMenuAnchor)}
+        onClose={handleMobileMenuClose}
         sx={{
-          '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
-            width: 250,
-            position: isMobile ? 'fixed' : 'relative',
-            height: isMobile ? '100%' : 'auto',
-          },
-          width: isMobile ? 0 : 250,
-          flexShrink: 0,
           display: { xs: 'block', md: 'none' },
+          mt: '45px',
         }}
       >
-        {drawer}
-      </Drawer>
+        {navItems.map((item) => (
+          <MenuItem
+            key={item.text}
+            onClick={() => handleNavigation(item.path)}
+            selected={location.pathname === item.path}
+          >
+            {item.icon}
+            <Typography sx={{ ml: 1 }}>{item.text}</Typography>
+          </MenuItem>
+        ))}
+        <MenuItem onClick={handleNewSession}>
+          <InfoIcon />
+          <Typography sx={{ ml: 1 }}>New Session</Typography>
+        </MenuItem>
+      </Menu>
 
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
-          width: { md: `calc(100% - ${isMobile ? 0 : 250}px)` },
-          ml: { md: isMobile ? 0 : '250px' },
+          width: '100%',
+          marginTop: '64px', // Height of AppBar
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
-        <Container maxWidth="lg" sx={{ mt: 2 }}>
+        <Container 
+          maxWidth="lg" 
+          sx={{ 
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            py: 3,
+          }}
+        >
           {children}
         </Container>
-      </Box>
 
-      <Box
-        component="footer"
-        sx={{
-          py: 3,
-          px: 2,
-          mt: 'auto',
-          backgroundColor: (theme) => theme.palette.grey[100],
-        }}
-      >
-        <Container maxWidth="lg">
-          <Typography variant="body2" color="text.secondary" align="center">
-            Working Backwards Innovation Assistant - Session data is stored locally in your browser
-          </Typography>
-        </Container>
+        <Box
+          component="footer"
+          sx={{
+            py: 3,
+            px: 2,
+            mt: 'auto',
+            backgroundColor: (theme) => theme.palette.grey[100],
+          }}
+        >
+          <Container maxWidth="lg">
+            <Typography variant="body2" color="text.secondary" align="center">
+              Working Backwards Innovation Assistant - Session data is stored locally in your browser
+            </Typography>
+          </Container>
+        </Box>
       </Box>
     </Box>
   );

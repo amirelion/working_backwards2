@@ -207,14 +207,28 @@ const WorkingBackwardsPage: React.FC = () => {
     navigate('/prfaq');
   };
 
-  const handleUseSuggestion = () => {
-    setCurrentResponse(aiSuggestion);
-    
-    // Also update Redux store
-    dispatch(updateWorkingBackwardsResponse({
-      field: currentQuestion.id,
-      value: aiSuggestion
-    }));
+  const handleUseSuggestion = async () => {
+    try {
+      // Update the current response state
+      setCurrentResponse(aiSuggestion);
+      
+      // Update Redux store
+      dispatch(updateWorkingBackwardsResponse({
+        field: currentQuestion.id,
+        value: aiSuggestion
+      }));
+
+      // Copy to clipboard using the Clipboard API
+      await navigator.clipboard.writeText(aiSuggestion);
+    } catch (error) {
+      console.error('Error using suggestion:', error);
+      // Still update the text field even if clipboard fails
+      setCurrentResponse(aiSuggestion);
+      dispatch(updateWorkingBackwardsResponse({
+        field: currentQuestion.id,
+        value: aiSuggestion
+      }));
+    }
   };
 
   return (

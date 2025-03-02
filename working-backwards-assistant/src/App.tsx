@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { Provider } from 'react-redux';
 import { RecoilRoot } from 'recoil';
 import { store } from './store';
+import { AuthProvider } from './lib/contexts/AuthContext';
 
 // Import pages
 import LandingPage from './pages/LandingPage';
@@ -94,26 +95,28 @@ const theme = createTheme({
 
 function App() {
   return (
-    <Provider store={store}>
-      <RecoilRoot>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <Router>
-            <Layout>
-              <Routes>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/initial-thoughts" element={<InitialThoughtsPage />} />
-                <Route path="/working-backwards" element={<WorkingBackwardsPage />} />
-                <Route path="/prfaq" element={<PRFAQPage />} />
-                <Route path="/assumptions" element={<AssumptionsPage />} />
-                <Route path="/experiments" element={<ExperimentsPage />} />
-                <Route path="*" element={<NotFoundPage />} />
-              </Routes>
-            </Layout>
-          </Router>
-        </ThemeProvider>
-      </RecoilRoot>
-    </Provider>
+    <AuthProvider>
+      <Provider store={store}>
+        <RecoilRoot>
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <Router>
+              <Layout>
+                <Routes>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/initial-thoughts" element={<InitialThoughtsPage />} />
+                  <Route path="/working-backwards" element={<WorkingBackwardsPage />} />
+                  <Route path="/prfaq" element={<PRFAQPage />} />
+                  <Route path="/assumptions" element={<AssumptionsPage />} />
+                  <Route path="/experiments" element={<ExperimentsPage />} />
+                  <Route path="*" element={<NotFoundPage />} />
+                </Routes>
+              </Layout>
+            </Router>
+          </ThemeProvider>
+        </RecoilRoot>
+      </Provider>
+    </AuthProvider>
   );
 }
 
