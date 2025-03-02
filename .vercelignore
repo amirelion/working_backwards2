@@ -1,5 +1,6 @@
-# Ignore node_modules in the root, but not in subdirectories
-/node_modules
-
-# Ignore git directories
-.git 
+# Only ignore these specific patterns
+.git/
+.github/
+node_modules/
+*.md
+!working-backwards-assistant/ 

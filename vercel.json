@@ -1,9 +1,23 @@
 {
-  "buildCommand": "cd working-backwards-assistant && npm install && CI=false npm run build",
-  "outputDirectory": "working-backwards-assistant/build",
-  "installCommand": "cd working-backwards-assistant && npm install",
-  "framework": "create-react-app",
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" }
+  "version": 2,
+  "builds": [
+    {
+      "src": "working-backwards-assistant/package.json",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "working-backwards-assistant/api/**/*.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "working-backwards-assistant/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "working-backwards-assistant/$1"
+    }
   ]
 } 

@@ -1,0 +1,13 @@
+{
+  "name": "working-backwards-root",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "working-backwards-assistant"
+  ],
+  "scripts": {
+    "start": "cd working-backwards-assistant && npm start",
+    "build": "cd working-backwards-assistant && CI=false npm run build",
+    "test": "cd working-backwards-assistant && npm test"
+  }
+} 
