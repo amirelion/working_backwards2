@@ -32,6 +32,8 @@ export interface PRFAQ {
     gettingStarted: string;
   };
   faq: FAQ[];
+  customerFaqs: FAQ[];
+  stakeholderFaqs: FAQ[];
 }
 
 export interface FAQ {

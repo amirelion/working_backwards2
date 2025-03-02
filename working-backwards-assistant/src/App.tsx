@@ -3,10 +3,12 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Provider } from 'react-redux';
+import { RecoilRoot } from 'recoil';
 import { store } from './store';
 
 // Import pages
 import LandingPage from './pages/LandingPage';
+import InitialThoughtsPage from './pages/InitialThoughtsPage';
 import WorkingBackwardsPage from './pages/WorkingBackwardsPage';
 import PRFAQPage from './pages/PRFAQPage';
 import AssumptionsPage from './pages/AssumptionsPage';
@@ -93,21 +95,24 @@ const theme = createTheme({
 function App() {
   return (
     <Provider store={store}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Router>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/working-backwards" element={<WorkingBackwardsPage />} />
-              <Route path="/prfaq" element={<PRFAQPage />} />
-              <Route path="/assumptions" element={<AssumptionsPage />} />
-              <Route path="/experiments" element={<ExperimentsPage />} />
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-          </Layout>
-        </Router>
-      </ThemeProvider>
+      <RecoilRoot>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <Router>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/initial-thoughts" element={<InitialThoughtsPage />} />
+                <Route path="/working-backwards" element={<WorkingBackwardsPage />} />
+                <Route path="/prfaq" element={<PRFAQPage />} />
+                <Route path="/assumptions" element={<AssumptionsPage />} />
+                <Route path="/experiments" element={<ExperimentsPage />} />
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </Layout>
+          </Router>
+        </ThemeProvider>
+      </RecoilRoot>
     </Provider>
   );
 }

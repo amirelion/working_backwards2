@@ -23,6 +23,8 @@ const initialPRFAQ: PRFAQ = {
     gettingStarted: '',
   },
   faq: [],
+  customerFaqs: [],
+  stakeholderFaqs: [],
 };
 
 // Initial empty Working Backwards responses
@@ -99,6 +101,60 @@ export const sessionSlice = createSlice({
     // Remove FAQ
     removeFAQ: (state, action: PayloadAction<number>) => {
       state.prfaq.faq.splice(action.payload, 1);
+      state.updatedAt = new Date().toISOString();
+    },
+    
+    // Add Customer FAQ
+    addCustomerFAQ: (state, action: PayloadAction<FAQ>) => {
+      state.prfaq.customerFaqs.push(action.payload);
+      state.updatedAt = new Date().toISOString();
+    },
+    
+    // Update Customer FAQ
+    updateCustomerFAQ: (
+      state,
+      action: PayloadAction<{ index: number; question?: string; answer?: string }>
+    ) => {
+      const { index, question, answer } = action.payload;
+      if (question !== undefined) {
+        state.prfaq.customerFaqs[index].question = question;
+      }
+      if (answer !== undefined) {
+        state.prfaq.customerFaqs[index].answer = answer;
+      }
+      state.updatedAt = new Date().toISOString();
+    },
+    
+    // Remove Customer FAQ
+    removeCustomerFAQ: (state, action: PayloadAction<number>) => {
+      state.prfaq.customerFaqs.splice(action.payload, 1);
+      state.updatedAt = new Date().toISOString();
+    },
+    
+    // Add Stakeholder FAQ
+    addStakeholderFAQ: (state, action: PayloadAction<FAQ>) => {
+      state.prfaq.stakeholderFaqs.push(action.payload);
+      state.updatedAt = new Date().toISOString();
+    },
+    
+    // Update Stakeholder FAQ
+    updateStakeholderFAQ: (
+      state,
+      action: PayloadAction<{ index: number; question?: string; answer?: string }>
+    ) => {
+      const { index, question, answer } = action.payload;
+      if (question !== undefined) {
+        state.prfaq.stakeholderFaqs[index].question = question;
+      }
+      if (answer !== undefined) {
+        state.prfaq.stakeholderFaqs[index].answer = answer;
+      }
+      state.updatedAt = new Date().toISOString();
+    },
+    
+    // Remove Stakeholder FAQ
+    removeStakeholderFAQ: (state, action: PayloadAction<number>) => {
+      state.prfaq.stakeholderFaqs.splice(action.payload, 1);
       state.updatedAt = new Date().toISOString();
     },
     
@@ -184,6 +240,12 @@ export const {
   addFAQ,
   updateFAQ,
   removeFAQ,
+  addCustomerFAQ,
+  updateCustomerFAQ,
+  removeCustomerFAQ,
+  addStakeholderFAQ,
+  updateStakeholderFAQ,
+  removeStakeholderFAQ,
   addAssumption,
   updateAssumption,
   removeAssumption,
