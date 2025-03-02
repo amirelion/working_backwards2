@@ -2,7 +2,7 @@ import { PRFAQ, ExportFormat } from '../types';
 
 // Helper function to convert PRFAQ to plain text
 const prfaqToText = (prfaq: PRFAQ): string => {
-  const { title, date, pressRelease, faq } = prfaq;
+  const { title, date, pressRelease, faq, customerFaqs, stakeholderFaqs } = prfaq;
   
   // Format press release
   const pressReleaseText = `
@@ -33,7 +33,7 @@ ${pressRelease.customerQuote}
 ${pressRelease.gettingStarted}
 `;
 
-  // Format FAQ
+  // Format main FAQ
   const faqText = faq.map((item, index) => {
     return `
 Q${index + 1}: ${item.question}
@@ -41,10 +41,36 @@ A${index + 1}: ${item.answer}
 `;
   }).join('\n');
 
+  // Format customer FAQs
+  const customerFaqText = customerFaqs && customerFaqs.length > 0 
+    ? customerFaqs.map((item, index) => {
+      return `
+Q${index + 1}: ${item.question}
+A${index + 1}: ${item.answer}
+`;
+    }).join('\n')
+    : 'No customer FAQs available.';
+
+  // Format stakeholder FAQs
+  const stakeholderFaqText = stakeholderFaqs && stakeholderFaqs.length > 0
+    ? stakeholderFaqs.map((item, index) => {
+      return `
+Q${index + 1}: ${item.question}
+A${index + 1}: ${item.answer}
+`;
+    }).join('\n')
+    : 'No stakeholder FAQs available.';
+
   return `${pressReleaseText}
 
 ## Frequently Asked Questions
 ${faqText}
+
+## Customer FAQs
+${customerFaqText}
+
+## Stakeholder FAQs
+${stakeholderFaqText}
 `;
 };
 
@@ -119,6 +145,28 @@ export const exportAsPdf = (prfaq: PRFAQ): void => {
             <div>A${index + 1}: ${item.answer}</div>
           </div>
         `).join('')}
+        
+        <h2>Customer FAQs</h2>
+        ${prfaq.customerFaqs && prfaq.customerFaqs.length > 0 ? 
+          prfaq.customerFaqs.map((item, index) => `
+            <div class="faq-item">
+              <div class="question">Q${index + 1}: ${item.question}</div>
+              <div>A${index + 1}: ${item.answer}</div>
+            </div>
+          `).join('') : 
+          '<div class="section">No customer FAQs available.</div>'
+        }
+        
+        <h2>Stakeholder FAQs</h2>
+        ${prfaq.stakeholderFaqs && prfaq.stakeholderFaqs.length > 0 ? 
+          prfaq.stakeholderFaqs.map((item, index) => `
+            <div class="faq-item">
+              <div class="question">Q${index + 1}: ${item.question}</div>
+              <div>A${index + 1}: ${item.answer}</div>
+            </div>
+          `).join('') : 
+          '<div class="section">No stakeholder FAQs available.</div>'
+        }
       </body>
     </html>
   `;
@@ -202,6 +250,24 @@ export const exportAsDocx = (prfaq: PRFAQ): void => {
           <p><strong>Q${index + 1}: ${item.question}</strong></p>
           <p>A${index + 1}: ${item.answer}</p>
         `).join('')}
+        
+        <h2>Customer FAQs</h2>
+        ${prfaq.customerFaqs && prfaq.customerFaqs.length > 0 ? 
+          prfaq.customerFaqs.map((item, index) => `
+            <p><strong>Q${index + 1}: ${item.question}</strong></p>
+            <p>A${index + 1}: ${item.answer}</p>
+          `).join('') : 
+          '<p>No customer FAQs available.</p>'
+        }
+        
+        <h2>Stakeholder FAQs</h2>
+        ${prfaq.stakeholderFaqs && prfaq.stakeholderFaqs.length > 0 ? 
+          prfaq.stakeholderFaqs.map((item, index) => `
+            <p><strong>Q${index + 1}: ${item.question}</strong></p>
+            <p>A${index + 1}: ${item.answer}</p>
+          `).join('') : 
+          '<p>No stakeholder FAQs available.</p>'
+        }
       </body>
     </html>
   `;

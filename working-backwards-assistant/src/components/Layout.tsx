@@ -28,7 +28,10 @@ import {
   Info as InfoIcon,
 } from '@mui/icons-material';
 import { useDispatch } from 'react-redux';
+import { useRecoilState } from 'recoil';
 import { resetSession } from '../store/sessionSlice';
+import { initialThoughtsState } from '../atoms/initialThoughtsState';
+import { workingBackwardsQuestionsState } from '../atoms/workingBackwardsQuestionsState';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -41,6 +44,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [initialThoughts, setInitialThoughts] = useRecoilState(initialThoughtsState);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [workingBackwardsQuestions, setWorkingBackwardsQuestions] = useRecoilState(workingBackwardsQuestionsState);
 
   const handleDrawerToggle = () => {
     setDrawerOpen(!drawerOpen);
@@ -56,6 +63,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const handleNewSession = () => {
     if (window.confirm('Starting a new session will clear all current data. Are you sure you want to continue?')) {
       dispatch(resetSession());
+      setInitialThoughts('');
+      setWorkingBackwardsQuestions({
+        customer: '',
+        problem: '',
+        benefit: '',
+        validation: '',
+        experience: '',
+        aiSuggestions: {}
+      });
       navigate('/');
     }
   };
