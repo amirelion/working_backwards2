@@ -15,17 +15,14 @@ import {
   ListItemText,
 } from '@mui/material';
 import {
-  Psychology,
   Description,
   Science,
   ArrowForward,
   CheckCircle,
-  People,
-  Lightbulb,
   QuestionAnswer,
 } from '@mui/icons-material';
 
-const LandingPage: React.FC = () => {
+export default function LandingPage() {
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
@@ -200,6 +197,4 @@ const LandingPage: React.FC = () => {
       </Container>
     </Box>
   );
-};
-
-export default LandingPage; 
+} 

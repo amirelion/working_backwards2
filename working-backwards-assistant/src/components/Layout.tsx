@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar,
@@ -7,43 +7,34 @@ import {
   Typography,
   Button,
   Container,
-  IconButton,
   useMediaQuery,
   useTheme,
-  Menu,
-  MenuItem,
 } from '@mui/material';
 import {
-  Menu as MenuIcon,
   Home as HomeIcon,
   QuestionAnswer as QuestionAnswerIcon,
   Description as DescriptionIcon,
   Psychology as PsychologyIcon,
   Science as ScienceIcon,
-  Info as InfoIcon,
+  Person as PersonIcon,
+  AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
 import { useDispatch } from 'react-redux';
-import { useRecoilState } from 'recoil';
 import { resetSession } from '../store/sessionSlice';
-import { initialThoughtsState } from '../atoms/initialThoughtsState';
-import { workingBackwardsQuestionsState } from '../atoms/workingBackwardsQuestionsState';
 import AuthMenu from './AuthMenu';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const [mobileOpen, setMobileOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  const { userProfile, isAdmin } = useAuth();
 
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -64,67 +55,61 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { text: 'Experiments', path: '/experiments', icon: <ScienceIcon /> },
   ];
 
+  // Only add profile and admin links if user is logged in
+  if (userProfile) {
+    navItems.push({ text: 'Profile', path: '/profile', icon: <PersonIcon /> });
+    if (isAdmin) {
+      navItems.push({ text: 'Admin', path: '/admin', icon: <AdminIcon /> });
+    }
+  }
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <AppBar position="fixed">
         <Toolbar>
-          {isMobile && (
-            <IconButton
-              color="inherit"
-              aria-label="open menu"
-              edge="start"
-              onClick={handleDrawerToggle}
-              sx={{ mr: 2 }}
-            >
-              <MenuIcon />
-            </IconButton>
-          )}
           <Typography 
             variant="h6" 
             component="div" 
             sx={{ 
-              flexGrow: 1,
-              textAlign: isMobile ? 'left' : 'center'
+              flexGrow: 0,
+              marginRight: 4
             }}
           >
-            Working Backwards Innovation Assistant
+            Working Backwards
           </Typography>
-          {!isMobile && (
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {navItems.map((item) => (
-                <Button
-                  key={item.text}
-                  color="inherit"
-                  onClick={() => handleNavigation(item.path)}
-                  sx={{
-                    mx: 1,
-                    ...(location.pathname === item.path && {
-                      borderBottom: '2px solid',
-                      borderColor: 'secondary.main',
-                    }),
-                  }}
-                >
-                  {item.text}
-                </Button>
-              ))}
-              <Button color="secondary" variant="outlined" onClick={handleNewSession} sx={{ ml: 2 }}>
-                New Session
+          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+            {navItems.map((item) => (
+              <Button
+                key={item.text}
+                color="inherit"
+                onClick={() => handleNavigation(item.path)}
+                sx={{
+                  mx: 1,
+                  ...(location.pathname === item.path && {
+                    borderBottom: '2px solid',
+                    borderColor: 'secondary.main',
+                  }),
+                }}
+              >
+                {item.text}
               </Button>
-              <AuthMenu />
-            </Box>
-          )}
-          {isMobile && <AuthMenu />}
+            ))}
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Button color="secondary" variant="outlined" onClick={handleNewSession}>
+              New Session
+            </Button>
+            <AuthMenu />
+          </Box>
         </Toolbar>
       </AppBar>
-
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          width: '100%',
-          marginTop: '64px', // Height of AppBar
-          display: 'flex',
-          flexDirection: 'column',
+          bgcolor: 'background.default',
+          mt: 8,
+          p: 3,
         }}
       >
         <Container 

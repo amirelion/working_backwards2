@@ -316,10 +316,9 @@ export const exportPRFAQ = (prfaq: PRFAQ, format: ExportFormat): void => {
   }
 };
 
-export default {
-  exportPRFAQ,
-  exportAsPdf,
-  exportAsDocx,
-  exportAsTxt,
-  sendViaEmail,
-}; 
+const exportUtils = {
+  prfaqToText,
+  exportPRFAQ
+};
+
+export default exportUtils; 

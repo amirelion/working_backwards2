@@ -8,11 +8,14 @@ import {
   Button,
   Tooltip,
 } from '@mui/material';
-import { useAuth } from '../lib/hooks/useAuth';
+import { useAuth } from '../contexts/AuthContext';
+import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { auth } from '../lib/firebase';
 
 const AuthMenu: React.FC = () => {
-  const { user, signInWithGoogle, signOut } = useAuth();
+  const { currentUser: user, userProfile } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -23,24 +26,58 @@ const AuthMenu: React.FC = () => {
   };
 
   const handleSignOut = async () => {
-    await signOut();
-    handleCloseMenu();
+    try {
+      await signOut(auth);
+      handleCloseMenu();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  const handleSignIn = async () => {
+    try {
+      console.log('Starting Google sign-in process from AuthMenu...');
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      
+      console.log('Initiating popup sign-in...');
+      const result = await signInWithPopup(auth, provider);
+      console.log('Sign-in successful:', result.user.email);
+      
+    } catch (error: any) {
+      console.error('Detailed sign-in error:', {
+        code: error.code,
+        message: error.message,
+        email: error.email,
+        credential: error.credential
+      });
+      setError('Failed to sign in. Please try again.');
+    }
   };
 
   if (!user) {
     return (
-      <Button
-        color="inherit"
-        onClick={signInWithGoogle}
-        sx={{
-          ml: 2,
-          '&:hover': {
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          },
-        }}
-      >
-        Sign In
-      </Button>
+      <>
+        <Button
+          color="inherit"
+          onClick={handleSignIn}
+          sx={{
+            ml: 2,
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            },
+          }}
+        >
+          Sign In
+        </Button>
+        {error && (
+          <Box sx={{ color: 'error.main', ml: 2 }}>
+            {error}
+          </Box>
+        )}
+      </>
     );
   }
 
@@ -49,8 +86,8 @@ const AuthMenu: React.FC = () => {
       <Tooltip title="Account settings">
         <IconButton onClick={handleOpenMenu} sx={{ p: 0 }}>
           <Avatar
-            alt={user.displayName || 'User'}
-            src={user.photoURL || undefined}
+            alt={userProfile?.displayName || user.displayName || 'User'}
+            src={userProfile?.photoURL || user.photoURL || undefined}
             sx={{
               width: 40,
               height: 40,

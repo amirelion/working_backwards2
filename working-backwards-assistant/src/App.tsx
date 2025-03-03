@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Provider } from 'react-redux';
 import { RecoilRoot } from 'recoil';
 import { store } from './store';
-import { AuthProvider } from './lib/contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
 
 // Import pages
 import LandingPage from './pages/LandingPage';
@@ -15,6 +15,9 @@ import PRFAQPage from './pages/PRFAQPage';
 import AssumptionsPage from './pages/AssumptionsPage';
 import ExperimentsPage from './pages/ExperimentsPage';
 import NotFoundPage from './pages/NotFoundPage';
+import UserProfile from './pages/UserProfile';
+import AdminDashboard from './pages/AdminDashboard';
+import TestPage from './pages/TestPage';
 
 // Import components
 import Layout from './components/Layout';
@@ -109,6 +112,9 @@ function App() {
                   <Route path="/prfaq" element={<PRFAQPage />} />
                   <Route path="/assumptions" element={<AssumptionsPage />} />
                   <Route path="/experiments" element={<ExperimentsPage />} />
+                  <Route path="/profile" element={<UserProfile />} />
+                  <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/test" element={<TestPage />} />
                   <Route path="*" element={<NotFoundPage />} />
                 </Routes>
               </Layout>

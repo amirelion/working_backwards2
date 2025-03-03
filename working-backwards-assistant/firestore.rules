@@ -1,0 +1,72 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isUserOrAdmin(userId) {
+      return request.auth.uid == userId || isAdmin();
+    }
+    
+    function isPremiumOrTrial(userId) {
+      let user = get(/databases/$(database)/documents/users/$(userId)).data;
+      return user.role == 'premium' || 
+        (user.role == 'trial' && user.trialEndDate > request.time);
+    }
+    
+    function canCreateSession(userId) {
+      let user = get(/databases/$(database)/documents/users/$(userId)).data;
+      return isAdmin() || 
+        user.role == 'premium' || 
+        (user.role == 'trial' && user.trialEndDate > request.time) ||
+        (user.role == 'free' && user.sessionCount < user.maxSessions);
+    }
+    
+    // User profiles
+    match /users/{userId} {
+      allow read: if isUserOrAdmin(userId);
+      allow create: if request.auth.uid == userId;
+      allow update: if isAdmin() || 
+        (request.auth.uid == userId && 
+         !request.resource.data.diff(resource.data).affectedKeys()
+           .hasAny(['role', 'maxSessions', 'trialEndDate']));
+      allow delete: if isAdmin();
+    }
+    
+    // Sessions
+    match /sessions/{sessionId} {
+      allow read: if resource.data.userId == request.auth.uid || isAdmin();
+      allow create: if isAuthenticated() && 
+                     request.resource.data.userId == request.auth.uid &&
+                     canCreateSession(request.auth.uid);
+      allow update: if resource.data.userId == request.auth.uid || isAdmin();
+      allow delete: if resource.data.userId == request.auth.uid || isAdmin();
+    }
+    
+    // Shared sessions
+    match /shared_sessions/{sessionId} {
+      allow read: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || 
+         resource.data.sharedWith.hasAny([request.auth.uid]) ||
+         isAdmin());
+      allow create: if isAuthenticated() && 
+                     request.resource.data.userId == request.auth.uid &&
+                     isPremiumOrTrial(request.auth.uid);
+      allow update: if resource.data.userId == request.auth.uid || isAdmin();
+      allow delete: if resource.data.userId == request.auth.uid || isAdmin();
+    }
+    
+    // Analytics (admin only)
+    match /analytics/{document=**} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+  }
+} 
