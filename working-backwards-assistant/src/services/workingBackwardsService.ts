@@ -13,7 +13,7 @@ import {
   orderBy,
   onSnapshot
 } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db } from '../lib/firebase/firebase';
 import { WorkingBackwardsProcess, WorkingBackwardsProcessSummary } from '../types/workingBackwards';
 
 // Collection reference
