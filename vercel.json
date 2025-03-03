@@ -1,30 +1,23 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "working-backwards-assistant/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build"
-      }
-    }
-  ],
+  "buildCommand": "cd working-backwards-assistant && npm install && npm run build",
+  "outputDirectory": "working-backwards-assistant/build",
   "routes": [
     {
       "src": "/static/(.*)",
-      "dest": "working-backwards-assistant/build/static/$1"
+      "dest": "/static/$1"
     },
     {
       "src": "/favicon.ico",
-      "dest": "working-backwards-assistant/build/favicon.ico"
+      "dest": "/favicon.ico"
     },
     {
       "src": "/manifest.json",
-      "dest": "working-backwards-assistant/build/manifest.json"
+      "dest": "/manifest.json"
     },
     {
       "src": "/(.*)",
-      "dest": "working-backwards-assistant/build/index.html"
+      "dest": "/index.html"
     }
   ]
 } 
