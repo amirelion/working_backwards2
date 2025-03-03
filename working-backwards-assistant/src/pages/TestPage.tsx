@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db } from '../lib/firebase/firebase';
 import { Box, Typography, Paper } from '@mui/material';
 
 export default function TestPage() {

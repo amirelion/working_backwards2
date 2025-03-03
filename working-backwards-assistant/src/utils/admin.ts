@@ -1,5 +1,5 @@
 import { doc, setDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db } from '../lib/firebase/firebase';
 import { UserProfile } from '../types/auth';
 
 export async function initializeAdminUser(user: any) {

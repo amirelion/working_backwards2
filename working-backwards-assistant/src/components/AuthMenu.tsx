@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { auth } from '../lib/firebase/firebase';
 
 const AuthMenu: React.FC = () => {
   const { currentUser: user, userProfile } = useAuth();

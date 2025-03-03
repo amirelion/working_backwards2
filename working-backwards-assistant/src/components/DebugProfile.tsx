@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db } from '../lib/firebase/firebase';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function DebugProfile() {
