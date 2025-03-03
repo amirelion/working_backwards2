@@ -83,6 +83,8 @@ app.post('/api/process-thoughts', async (req, res) => {
       return res.status(400).json({ error: 'Text is required' });
     }
 
+    console.log('Processing initial thoughts:', text.substring(0, 100) + '...');
+
     // Define the prompt for extracting insights
     const prompt = `
       You are an expert in Amazon's Working Backwards process. 
@@ -100,7 +102,14 @@ app.post('/api/process-thoughts', async (req, res) => {
       4. How do you know what customers need or want?
       5. What does the customer experience look like?
       
-      Format your response as a JSON object with keys corresponding to each question number and values containing the suggested answers.
+      Format your response as a JSON object with keys corresponding to each question number (use only the number as the key) and values containing the suggested answers. For example:
+      {
+        "1": "Answer to question 1",
+        "2": "Answer to question 2",
+        "3": "Answer to question 3",
+        "4": "Answer to question 4",
+        "5": "Answer to question 5"
+      }
     `;
 
     // Call OpenAI API to process the text
@@ -115,6 +124,7 @@ app.post('/api/process-thoughts', async (req, res) => {
 
     // Parse the JSON response
     const suggestions = JSON.parse(completion.choices[0].message.content);
+    console.log('AI suggestions:', suggestions);
 
     // Return the suggestions
     return res.status(200).json(suggestions);

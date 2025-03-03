@@ -6,9 +6,11 @@ import { Provider } from 'react-redux';
 import { RecoilRoot } from 'recoil';
 import { store } from './store';
 import { AuthProvider } from './contexts/AuthContext';
+import { WorkingBackwardsProvider } from './contexts/WorkingBackwardsContext';
 
 // Import pages
 import LandingPage from './pages/LandingPage';
+import DashboardPage from './pages/DashboardPage';
 import InitialThoughtsPage from './pages/InitialThoughtsPage';
 import WorkingBackwardsPage from './pages/WorkingBackwardsPage';
 import PRFAQPage from './pages/PRFAQPage';
@@ -99,31 +101,34 @@ const theme = createTheme({
 
 function App() {
   return (
-    <AuthProvider>
+    <RecoilRoot>
       <Provider store={store}>
-        <RecoilRoot>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <Router>
-              <Layout>
-                <Routes>
-                  <Route path="/" element={<LandingPage />} />
-                  <Route path="/initial-thoughts" element={<InitialThoughtsPage />} />
-                  <Route path="/working-backwards" element={<WorkingBackwardsPage />} />
-                  <Route path="/prfaq" element={<PRFAQPage />} />
-                  <Route path="/assumptions" element={<AssumptionsPage />} />
-                  <Route path="/experiments" element={<ExperimentsPage />} />
-                  <Route path="/profile" element={<UserProfile />} />
-                  <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-                  <Route path="/test" element={<TestPage />} />
-                  <Route path="*" element={<NotFoundPage />} />
-                </Routes>
-              </Layout>
-            </Router>
-          </ThemeProvider>
-        </RecoilRoot>
+        <AuthProvider>
+          <Router>
+            <WorkingBackwardsProvider>
+              <ThemeProvider theme={theme}>
+                <CssBaseline />
+                <Layout>
+                  <Routes>
+                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/initial-thoughts" element={<InitialThoughtsPage />} />
+                    <Route path="/working-backwards" element={<WorkingBackwardsPage />} />
+                    <Route path="/prfaq" element={<PRFAQPage />} />
+                    <Route path="/assumptions" element={<AssumptionsPage />} />
+                    <Route path="/experiments" element={<ExperimentsPage />} />
+                    <Route path="/profile" element={<UserProfile />} />
+                    <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                    <Route path="/test" element={<TestPage />} />
+                    <Route path="*" element={<NotFoundPage />} />
+                  </Routes>
+                </Layout>
+              </ThemeProvider>
+            </WorkingBackwardsProvider>
+          </Router>
+        </AuthProvider>
       </Provider>
-    </AuthProvider>
+    </RecoilRoot>
   );
 }
 

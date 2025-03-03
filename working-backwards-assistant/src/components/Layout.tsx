@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import {
   Home as HomeIcon,
+  Dashboard as DashboardIcon,
   QuestionAnswer as QuestionAnswerIcon,
   Description as DescriptionIcon,
   Psychology as PsychologyIcon,
@@ -49,14 +50,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const navItems = [
     { text: 'Home', path: '/', icon: <HomeIcon /> },
-    { text: 'Working Backwards', path: '/working-backwards', icon: <QuestionAnswerIcon /> },
-    { text: 'PRFAQ', path: '/prfaq', icon: <DescriptionIcon /> },
-    { text: 'Assumptions', path: '/assumptions', icon: <PsychologyIcon /> },
-    { text: 'Experiments', path: '/experiments', icon: <ScienceIcon /> },
   ];
 
-  // Only add profile and admin links if user is logged in
+  // Only add these items if user is logged in
   if (userProfile) {
+    navItems.push({ text: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> });
+    navItems.push({ text: 'Working Backwards', path: '/working-backwards', icon: <QuestionAnswerIcon /> });
+    navItems.push({ text: 'PRFAQ', path: '/prfaq', icon: <DescriptionIcon /> });
+    navItems.push({ text: 'Assumptions', path: '/assumptions', icon: <PsychologyIcon /> });
+    navItems.push({ text: 'Experiments', path: '/experiments', icon: <ScienceIcon /> });
     navItems.push({ text: 'Profile', path: '/profile', icon: <PersonIcon /> });
     if (isAdmin) {
       navItems.push({ text: 'Admin', path: '/admin', icon: <AdminIcon /> });

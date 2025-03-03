@@ -1,4 +1,5 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
     // Helper functions
@@ -29,15 +30,15 @@ service cloud.firestore {
         (user.role == 'free' && user.sessionCount < user.maxSessions);
     }
     
-    // User profiles
+    // User profiles - users can read/write only their own profile
     match /users/{userId} {
-      allow read: if isUserOrAdmin(userId);
-      allow create: if request.auth.uid == userId;
-      allow update: if isAdmin() || 
-        (request.auth.uid == userId && 
-         !request.resource.data.diff(resource.data).affectedKeys()
-           .hasAny(['role', 'maxSessions', 'trialEndDate']));
-      allow delete: if isAdmin();
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      
+      // Admin users can read all user profiles
+      allow read: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
     
     // Sessions
@@ -63,10 +64,42 @@ service cloud.firestore {
       allow delete: if resource.data.userId == request.auth.uid || isAdmin();
     }
     
-    // Analytics (admin only)
-    match /analytics/{document=**} {
-      allow read: if isAdmin();
-      allow write: if isAdmin();
+    // Working Backwards processes - users can only access their own processes
+    match /workingBackwardsProcesses/{processId} {
+      // Allow read if the user is authenticated and the process belongs to them
+      allow read: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+      
+      // Allow create if the user is authenticated and setting themselves as the owner
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // Allow update if the user is authenticated and the process belongs to them
+      // and they're not trying to change the userId
+      allow update: if request.auth != null && 
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == resource.data.userId;
+      
+      // Allow delete if the user is authenticated and the process belongs to them
+      allow delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+        
+      // Admin users can access all processes
+      allow read, write: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Admin-only collections
+    match /adminSettings/{document=**} {
+      allow read, write: if request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 } 
