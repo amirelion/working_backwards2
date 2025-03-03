@@ -4,17 +4,9 @@
     {
       "src": "working-backwards-assistant/package.json",
       "use": "@vercel/node"
-    },
-    {
-      "src": "working-backwards-assistant/api/**/*.js",
-      "use": "@vercel/node"
     }
   ],
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "working-backwards-assistant/api/$1"
-    },
     {
       "src": "/(.*)",
       "dest": "working-backwards-assistant/$1"
