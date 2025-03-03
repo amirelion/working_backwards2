@@ -34,43 +34,26 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const [mobileOpen, setMobileOpen] = useState(false);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [mobileMenuAnchor, setMobileMenuAnchor] = useState<null | HTMLElement>(null);
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const [initialThoughts, setInitialThoughts] = useRecoilState(initialThoughtsState);
-  const [workingBackwardsQuestions, setWorkingBackwardsQuestions] = useRecoilState(workingBackwardsQuestionsState);
 
-  const handleMobileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setMobileMenuAnchor(event.currentTarget);
-  };
-
-  const handleMobileMenuClose = () => {
-    setMobileMenuAnchor(null);
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
   };
 
   const handleNavigation = (path: string) => {
     navigate(path);
-    handleMobileMenuClose();
   };
 
   const handleNewSession = () => {
     if (window.confirm('Starting a new session will clear all current data. Are you sure you want to continue?')) {
       dispatch(resetSession());
-      setInitialThoughts('');
-      setWorkingBackwardsQuestions({
-        customer: '',
-        problem: '',
-        benefit: '',
-        validation: '',
-        experience: '',
-        aiSuggestions: {}
-      });
       navigate('/');
     }
-    handleMobileMenuClose();
   };
 
   const navItems = [
@@ -90,7 +73,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               color="inherit"
               aria-label="open menu"
               edge="start"
-              onClick={handleMobileMenuOpen}
+              onClick={handleDrawerToggle}
               sx={{ mr: 2 }}
             >
               <MenuIcon />
@@ -133,32 +116,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           {isMobile && <AuthMenu />}
         </Toolbar>
       </AppBar>
-
-      {/* Mobile Menu */}
-      <Menu
-        anchorEl={mobileMenuAnchor}
-        open={Boolean(mobileMenuAnchor)}
-        onClose={handleMobileMenuClose}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          mt: '45px',
-        }}
-      >
-        {navItems.map((item) => (
-          <MenuItem
-            key={item.text}
-            onClick={() => handleNavigation(item.path)}
-            selected={location.pathname === item.path}
-          >
-            {item.icon}
-            <Typography sx={{ ml: 1 }}>{item.text}</Typography>
-          </MenuItem>
-        ))}
-        <MenuItem onClick={handleNewSession}>
-          <InfoIcon />
-          <Typography sx={{ ml: 1 }}>New Session</Typography>
-        </MenuItem>
-      </Menu>
 
       <Box
         component="main"

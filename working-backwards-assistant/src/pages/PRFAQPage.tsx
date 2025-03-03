@@ -157,7 +157,7 @@ const PRFAQPage: React.FC = () => {
   const { prfaq, workingBackwardsResponses } = useSelector((state: RootState) => state.session);
   
   const [tabValue, setTabValue] = useState(0);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingPRFAQ, setIsGeneratingPRFAQ] = useState(false);
   const [generationStep, setGenerationStep] = useState<string>('');
   
   // Legacy FAQ state
@@ -332,7 +332,7 @@ const PRFAQPage: React.FC = () => {
       return;
     }
 
-    setIsGenerating(true);
+    setIsGeneratingPRFAQ(true);
     
     try {
       // Create a copy of the current PRFAQ to build upon
@@ -426,7 +426,7 @@ const PRFAQPage: React.FC = () => {
       alert(`Failed to generate section: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setGenerationStep('');
     } finally {
-      setIsGenerating(false);
+      setIsGeneratingPRFAQ(false);
     }
   };
 
@@ -438,7 +438,7 @@ const PRFAQPage: React.FC = () => {
       return;
     }
 
-    setIsGenerating(true);
+    setIsGeneratingPRFAQ(true);
     
     try {
       // Generate each section sequentially
@@ -560,7 +560,7 @@ const PRFAQPage: React.FC = () => {
       alert(`Failed to generate PRFAQ: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setGenerationStep('');
     } finally {
-      setIsGenerating(false);
+      setIsGeneratingPRFAQ(false);
     }
   };
 
@@ -612,7 +612,7 @@ const PRFAQPage: React.FC = () => {
               variant="outlined"
               size="small"
               onClick={() => generatePRFAQSection(section)}
-              disabled={isGenerating}
+              disabled={isGeneratingPRFAQ}
               sx={{ minWidth: '120px' }}
             >
               {hasContent ? 'Revise' : 'Generate'}
@@ -1097,13 +1097,13 @@ const PRFAQPage: React.FC = () => {
                 variant="outlined"
                 color="primary"
                 onClick={generatePRFAQ}
-                disabled={isGenerating || !hasWorkingBackwardsResponses}
-                startIcon={isGenerating ? <CircularProgress size={20} /> : null}
+                disabled={isGeneratingPRFAQ || !hasWorkingBackwardsResponses}
+                startIcon={isGeneratingPRFAQ ? <CircularProgress size={20} /> : null}
               >
                 {isPRFAQEmpty ? 'Generate PRFAQ' : hasSomeContent ? 'Revise Full PRFAQ' : 'Regenerate PRFAQ'}
               </Button>
             </Tooltip>
-            {isGenerating && (
+            {isGeneratingPRFAQ && (
               <Typography variant="body2" color="text.secondary" sx={{ ml: 1, alignSelf: 'center' }}>
                 {generationStep}
               </Typography>

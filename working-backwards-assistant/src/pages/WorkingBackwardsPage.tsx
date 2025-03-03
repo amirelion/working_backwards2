@@ -3,10 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
-  Card,
-  CardContent,
   Container,
-  Grid,
   Typography,
   TextField,
   CircularProgress,
@@ -16,11 +13,10 @@ import {
   StepLabel,
   StepContent,
   Divider,
-  Chip,
   Tooltip,
   IconButton,
 } from '@mui/material';
-import { ArrowForward, ArrowBack, Check, Lightbulb, ContentPaste } from '@mui/icons-material';
+import { ArrowForward, ArrowBack, Lightbulb, ContentPaste } from '@mui/icons-material';
 import { useRecoilState } from 'recoil';
 import { useDispatch } from 'react-redux';
 import { workingBackwardsQuestionsState, WorkingBackwardsQuestionsState } from '../atoms/workingBackwardsQuestionsState';
@@ -137,6 +133,15 @@ const WorkingBackwardsPage: React.FC = () => {
         setAiSuggestion('Sorry, I couldn\'t generate a suggestion at this time. Please try again later.');
       } else {
         setAiSuggestion(response.content);
+        
+        // Store the suggestion in the questionsState
+        setQuestionsState(prev => ({
+          ...prev,
+          aiSuggestions: {
+            ...prev.aiSuggestions,
+            [`${currentStep + 1}. ${currentQuestion.label}`]: response.content
+          }
+        }));
       }
     } catch (error) {
       console.error('Error getting AI suggestion:', error);
@@ -209,25 +214,48 @@ const WorkingBackwardsPage: React.FC = () => {
 
   const handleUseSuggestion = async () => {
     try {
+      // Get the current question's suggestion from the stored suggestions
+      const questionNumber = currentStep + 1;
+      const fullQuestionKey = `${questionNumber}. ${currentQuestion.label}`;
+      const suggestionToUse = questionsState.aiSuggestions?.[fullQuestionKey] || aiSuggestion;
+
+      if (!suggestionToUse) {
+        console.error('No suggestion available to use');
+        return;
+      }
+
       // Update the current response state
-      setCurrentResponse(aiSuggestion);
+      setCurrentResponse(suggestionToUse);
       
       // Update Redux store
       dispatch(updateWorkingBackwardsResponse({
         field: currentQuestion.id,
-        value: aiSuggestion
+        value: suggestionToUse
+      }));
+
+      // Update Recoil state
+      setQuestionsState(prev => ({
+        ...prev,
+        [currentQuestion.id]: suggestionToUse
       }));
 
       // Copy to clipboard using the Clipboard API
-      await navigator.clipboard.writeText(aiSuggestion);
+      await navigator.clipboard.writeText(suggestionToUse);
     } catch (error) {
       console.error('Error using suggestion:', error);
       // Still update the text field even if clipboard fails
-      setCurrentResponse(aiSuggestion);
-      dispatch(updateWorkingBackwardsResponse({
-        field: currentQuestion.id,
-        value: aiSuggestion
-      }));
+      const suggestionToUse = questionsState.aiSuggestions?.[`${currentStep + 1}. ${currentQuestion.label}`] || aiSuggestion;
+      if (suggestionToUse) {
+        setCurrentResponse(suggestionToUse);
+        dispatch(updateWorkingBackwardsResponse({
+          field: currentQuestion.id,
+          value: suggestionToUse
+        }));
+        setQuestionsState(prev => ({
+          ...prev,
+          [currentQuestion.id]: suggestionToUse
+        }));
+      }
     }
   };
 
