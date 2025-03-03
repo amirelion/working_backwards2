@@ -97,6 +97,10 @@ const WorkingBackwardsPage: React.FC = () => {
       if (questionsState.aiSuggestions) {
         const questionNumber = currentStep + 1;
         const fullQuestionKey = `${questionNumber}. ${question.label}`;
+        
+        console.log('Checking for AI suggestion with key:', fullQuestionKey);
+        console.log('Available AI suggestions:', questionsState.aiSuggestions);
+        
         if (questionsState.aiSuggestions[fullQuestionKey]) {
           setAiSuggestion(questionsState.aiSuggestions[fullQuestionKey]);
         } else {
@@ -282,40 +286,6 @@ const WorkingBackwardsPage: React.FC = () => {
                         {question.helperText}
                       </Typography>
                       
-                      {questionsState.aiSuggestions && 
-                       questionsState.aiSuggestions[`${index + 1}`] && (
-                        <Paper 
-                          variant="outlined" 
-                          sx={{ 
-                            p: 2, 
-                            mb: 2, 
-                            bgcolor: 'rgba(255, 240, 230, 0.5)', 
-                            borderColor: 'secondary.light',
-                            display: 'flex',
-                            alignItems: 'flex-start'
-                          }}
-                        >
-                          <Lightbulb color="secondary" sx={{ mr: 1, mt: 0.5 }} />
-                          <Box sx={{ flex: 1 }}>
-                            <Typography variant="subtitle2" color="secondary.dark" gutterBottom>
-                              AI Suggestion based on your initial thoughts:
-                            </Typography>
-                            <Typography variant="body2">
-                              {questionsState.aiSuggestions[`${index + 1}`]}
-                            </Typography>
-                          </Box>
-                          <Tooltip title="Use this suggestion">
-                            <IconButton 
-                              size="small" 
-                              onClick={handleUseSuggestion}
-                              sx={{ ml: 1 }}
-                            >
-                              <ContentPaste fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Paper>
-                      )}
-                      
                       <TextField
                         fullWidth
                         multiline
@@ -327,20 +297,8 @@ const WorkingBackwardsPage: React.FC = () => {
                         sx={{ mb: 2 }}
                       />
                       
-                      {!questionsState.aiSuggestions?.[`${index + 1}`] && (
-                        <Button
-                          variant="text"
-                          color="secondary"
-                          onClick={getAISuggestion}
-                          disabled={isLoading}
-                          startIcon={isLoading ? <CircularProgress size={20} /> : <Lightbulb />}
-                          sx={{ mb: 2 }}
-                        >
-                          {isLoading ? 'Getting suggestion...' : 'Get AI suggestion'}
-                        </Button>
-                      )}
-                      
-                      {aiSuggestion && !questionsState.aiSuggestions?.[`${index + 1}`] && (
+                      {/* AI Suggestion Section */}
+                      {(questionsState.aiSuggestions?.[`${index + 1}. ${question.label}`] || aiSuggestion) && (
                         <Paper 
                           variant="outlined" 
                           sx={{ 
@@ -358,7 +316,7 @@ const WorkingBackwardsPage: React.FC = () => {
                               AI Suggestion:
                             </Typography>
                             <Typography variant="body2">
-                              {aiSuggestion}
+                              {questionsState.aiSuggestions?.[`${index + 1}. ${question.label}`] || aiSuggestion}
                             </Typography>
                           </Box>
                           <Tooltip title="Use this suggestion">
@@ -371,6 +329,19 @@ const WorkingBackwardsPage: React.FC = () => {
                             </IconButton>
                           </Tooltip>
                         </Paper>
+                      )}
+                      
+                      {!questionsState.aiSuggestions?.[`${index + 1}. ${question.label}`] && !aiSuggestion && (
+                        <Button
+                          variant="text"
+                          color="secondary"
+                          onClick={getAISuggestion}
+                          disabled={isLoading}
+                          startIcon={isLoading ? <CircularProgress size={20} /> : <Lightbulb />}
+                          sx={{ mb: 2 }}
+                        >
+                          {isLoading ? 'Getting suggestion...' : 'Get AI suggestion'}
+                        </Button>
                       )}
                       
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
