@@ -3,13 +3,28 @@
   "builds": [
     {
       "src": "working-backwards-assistant/package.json",
-      "use": "@vercel/node"
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
     }
   ],
   "routes": [
     {
+      "src": "/static/(.*)",
+      "dest": "working-backwards-assistant/build/static/$1"
+    },
+    {
+      "src": "/favicon.ico",
+      "dest": "working-backwards-assistant/build/favicon.ico"
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "working-backwards-assistant/build/manifest.json"
+    },
+    {
       "src": "/(.*)",
-      "dest": "working-backwards-assistant/$1"
+      "dest": "working-backwards-assistant/build/index.html"
     }
   ]
 } 
