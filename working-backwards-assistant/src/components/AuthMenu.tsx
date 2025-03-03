@@ -11,11 +11,13 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { auth } from '../lib/firebase/firebase';
+import { useNavigate } from 'react-router-dom';
 
 const AuthMenu: React.FC = () => {
   const { currentUser: user, userProfile } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -29,6 +31,7 @@ const AuthMenu: React.FC = () => {
     try {
       await signOut(auth);
       handleCloseMenu();
+      navigate('/'); // Redirect to home page after logout
     } catch (error) {
       console.error('Error signing out:', error);
     }

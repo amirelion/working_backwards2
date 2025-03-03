@@ -21,6 +21,7 @@ import TestPage from './pages/TestPage';
 
 // Import components
 import Layout from './components/Layout';
+import { AdminRoute } from './components/ProtectedRoute';
 
 // Create theme
 const theme = createTheme({
@@ -113,7 +114,7 @@ function App() {
                   <Route path="/assumptions" element={<AssumptionsPage />} />
                   <Route path="/experiments" element={<ExperimentsPage />} />
                   <Route path="/profile" element={<UserProfile />} />
-                  <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                   <Route path="/test" element={<TestPage />} />
                   <Route path="*" element={<NotFoundPage />} />
                 </Routes>

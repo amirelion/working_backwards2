@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase/firebase';
 import {
   Box,
@@ -11,24 +10,13 @@ import {
 } from '@mui/material';
 
 export default function AdminDashboard() {
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [users, setUsers] = useState<any[]>([]);
 
   useEffect(() => {
-    const checkAccess = async () => {
+    const fetchUsers = async () => {
       try {
-        // Check if there are any admin users
-        const adminQuery = query(collection(db, 'users'), where('role', '==', 'admin'));
-        const adminSnapshot = await getDocs(adminQuery);
-        
-        if (adminSnapshot.empty) {
-          setError('Access denied. No admin users found.');
-          navigate('/');
-          return;
-        }
-
         // Fetch all users for the admin dashboard
         const usersSnapshot = await getDocs(collection(db, 'users'));
         const usersData = usersSnapshot.docs.map(doc => ({
@@ -39,14 +27,14 @@ export default function AdminDashboard() {
         setUsers(usersData);
         setLoading(false);
       } catch (err) {
-        console.error('Error checking admin access:', err);
-        setError('Error accessing admin dashboard');
+        console.error('Error fetching users:', err);
+        setError('Error loading user data');
         setLoading(false);
       }
     };
 
-    checkAccess();
-  }, [navigate]);
+    fetchUsers();
+  }, []);
 
   if (loading) {
     return (

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Box, CircularProgress } from '@mui/material';
+import { Box, Typography, Paper, Container, CircularProgress } from '@mui/material';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -23,22 +23,36 @@ function LoadingSpinner() {
   );
 }
 
+function AccessDenied({ message }: { message: string }) {
+  return (
+    <Container maxWidth="sm">
+      <Box sx={{ mt: 8, mb: 4 }}>
+        <Paper sx={{ p: 4, textAlign: 'center' }}>
+          <Typography variant="h4" component="h1" gutterBottom color="error">
+            Access Denied
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            {message}
+          </Typography>
+        </Paper>
+      </Box>
+    </Container>
+  );
+}
+
 export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
   const { currentUser, isAdmin, loading } = useAuth();
-  const location = useLocation();
   
   if (loading) {
     return <LoadingSpinner />;
   }
   
   if (!currentUser) {
-    // Redirect to login page with return URL
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <AccessDenied message="Please sign in to access this page." />;
   }
   
   if (requireAdmin && !isAdmin) {
-    // Redirect non-admin users to dashboard
-    return <Navigate to="/dashboard" replace />;
+    return <AccessDenied message="You don't have permission to access this page. This area is restricted to administrators only." />;
   }
   
   return <>{children}</>;
