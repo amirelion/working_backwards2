@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "cd working-backwards-assistant && npm install && npm run build",
-  "outputDirectory": "working-backwards-assistant/build",
+  "buildCommand": "npm install && npm run build",
+  "outputDirectory": "build",
   "routes": [
     {
       "src": "/static/(.*)",
