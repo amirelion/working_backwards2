@@ -165,6 +165,42 @@ export function WorkingBackwardsProvider({ children }: { children: React.ReactNo
   const loadProcess = async (processId: string): Promise<void> => {
     setError(null);
     setCurrentProcessId(processId);
+    
+    try {
+      const process = await workingBackwardsService.getProcessById(processId);
+      if (process) {
+        // Update all the state
+        setInitialThoughts(process.initialThoughts || '');
+        setWorkingBackwardsQuestions(process.workingBackwardsQuestions);
+        dispatch(updatePRFAQTitle(process.prfaq?.title || ''));
+        
+        // Update each press release field individually
+        if (process.prfaq?.pressRelease) {
+          const fields = [
+            'date', 'location', 'headline', 'subheadline', 'introduction',
+            'problemStatement', 'solution', 'customerQuote', 'stakeholderQuote',
+            'callToAction', 'aboutCompany'
+          ] as const;
+          
+          fields.forEach(field => {
+            dispatch(updatePRFAQPressRelease({
+              field,
+              value: process.prfaq?.pressRelease[field] || ''
+            }));
+          });
+        }
+
+        if (process.prfaq) {
+          dispatch(setFAQs(process.prfaq.internalFaqs || []));
+          dispatch(setCustomerFAQs(process.prfaq.customerFaqs || []));
+          dispatch(setStakeholderFAQs(process.prfaq.stakeholderFaqs || []));
+        }
+      }
+    } catch (error) {
+      console.error('Error loading process:', error);
+      setError('Failed to load process');
+      throw error;
+    }
   };
   
   // Save current process
