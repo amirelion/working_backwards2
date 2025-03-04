@@ -12,12 +12,14 @@ import {
   Divider,
   Alert,
   CircularProgress,
-  Snackbar
+  Snackbar,
+  ClickAwayListener
 } from '@mui/material';
 import { useRecoilState } from 'recoil';
 import { initialThoughtsState } from '../atoms/initialThoughtsState';
 import { workingBackwardsQuestionsState } from '../atoms/workingBackwardsQuestionsState';
 import VoiceTranscriber from '../components/VoiceTranscriber';
+import CustomSnackbar from '../components/CustomSnackbar';
 import { processInitialThoughts } from '../utils/aiProcessing';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
@@ -184,24 +186,13 @@ function InitialThoughtsPage() {
 
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-      {/* Fix Snackbar component */}
-      {snackbarOpen && (
-        <Snackbar 
-          open={snackbarOpen} 
-          autoHideDuration={snackbarSeverity === 'info' ? undefined : 6000} 
-          onClose={handleSnackbarClose}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        >
-          <Alert 
-            onClose={handleSnackbarClose} 
-            severity={snackbarSeverity} 
-            sx={{ width: '100%' }}
-            variant="filled"
-          >
-            {snackbarMessage}
-          </Alert>
-        </Snackbar>
-      )}
+      <CustomSnackbar
+        open={snackbarOpen}
+        message={snackbarMessage}
+        severity={snackbarSeverity}
+        onClose={handleSnackbarClose}
+        variant="filled"
+      />
 
       <Paper elevation={2} sx={{ p: 0 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>

@@ -12,13 +12,12 @@ import {
   Button,
   SelectChangeEvent,
   Box,
-  Typography,
-  Snackbar,
-  Alert
+  Typography
 } from '@mui/material';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase/firebase';
 import { UserProfile, UserRole } from '../types/auth';
+import CustomSnackbar from './CustomSnackbar';
 
 interface UserManagementTableProps {
   users: UserProfile[];
@@ -146,19 +145,13 @@ export default function UserManagementTable({ users, onUserUpdated }: UserManage
         </Box>
       )}
 
-      <Snackbar
+      <CustomSnackbar
         open={snackbar.open}
-        autoHideDuration={6000}
+        message={snackbar.message}
+        severity={snackbar.severity}
         onClose={handleCloseSnackbar}
-      >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+        variant="filled"
+      />
     </Box>
   );
 } 
