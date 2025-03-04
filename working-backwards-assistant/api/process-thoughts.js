@@ -57,7 +57,14 @@ module.exports = async (req, res) => {
       4. How do you know what customers need or want?
       5. What does the customer experience look like?
       
-      Format your response as a JSON object with keys corresponding to each question number and values containing the suggested answers.
+      Format your response as a JSON object with keys corresponding to each question number (use only the number as the key) and values containing the suggested answers. For example:
+      {
+        "1": "Answer to question 1",
+        "2": "Answer to question 2",
+        "3": "Answer to question 3",
+        "4": "Answer to question 4",
+        "5": "Answer to question 5"
+      }
     `;
 
     // Call OpenAI API to process the text
