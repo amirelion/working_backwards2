@@ -12,7 +12,7 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
     'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
   );
 
   // Handle OPTIONS request
@@ -24,6 +24,12 @@ module.exports = async (req, res) => {
   // Only allow POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Check for API key
+  if (!process.env.REACT_APP_AI_API_KEY) {
+    console.error('Missing OpenAI API key');
+    return res.status(500).json({ error: 'Server configuration error' });
   }
 
   try {

@@ -16,7 +16,11 @@
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "X-Requested-With, Content-Type, Authorization"
+          "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
+        },
+        {
+          "key": "Access-Control-Allow-Credentials",
+          "value": "true"
         },
         {
           "key": "Access-Control-Max-Age",
@@ -27,12 +31,12 @@
   ],
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
     },
     {
-      "source": "/static/:path*",
-      "destination": "/static/:path*"
+      "source": "/static/(.*)",
+      "destination": "/static/$1"
     },
     {
       "source": "/favicon.ico",
