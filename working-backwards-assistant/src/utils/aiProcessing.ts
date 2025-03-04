@@ -1,7 +1,10 @@
 export async function processInitialThoughts(text: string) {
   try {
     // Call your backend API that will process the text with OpenAI
-    const response = await fetch('/api/process-thoughts', {
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? window.location.origin
+      : '';
+    const response = await fetch(`${baseUrl}/api/process-thoughts`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
