@@ -11,8 +11,15 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 app.use(express.json());
+
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, 'build')));
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -33,6 +40,9 @@ const upload = multer({
 const openai = new OpenAI({
   apiKey: process.env.REACT_APP_AI_API_KEY,
 });
+
+// Handle OPTIONS requests
+app.options('*', cors());
 
 // Transcribe API endpoint
 app.post('/api/transcribe', upload.single('file'), async (req, res) => {
