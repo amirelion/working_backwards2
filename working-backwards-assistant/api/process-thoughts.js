@@ -2,7 +2,7 @@ const { OpenAI } = require('openai');
 
 // Initialize OpenAI client
 const openai = new OpenAI({
-  apiKey: process.env.REACT_APP_AI_API_KEY,
+  apiKey: process.env.REACT_APP_AI_API_KEY || process.env.AI_API_KEY,
 });
 
 module.exports = async (req, res) => {
@@ -27,7 +27,8 @@ module.exports = async (req, res) => {
   }
 
   // Check for API key
-  if (!process.env.REACT_APP_AI_API_KEY) {
+  const apiKey = process.env.REACT_APP_AI_API_KEY || process.env.AI_API_KEY;
+  if (!apiKey) {
     console.error('Missing OpenAI API key');
     return res.status(500).json({ error: 'Server configuration error' });
   }
