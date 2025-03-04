@@ -3,10 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
-  Card,
-  CardContent,
   Container,
-  Grid,
   Typography,
   TextField,
   CircularProgress,
@@ -16,11 +13,10 @@ import {
   StepLabel,
   StepContent,
   Divider,
-  Chip,
   Tooltip,
   IconButton,
 } from '@mui/material';
-import { ArrowForward, ArrowBack, Check, Lightbulb, ContentPaste } from '@mui/icons-material';
+import { ArrowForward, ArrowBack, Lightbulb, ContentPaste, Edit } from '@mui/icons-material';
 import { useRecoilState } from 'recoil';
 import { useDispatch } from 'react-redux';
 import { workingBackwardsQuestionsState, WorkingBackwardsQuestionsState } from '../atoms/workingBackwardsQuestionsState';
@@ -101,6 +97,10 @@ const WorkingBackwardsPage: React.FC = () => {
       if (questionsState.aiSuggestions) {
         const questionNumber = currentStep + 1;
         const fullQuestionKey = `${questionNumber}. ${question.label}`;
+        
+        console.log('Checking for AI suggestion with key:', fullQuestionKey);
+        console.log('Available AI suggestions:', questionsState.aiSuggestions);
+        
         if (questionsState.aiSuggestions[fullQuestionKey]) {
           setAiSuggestion(questionsState.aiSuggestions[fullQuestionKey]);
         } else {
@@ -137,6 +137,15 @@ const WorkingBackwardsPage: React.FC = () => {
         setAiSuggestion('Sorry, I couldn\'t generate a suggestion at this time. Please try again later.');
       } else {
         setAiSuggestion(response.content);
+        
+        // Store the suggestion in the questionsState
+        setQuestionsState(prev => ({
+          ...prev,
+          aiSuggestions: {
+            ...prev.aiSuggestions,
+            [`${currentStep + 1}. ${currentQuestion.label}`]: response.content
+          }
+        }));
       }
     } catch (error) {
       console.error('Error getting AI suggestion:', error);
@@ -207,29 +216,74 @@ const WorkingBackwardsPage: React.FC = () => {
     navigate('/prfaq');
   };
 
-  const handleUseSuggestion = () => {
-    setCurrentResponse(aiSuggestion);
-    
-    // Also update Redux store
-    dispatch(updateWorkingBackwardsResponse({
-      field: currentQuestion.id,
-      value: aiSuggestion
-    }));
+  const handleUseSuggestion = async () => {
+    try {
+      // Get the current question's suggestion from the stored suggestions
+      const questionNumber = currentStep + 1;
+      const fullQuestionKey = `${questionNumber}. ${currentQuestion.label}`;
+      const suggestionToUse = questionsState.aiSuggestions?.[fullQuestionKey] || aiSuggestion;
+
+      if (!suggestionToUse) {
+        console.error('No suggestion available to use');
+        return;
+      }
+
+      // Update the current response state
+      setCurrentResponse(suggestionToUse);
+      
+      // Update Redux store
+      dispatch(updateWorkingBackwardsResponse({
+        field: currentQuestion.id,
+        value: suggestionToUse
+      }));
+
+      // Update Recoil state
+      setQuestionsState(prev => ({
+        ...prev,
+        [currentQuestion.id]: suggestionToUse
+      }));
+
+      // Copy to clipboard using the Clipboard API
+      await navigator.clipboard.writeText(suggestionToUse);
+    } catch (error) {
+      console.error('Error using suggestion:', error);
+      // Still update the text field even if clipboard fails
+      const suggestionToUse = questionsState.aiSuggestions?.[`${currentStep + 1}. ${currentQuestion.label}`] || aiSuggestion;
+      if (suggestionToUse) {
+        setCurrentResponse(suggestionToUse);
+        dispatch(updateWorkingBackwardsResponse({
+          field: currentQuestion.id,
+          value: suggestionToUse
+        }));
+        setQuestionsState(prev => ({
+          ...prev,
+          [currentQuestion.id]: suggestionToUse
+        }));
+      }
+    }
+  };
+
+  const handleBackToInitialThoughts = () => {
+    navigate('/initial-thoughts');
   };
 
   return (
-    <Container maxWidth="md">
-      <Box sx={{ my: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Working Backwards
-        </Typography>
-        <Typography variant="body1" paragraph>
-          Answer these key questions to clarify your thinking about your product or service. 
-          This process helps you focus on the customer and their needs before diving into solutions.
-        </Typography>
-
+    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+      <Box>
         {!showSummary ? (
-          <Box sx={{ mt: 4 }}>
+          <Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h5">Working Backwards Questions</Typography>
+              <Button
+                variant="outlined"
+                startIcon={<Edit />}
+                onClick={handleBackToInitialThoughts}
+                size="small"
+              >
+                Edit Initial Thoughts
+              </Button>
+            </Box>
+            
             <Stepper activeStep={currentStep} orientation="vertical">
               {questionsList.map((question, index) => (
                 <Step key={question.id}>
@@ -239,40 +293,6 @@ const WorkingBackwardsPage: React.FC = () => {
                       <Typography variant="body2" color="text.secondary" paragraph>
                         {question.helperText}
                       </Typography>
-                      
-                      {questionsState.aiSuggestions && 
-                       questionsState.aiSuggestions[`${index + 1}`] && (
-                        <Paper 
-                          variant="outlined" 
-                          sx={{ 
-                            p: 2, 
-                            mb: 2, 
-                            bgcolor: 'rgba(255, 240, 230, 0.5)', 
-                            borderColor: 'secondary.light',
-                            display: 'flex',
-                            alignItems: 'flex-start'
-                          }}
-                        >
-                          <Lightbulb color="secondary" sx={{ mr: 1, mt: 0.5 }} />
-                          <Box sx={{ flex: 1 }}>
-                            <Typography variant="subtitle2" color="secondary.dark" gutterBottom>
-                              AI Suggestion based on your initial thoughts:
-                            </Typography>
-                            <Typography variant="body2">
-                              {questionsState.aiSuggestions[`${index + 1}`]}
-                            </Typography>
-                          </Box>
-                          <Tooltip title="Use this suggestion">
-                            <IconButton 
-                              size="small" 
-                              onClick={handleUseSuggestion}
-                              sx={{ ml: 1 }}
-                            >
-                              <ContentPaste fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Paper>
-                      )}
                       
                       <TextField
                         fullWidth
@@ -285,20 +305,8 @@ const WorkingBackwardsPage: React.FC = () => {
                         sx={{ mb: 2 }}
                       />
                       
-                      {!questionsState.aiSuggestions?.[`${index + 1}`] && (
-                        <Button
-                          variant="text"
-                          color="secondary"
-                          onClick={getAISuggestion}
-                          disabled={isLoading}
-                          startIcon={isLoading ? <CircularProgress size={20} /> : <Lightbulb />}
-                          sx={{ mb: 2 }}
-                        >
-                          {isLoading ? 'Getting suggestion...' : 'Get AI suggestion'}
-                        </Button>
-                      )}
-                      
-                      {aiSuggestion && !questionsState.aiSuggestions?.[`${index + 1}`] && (
+                      {/* AI Suggestion Section */}
+                      {(questionsState.aiSuggestions?.[`${index + 1}. ${question.label}`] || aiSuggestion) && (
                         <Paper 
                           variant="outlined" 
                           sx={{ 
@@ -316,7 +324,7 @@ const WorkingBackwardsPage: React.FC = () => {
                               AI Suggestion:
                             </Typography>
                             <Typography variant="body2">
-                              {aiSuggestion}
+                              {questionsState.aiSuggestions?.[`${index + 1}. ${question.label}`] || aiSuggestion}
                             </Typography>
                           </Box>
                           <Tooltip title="Use this suggestion">
@@ -329,6 +337,19 @@ const WorkingBackwardsPage: React.FC = () => {
                             </IconButton>
                           </Tooltip>
                         </Paper>
+                      )}
+                      
+                      {!questionsState.aiSuggestions?.[`${index + 1}. ${question.label}`] && !aiSuggestion && (
+                        <Button
+                          variant="text"
+                          color="secondary"
+                          onClick={getAISuggestion}
+                          disabled={isLoading}
+                          startIcon={isLoading ? <CircularProgress size={20} /> : <Lightbulb />}
+                          sx={{ mb: 2 }}
+                        >
+                          {isLoading ? 'Getting suggestion...' : 'Get AI suggestion'}
+                        </Button>
                       )}
                       
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
@@ -356,9 +377,19 @@ const WorkingBackwardsPage: React.FC = () => {
         ) : (
           <Box sx={{ mt: 4 }}>
             <Paper elevation={3} sx={{ p: 3 }}>
-              <Typography variant="h5" gutterBottom>
-                Working Backwards Summary
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h5" gutterBottom>
+                  Working Backwards Summary
+                </Typography>
+                <Button
+                  variant="outlined"
+                  startIcon={<Edit />}
+                  onClick={handleBackToInitialThoughts}
+                  size="small"
+                >
+                  Edit Initial Thoughts
+                </Button>
+              </Box>
               <Divider sx={{ mb: 3 }} />
               
               {questionsList.map((question) => (

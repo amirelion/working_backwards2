@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar,
@@ -7,31 +7,23 @@ import {
   Typography,
   Button,
   Container,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Divider,
-  IconButton,
   useMediaQuery,
   useTheme,
-  ListItemButton,
 } from '@mui/material';
 import {
-  Menu as MenuIcon,
   Home as HomeIcon,
+  Dashboard as DashboardIcon,
   QuestionAnswer as QuestionAnswerIcon,
   Description as DescriptionIcon,
   Psychology as PsychologyIcon,
   Science as ScienceIcon,
-  Info as InfoIcon,
+  Person as PersonIcon,
+  AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
 import { useDispatch } from 'react-redux';
-import { useRecoilState } from 'recoil';
 import { resetSession } from '../store/sessionSlice';
-import { initialThoughtsState } from '../atoms/initialThoughtsState';
-import { workingBackwardsQuestionsState } from '../atoms/workingBackwardsQuestionsState';
+import AuthMenu from './AuthMenu';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -39,191 +31,116 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [initialThoughts, setInitialThoughts] = useRecoilState(initialThoughtsState);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [workingBackwardsQuestions, setWorkingBackwardsQuestions] = useRecoilState(workingBackwardsQuestionsState);
-
-  const handleDrawerToggle = () => {
-    setDrawerOpen(!drawerOpen);
-  };
+  const { userProfile, isAdmin } = useAuth();
 
   const handleNavigation = (path: string) => {
     navigate(path);
-    if (isMobile) {
-      setDrawerOpen(false);
-    }
   };
 
   const handleNewSession = () => {
     if (window.confirm('Starting a new session will clear all current data. Are you sure you want to continue?')) {
       dispatch(resetSession());
-      setInitialThoughts('');
-      setWorkingBackwardsQuestions({
-        customer: '',
-        problem: '',
-        benefit: '',
-        validation: '',
-        experience: '',
-        aiSuggestions: {}
-      });
       navigate('/');
     }
   };
 
   const navItems = [
     { text: 'Home', path: '/', icon: <HomeIcon /> },
-    { text: 'Working Backwards', path: '/working-backwards', icon: <QuestionAnswerIcon /> },
-    { text: 'PRFAQ', path: '/prfaq', icon: <DescriptionIcon /> },
-    { text: 'Assumptions', path: '/assumptions', icon: <PsychologyIcon /> },
-    { text: 'Experiments', path: '/experiments', icon: <ScienceIcon /> },
   ];
 
-  const drawer = (
-    <Box sx={{ width: 250 }} role="presentation">
-      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
-          Working Backwards
-        </Typography>
-      </Box>
-      <Divider />
-      <List>
-        {navItems.map((item) => (
-          <ListItem
-            key={item.text}
-            disablePadding
-            sx={{
-              '&.Mui-selected': {
-                backgroundColor: 'rgba(255, 153, 0, 0.1)',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 153, 0, 0.2)',
-                },
-              },
-            }}
-          >
-            <ListItemButton 
-              selected={location.pathname === item.path}
-              onClick={() => handleNavigation(item.path)}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-      <Divider />
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton onClick={handleNewSession}>
-            <ListItemIcon>
-              <InfoIcon />
-            </ListItemIcon>
-            <ListItemText primary="New Session" />
-          </ListItemButton>
-        </ListItem>
-      </List>
-    </Box>
-  );
+  // Only add these items if user is logged in
+  if (userProfile) {
+    navItems.push({ text: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> });
+    navItems.push({ text: 'Working Backwards', path: '/working-backwards', icon: <QuestionAnswerIcon /> });
+    navItems.push({ text: 'PRFAQ', path: '/prfaq', icon: <DescriptionIcon /> });
+    navItems.push({ text: 'Assumptions', path: '/assumptions', icon: <PsychologyIcon /> });
+    navItems.push({ text: 'Experiments', path: '/experiments', icon: <ScienceIcon /> });
+    navItems.push({ text: 'Profile', path: '/profile', icon: <PersonIcon /> });
+    if (isAdmin) {
+      navItems.push({ text: 'Admin', path: '/admin', icon: <AdminIcon /> });
+    }
+  }
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <AppBar position="static">
+      <AppBar position="fixed">
         <Toolbar>
-          {isMobile && (
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              edge="start"
-              onClick={handleDrawerToggle}
-              sx={{ mr: 2 }}
-            >
-              <MenuIcon />
-            </IconButton>
-          )}
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Working Backwards Innovation Assistant
+          <Typography 
+            variant="h6" 
+            component="div" 
+            sx={{ 
+              flexGrow: 0,
+              marginRight: 4
+            }}
+          >
+            Working Backwards
           </Typography>
-          {!isMobile && (
-            <Box sx={{ display: 'flex' }}>
-              {navItems.map((item) => (
-                <Button
-                  key={item.text}
-                  color="inherit"
-                  onClick={() => handleNavigation(item.path)}
-                  sx={{
-                    mx: 1,
-                    ...(location.pathname === item.path && {
-                      borderBottom: '2px solid',
-                      borderColor: 'secondary.main',
-                    }),
-                  }}
-                >
-                  {item.text}
-                </Button>
-              ))}
-              <Button color="secondary" variant="outlined" onClick={handleNewSession} sx={{ ml: 2 }}>
-                New Session
+          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+            {navItems.map((item) => (
+              <Button
+                key={item.text}
+                color="inherit"
+                onClick={() => handleNavigation(item.path)}
+                sx={{
+                  mx: 1,
+                  ...(location.pathname === item.path && {
+                    borderBottom: '2px solid',
+                    borderColor: 'secondary.main',
+                  }),
+                }}
+              >
+                {item.text}
               </Button>
-            </Box>
-          )}
+            ))}
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Button color="secondary" variant="outlined" onClick={handleNewSession}>
+              New Session
+            </Button>
+            <AuthMenu />
+          </Box>
         </Toolbar>
       </AppBar>
-
-      <Drawer
-        variant={isMobile ? 'temporary' : 'permanent'}
-        open={isMobile ? drawerOpen : true}
-        onClose={handleDrawerToggle}
-        ModalProps={{
-          keepMounted: true, // Better open performance on mobile
-        }}
-        sx={{
-          '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
-            width: 250,
-            position: isMobile ? 'fixed' : 'relative',
-            height: isMobile ? '100%' : 'auto',
-          },
-          width: isMobile ? 0 : 250,
-          flexShrink: 0,
-          display: { xs: 'block', md: 'none' },
-        }}
-      >
-        {drawer}
-      </Drawer>
-
       <Box
         component="main"
         sx={{
           flexGrow: 1,
+          bgcolor: 'background.default',
+          mt: 8,
           p: 3,
-          width: { md: `calc(100% - ${isMobile ? 0 : 250}px)` },
-          ml: { md: isMobile ? 0 : '250px' },
         }}
       >
-        <Container maxWidth="lg" sx={{ mt: 2 }}>
+        <Container 
+          maxWidth="lg" 
+          sx={{ 
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            py: 3,
+          }}
+        >
           {children}
         </Container>
-      </Box>
 
-      <Box
-        component="footer"
-        sx={{
-          py: 3,
-          px: 2,
-          mt: 'auto',
-          backgroundColor: (theme) => theme.palette.grey[100],
-        }}
-      >
-        <Container maxWidth="lg">
-          <Typography variant="body2" color="text.secondary" align="center">
-            Working Backwards Innovation Assistant - Session data is stored locally in your browser
-          </Typography>
-        </Container>
+        <Box
+          component="footer"
+          sx={{
+            py: 3,
+            px: 2,
+            mt: 'auto',
+            backgroundColor: (theme) => theme.palette.grey[100],
+          }}
+        >
+          <Container maxWidth="lg">
+            <Typography variant="body2" color="text.secondary" align="center">
+              Working Backwards Innovation Assistant - Session data is stored locally in your browser
+            </Typography>
+          </Container>
+        </Box>
       </Box>
     </Box>
   );

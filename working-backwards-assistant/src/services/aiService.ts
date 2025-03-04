@@ -648,7 +648,7 @@ A: [Answer]
 Make sure the answer is comprehensive and addresses the question fully from a business and strategic perspective.`;
 };
 
-export default {
+const aiService = {
   getAIResponse,
   getWorkingBackwardsPrompt,
   getPRFAQGenerationPrompt,
@@ -665,4 +665,6 @@ export default {
   getStakeholderFAQPrompt,
   getSingleCustomerFAQPrompt,
   getSingleStakeholderFAQPrompt,
-}; 
+};
+
+export default aiService; 

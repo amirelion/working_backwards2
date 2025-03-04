@@ -78,10 +78,12 @@ export const importSessionFromJson = (file: File): Promise<Session> => {
   });
 };
 
-export default {
+const sessionStorage = {
   saveSession,
   loadSession,
   clearSession,
   exportSessionAsJson,
   importSessionFromJson,
-}; 
+};
+
+export default sessionStorage; 

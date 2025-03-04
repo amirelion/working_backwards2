@@ -82,7 +82,7 @@ export interface TabPanelProps {
 }
 
 // Export Format Types
-export type ExportFormat = 'pdf' | 'docx' | 'txt' | 'email';
+export type ExportFormat = 'pdf' | 'docx' | 'txt' | 'email' | 'markdown';
 
 // Navigation Types
 export interface NavItem {

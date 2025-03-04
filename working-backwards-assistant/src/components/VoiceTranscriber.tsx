@@ -152,29 +152,7 @@ const VoiceTranscriber: React.FC<VoiceTranscriberProps> = ({
         </Typography>
       )}
       
-      {(transcription || currentText) && (
-        <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'background.paper' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <Typography variant="body1" sx={{ flex: 1 }}>
-              {transcription || currentText}
-            </Typography>
-            <Box>
-              <IconButton size="small" onClick={clearTranscription} title="Clear transcription">
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-              <IconButton size="small" onClick={useTranscription} title="Use this transcription" color="primary">
-                <CheckCircleIcon fontSize="small" />
-              </IconButton>
-            </Box>
-          </Box>
-        </Paper>
-      )}
-      
-      {!transcription && !currentText && !isRecording && !isTranscribing && (
-        <Typography variant="body2" color="text.secondary">
-          {placeholder}
-        </Typography>
-      )}
+      {/* Removing the display of transcription text here, as it's already shown in the text field */}
     </Box>
   );
 };

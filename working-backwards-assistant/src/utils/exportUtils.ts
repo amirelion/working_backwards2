@@ -296,6 +296,21 @@ export const sendViaEmail = (prfaq: PRFAQ, email?: string): void => {
   window.open(mailtoLink);
 };
 
+// Export PRFAQ as Markdown
+export const exportAsMarkdown = (prfaq: PRFAQ): void => {
+  // Use the existing prfaqToText function which already formats in Markdown
+  const markdown = prfaqToText(prfaq);
+  const blob = new Blob([markdown], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${prfaq.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_prfaq.md`;
+  link.click();
+  
+  URL.revokeObjectURL(url);
+};
+
 // Main export function
 export const exportPRFAQ = (prfaq: PRFAQ, format: ExportFormat): void => {
   switch (format) {
@@ -311,15 +326,17 @@ export const exportPRFAQ = (prfaq: PRFAQ, format: ExportFormat): void => {
     case 'email':
       sendViaEmail(prfaq);
       break;
+    case 'markdown':
+      exportAsMarkdown(prfaq);
+      break;
     default:
       console.error(`Unsupported export format: ${format}`);
   }
 };
 
-export default {
-  exportPRFAQ,
-  exportAsPdf,
-  exportAsDocx,
-  exportAsTxt,
-  sendViaEmail,
-}; 
+const exportUtils = {
+  prfaqToText,
+  exportPRFAQ
+};
+
+export default exportUtils; 
