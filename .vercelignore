@@ -1,6 +1,0 @@
-# Only ignore these specific patterns
-.git/
-.github/
-node_modules/
-*.md
-!working-backwards-assistant/ 
