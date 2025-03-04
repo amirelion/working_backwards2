@@ -23,6 +23,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import SaveIcon from '@mui/icons-material/Save';
 import { useWorkingBackwards } from '../contexts/WorkingBackwardsContext';
+import ClearIcon from '@mui/icons-material/Clear';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -174,15 +175,11 @@ function InitialThoughtsPage() {
     navigate('/working-backwards');
   };
   
-  const handleSave = async () => {
-    if (currentProcessId) {
-      try {
-        await saveCurrentProcess();
-        setSaveSuccess(true);
-      } catch (error) {
-        console.error('Error saving process:', error);
-      }
-    }
+  const handleClear = () => {
+    setInitialThoughts('');
+    setSnackbarMessage('Initial thoughts cleared');
+    setSnackbarSeverity('info');
+    setSnackbarOpen(true);
   };
 
   return (
@@ -253,11 +250,11 @@ function InitialThoughtsPage() {
             <Button
               variant="contained"
               color="secondary"
-              onClick={handleSave}
-              startIcon={<SaveIcon />}
-              disabled={!currentProcessId || isProcessing}
+              onClick={handleClear}
+              startIcon={<ClearIcon />}
+              disabled={isProcessing || !initialThoughts.trim()}
             >
-              Save Progress
+              Clear
             </Button>
             
             <Box>
@@ -307,11 +304,11 @@ function InitialThoughtsPage() {
             <Button
               variant="contained"
               color="secondary"
-              onClick={handleSave}
-              startIcon={<SaveIcon />}
-              disabled={!currentProcessId || isProcessing}
+              onClick={handleClear}
+              startIcon={<ClearIcon />}
+              disabled={isProcessing || !initialThoughts.trim()}
             >
-              Save Progress
+              Clear
             </Button>
             
             <Box>

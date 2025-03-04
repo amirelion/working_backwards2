@@ -16,7 +16,7 @@ import {
   Tooltip,
   IconButton,
 } from '@mui/material';
-import { ArrowForward, ArrowBack, Lightbulb, ContentPaste } from '@mui/icons-material';
+import { ArrowForward, ArrowBack, Lightbulb, ContentPaste, Edit } from '@mui/icons-material';
 import { useRecoilState } from 'recoil';
 import { useDispatch } from 'react-redux';
 import { workingBackwardsQuestionsState, WorkingBackwardsQuestionsState } from '../atoms/workingBackwardsQuestionsState';
@@ -263,19 +263,27 @@ const WorkingBackwardsPage: React.FC = () => {
     }
   };
 
-  return (
-    <Container maxWidth="md">
-      <Box sx={{ my: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Working Backwards
-        </Typography>
-        <Typography variant="body1" paragraph>
-          Answer these key questions to clarify your thinking about your product or service. 
-          This process helps you focus on the customer and their needs before diving into solutions.
-        </Typography>
+  const handleBackToInitialThoughts = () => {
+    navigate('/initial-thoughts');
+  };
 
+  return (
+    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+      <Box>
         {!showSummary ? (
-          <Box sx={{ mt: 4 }}>
+          <Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h5">Working Backwards Questions</Typography>
+              <Button
+                variant="outlined"
+                startIcon={<Edit />}
+                onClick={handleBackToInitialThoughts}
+                size="small"
+              >
+                Edit Initial Thoughts
+              </Button>
+            </Box>
+            
             <Stepper activeStep={currentStep} orientation="vertical">
               {questionsList.map((question, index) => (
                 <Step key={question.id}>
@@ -369,9 +377,19 @@ const WorkingBackwardsPage: React.FC = () => {
         ) : (
           <Box sx={{ mt: 4 }}>
             <Paper elevation={3} sx={{ p: 3 }}>
-              <Typography variant="h5" gutterBottom>
-                Working Backwards Summary
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h5" gutterBottom>
+                  Working Backwards Summary
+                </Typography>
+                <Button
+                  variant="outlined"
+                  startIcon={<Edit />}
+                  onClick={handleBackToInitialThoughts}
+                  size="small"
+                >
+                  Edit Initial Thoughts
+                </Button>
+              </Box>
               <Divider sx={{ mb: 3 }} />
               
               {questionsList.map((question) => (
