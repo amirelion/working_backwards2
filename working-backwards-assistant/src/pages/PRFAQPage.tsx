@@ -31,22 +31,20 @@ import {
   Download as DownloadIcon,
   Email as EmailIcon,
   PictureAsPdf as PdfIcon,
-  Description as DocIcon,
+  Description as DescriptionIcon,
   TextSnippet as TxtIcon,
   ArrowForward,
   ArrowBack,
-  Comment as CommentIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  AutoFixHigh as AutoFixHighIcon,
+  Article as ArticleIcon,
 } from '@mui/icons-material';
 import 'react-quill/dist/quill.snow.css';
 import { RootState } from '../store';
 import {
   updatePRFAQTitle,
   updatePRFAQPressRelease,
-  addFAQ,
-  updateFAQ,
-  removeFAQ,
   addCustomerFAQ,
   updateCustomerFAQ,
   removeCustomerFAQ,
@@ -56,7 +54,6 @@ import {
 } from '../store/sessionSlice';
 import { 
   getAIResponse, 
-  getPRFAQGenerationPrompt,
   getFirstParagraphPrompt,
   getSecondParagraphPrompt,
   getThirdParagraphPrompt,
@@ -156,56 +153,29 @@ const PRFAQPage: React.FC = () => {
   const dispatch = useDispatch();
   const { prfaq, workingBackwardsResponses } = useSelector((state: RootState) => state.session);
   
+  // State for tabs
   const [tabValue, setTabValue] = useState(0);
+  
+  // State for press release and FAQs
+  const hasWorkingBackwardsResponses = Object.values(workingBackwardsResponses).every(response => response.trim() !== '');
+  
+  const [exportMenuAnchor, setExportMenuAnchor] = useState<null | HTMLElement>(null);
+  
+  // State for generation
   const [isGeneratingPRFAQ, setIsGeneratingPRFAQ] = useState(false);
   const [generationStep, setGenerationStep] = useState<string>('');
   
-  // Legacy FAQ state
-  const [editingFAQIndex, setEditingFAQIndex] = useState<number | null>(null);
-  const [newFAQ, setNewFAQ] = useState<FAQ>({ question: '', answer: '' });
-  
   // New Customer FAQ state
-  const [customerFaqTabValue, setCustomerFaqTabValue] = useState(0);
   const [editingCustomerFAQIndex, setEditingCustomerFAQIndex] = useState<number | null>(null);
   const [newCustomerFAQ, setNewCustomerFAQ] = useState<FAQ>({ question: '', answer: '' });
   const [isGeneratingCustomerFAQ, setIsGeneratingCustomerFAQ] = useState(false);
   const [customerFaqComment, setCustomerFaqComment] = useState('');
   
   // New Stakeholder FAQ state
-  const [stakeholderFaqTabValue, setStakeholderFaqTabValue] = useState(0);
   const [editingStakeholderFAQIndex, setEditingStakeholderFAQIndex] = useState<number | null>(null);
   const [newStakeholderFAQ, setNewStakeholderFAQ] = useState<FAQ>({ question: '', answer: '' });
   const [isGeneratingStakeholderFAQ, setIsGeneratingStakeholderFAQ] = useState(false);
   const [stakeholderFaqComment, setStakeholderFaqComment] = useState('');
-  
-  const [exportMenuAnchor, setExportMenuAnchor] = useState<null | HTMLElement>(null);
-  
-  // New state for user comments
-  const [userComments, setUserComments] = useState<Record<string, string>>({
-    title: '',
-    summary: '',
-    problem: '',
-    solution: '',
-    executiveQuote: '',
-    customerJourney: '',
-    customerQuote: '',
-    gettingStarted: '',
-  });
-  
-  // New state to track which comment sections are expanded
-  const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({
-    title: false,
-    summary: false,
-    problem: false,
-    solution: false,
-    executiveQuote: false,
-    customerJourney: false,
-    customerQuote: false,
-    gettingStarted: false,
-  });
-  
-  // Check if Working Backwards responses are filled
-  const hasWorkingBackwardsResponses = Object.values(workingBackwardsResponses).some(value => value.trim() !== '');
   
   // Check if PRFAQ is empty
   const isPRFAQEmpty = !prfaq.title && 
@@ -248,50 +218,6 @@ const PRFAQPage: React.FC = () => {
     dispatch(updatePRFAQPressRelease({ field, value }));
   };
 
-  // Handle new FAQ question change
-  const handleNewFAQQuestionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setNewFAQ({ ...newFAQ, question: event.target.value });
-  };
-
-  // Handle new FAQ answer change
-  const handleNewFAQAnswerChange = (value: string) => {
-    setNewFAQ({ ...newFAQ, answer: value });
-  };
-
-  // Handle add FAQ
-  const handleAddFAQ = () => {
-    if (newFAQ.question.trim() && newFAQ.answer.trim()) {
-      dispatch(addFAQ(newFAQ));
-      setNewFAQ({ question: '', answer: '' });
-    }
-  };
-
-  // Handle edit FAQ
-  const handleEditFAQ = (index: number) => {
-    setEditingFAQIndex(index);
-  };
-
-  // Handle update FAQ
-  const handleUpdateFAQ = (index: number, field: 'question' | 'answer', value: string) => {
-    if (field === 'question') {
-      dispatch(updateFAQ({ index, question: value }));
-    } else {
-      dispatch(updateFAQ({ index, answer: value }));
-    }
-  };
-
-  // Handle save FAQ edit
-  const handleSaveFAQEdit = () => {
-    setEditingFAQIndex(null);
-  };
-
-  // Handle delete FAQ
-  const handleDeleteFAQ = (index: number) => {
-    if (window.confirm('Are you sure you want to delete this FAQ?')) {
-      dispatch(removeFAQ(index));
-    }
-  };
-
   // Handle export menu open
   const handleExportMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setExportMenuAnchor(event.currentTarget);
@@ -308,358 +234,7 @@ const PRFAQPage: React.FC = () => {
     handleExportMenuClose();
   };
 
-  // Handle user comment change
-  const handleUserCommentChange = (section: string, value: string) => {
-    setUserComments(prev => ({
-      ...prev,
-      [section]: value
-    }));
-  };
-  
-  // Toggle comment section expansion
-  const toggleCommentSection = (section: string) => {
-    setExpandedComments(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  };
-
-  // Generate a specific section of the PRFAQ
-  const generatePRFAQSection = async (section: keyof typeof prfaq.pressRelease | 'title') => {
-    if (!hasWorkingBackwardsResponses) {
-      alert('Please complete the Working Backwards questions first.');
-      navigate('/working-backwards');
-      return;
-    }
-
-    setIsGeneratingPRFAQ(true);
-    
-    try {
-      // Create a copy of the current PRFAQ to build upon
-      const currentPRFAQ = { ...prfaq };
-      const model = process.env.REACT_APP_AI_MODEL || '';
-      const provider = process.env.REACT_APP_AI_PROVIDER || '';
-      
-      let prompt: string;
-      let sectionName: string;
-      
-      // Get the user comment for this section
-      const userComment = userComments[section];
-      
-      // Determine which prompt to use based on the section
-      switch (section) {
-        case 'title':
-          sectionName = 'headline';
-          setGenerationStep(`Generating ${sectionName}...`);
-          prompt = getHeadlinePrompt(workingBackwardsResponses, currentPRFAQ, userComment);
-          break;
-        case 'summary':
-          sectionName = 'first paragraph (summary)';
-          setGenerationStep(`Generating ${sectionName}...`);
-          prompt = getFirstParagraphPrompt(workingBackwardsResponses, currentPRFAQ, userComment);
-          break;
-        case 'problem':
-          sectionName = 'second paragraph (problem/opportunity)';
-          setGenerationStep(`Generating ${sectionName}...`);
-          prompt = getSecondParagraphPrompt(workingBackwardsResponses, currentPRFAQ, userComment);
-          break;
-        case 'solution':
-          sectionName = 'third paragraph (solution)';
-          setGenerationStep(`Generating ${sectionName}...`);
-          prompt = getThirdParagraphPrompt(workingBackwardsResponses, currentPRFAQ, userComment);
-          break;
-        case 'executiveQuote':
-          sectionName = 'fourth paragraph (executive quote)';
-          setGenerationStep(`Generating ${sectionName}...`);
-          prompt = getFourthParagraphPrompt(workingBackwardsResponses, currentPRFAQ, userComment);
-          break;
-        case 'customerJourney':
-          sectionName = 'fifth paragraph (customer journey)';
-          setGenerationStep(`Generating ${sectionName}...`);
-          prompt = getFifthParagraphPrompt(workingBackwardsResponses, currentPRFAQ, userComment);
-          break;
-        case 'customerQuote':
-          sectionName = 'sixth paragraph (customer quote)';
-          setGenerationStep(`Generating ${sectionName}...`);
-          prompt = getSixthParagraphPrompt(workingBackwardsResponses, currentPRFAQ, userComment);
-          break;
-        case 'gettingStarted':
-          sectionName = 'call to action';
-          setGenerationStep(`Generating ${sectionName}...`);
-          prompt = getCallToActionPrompt(workingBackwardsResponses, currentPRFAQ, userComment);
-          break;
-        default:
-          throw new Error(`Unknown section: ${section}`);
-      }
-      
-      const response = await getAIResponse({
-        prompt,
-        model,
-        provider,
-      });
-      
-      if (response.error) {
-        throw new Error(`Failed to generate ${sectionName}: ${response.error}`);
-      }
-      
-      // Update the appropriate section
-      if (section === 'title') {
-        dispatch(updatePRFAQTitle(response.content.trim()));
-      } else {
-        dispatch(updatePRFAQPressRelease({ 
-          field: section, 
-          value: response.content.trim() 
-        }));
-      }
-      
-      // Clear the user comment after successful generation
-      handleUserCommentChange(section, '');
-      // Collapse the comment section
-      setExpandedComments(prev => ({
-        ...prev,
-        [section]: false
-      }));
-      
-      setGenerationStep('');
-    } catch (error) {
-      console.error(`Error generating PRFAQ section ${section}:`, error);
-      alert(`Failed to generate section: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      setGenerationStep('');
-    } finally {
-      setIsGeneratingPRFAQ(false);
-    }
-  };
-
-  // Generate complete PRFAQ using AI with sequential prompts
-  const generatePRFAQ = async () => {
-    if (!hasWorkingBackwardsResponses) {
-      alert('Please complete the Working Backwards questions first.');
-      navigate('/working-backwards');
-      return;
-    }
-
-    setIsGeneratingPRFAQ(true);
-    
-    try {
-      // Generate each section sequentially
-      const sections: (keyof typeof prfaq.pressRelease | 'title')[] = [
-        'summary',
-        'problem',
-        'solution',
-        'executiveQuote',
-        'customerJourney',
-        'customerQuote',
-        'gettingStarted',
-        'title', // Generate title last as requested
-      ];
-      
-      // Create a copy of the current PRFAQ to build upon
-      let currentPRFAQ = { ...prfaq };
-      
-      // Generate each section one by one
-      for (const section of sections) {
-        try {
-          // Determine section name for progress indicator
-          let sectionName: string;
-          switch (section) {
-            case 'title':
-              sectionName = 'headline';
-              break;
-            case 'summary':
-              sectionName = 'first paragraph (summary)';
-              break;
-            case 'problem':
-              sectionName = 'second paragraph (problem/opportunity)';
-              break;
-            case 'solution':
-              sectionName = 'third paragraph (solution)';
-              break;
-            case 'executiveQuote':
-              sectionName = 'fourth paragraph (executive quote)';
-              break;
-            case 'customerJourney':
-              sectionName = 'fifth paragraph (customer journey)';
-              break;
-            case 'customerQuote':
-              sectionName = 'sixth paragraph (customer quote)';
-              break;
-            case 'gettingStarted':
-              sectionName = 'call to action';
-              break;
-            default:
-              sectionName = section;
-          }
-          
-          setGenerationStep(`Generating ${sectionName}...`);
-          
-          // Get the user comment for this section
-          const userComment = userComments[section];
-          
-          // Get the appropriate prompt for this section
-          let prompt: string;
-          if (section === 'title') {
-            prompt = getHeadlinePrompt(workingBackwardsResponses, currentPRFAQ, userComment);
-          } else if (section === 'summary') {
-            prompt = getFirstParagraphPrompt(workingBackwardsResponses, currentPRFAQ, userComment);
-          } else if (section === 'problem') {
-            prompt = getSecondParagraphPrompt(workingBackwardsResponses, currentPRFAQ, userComment);
-          } else if (section === 'solution') {
-            prompt = getThirdParagraphPrompt(workingBackwardsResponses, currentPRFAQ, userComment);
-          } else if (section === 'executiveQuote') {
-            prompt = getFourthParagraphPrompt(workingBackwardsResponses, currentPRFAQ, userComment);
-          } else if (section === 'customerJourney') {
-            prompt = getFifthParagraphPrompt(workingBackwardsResponses, currentPRFAQ, userComment);
-          } else if (section === 'customerQuote') {
-            prompt = getSixthParagraphPrompt(workingBackwardsResponses, currentPRFAQ, userComment);
-          } else if (section === 'gettingStarted') {
-            prompt = getCallToActionPrompt(workingBackwardsResponses, currentPRFAQ, userComment);
-          } else {
-            throw new Error(`Unknown section: ${section}`);
-          }
-          
-          // Generate content for this section
-          const response = await getAIResponse({
-            prompt,
-            model: process.env.REACT_APP_AI_MODEL || '',
-            provider: process.env.REACT_APP_AI_PROVIDER || '',
-          });
-          
-          if (response.error) {
-            throw new Error(`Failed to generate ${sectionName}: ${response.error}`);
-          }
-          
-          // Update the appropriate section in Redux and our local copy
-          if (section === 'title') {
-            dispatch(updatePRFAQTitle(response.content.trim()));
-            currentPRFAQ.title = response.content.trim();
-          } else {
-            dispatch(updatePRFAQPressRelease({ 
-              field: section, 
-              value: response.content.trim() 
-            }));
-            currentPRFAQ.pressRelease = {
-              ...currentPRFAQ.pressRelease,
-              [section]: response.content.trim()
-            };
-          }
-          
-          // Clear the user comment after successful generation
-          handleUserCommentChange(section, '');
-        } catch (error) {
-          console.error(`Error generating ${section}:`, error);
-          // Continue with the next section even if this one failed
-        }
-      }
-      
-      setGenerationStep('');
-      
-      // Switch to the Press Release tab
-      setTabValue(0);
-    } catch (error) {
-      console.error('Error generating PRFAQ:', error);
-      alert(`Failed to generate PRFAQ: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      setGenerationStep('');
-    } finally {
-      setIsGeneratingPRFAQ(false);
-    }
-  };
-
-  // Handle continue to assumptions
-  const handleContinueToAssumptions = () => {
-    navigate('/assumptions');
-  };
-
-  // Handle back to Working Backwards
-  const handleBackToWorkingBackwards = () => {
-    navigate('/working-backwards');
-  };
-
-  // Create a reusable component for section with regenerate button and comment field
-  const SectionWithRegenerateButton = ({ 
-    section, 
-    label, 
-    value, 
-    onChange, 
-    rows = 3,
-    placeholder 
-  }: { 
-    section: keyof typeof prfaq.pressRelease | 'title', 
-    label: string, 
-    value: string, 
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, 
-    rows?: number,
-    placeholder: string 
-  }) => {
-    const hasContent = value && value.trim().length > 0;
-    
-    return (
-      <Grid item xs={12}>
-        <Typography variant="subtitle1" gutterBottom>
-          {label}
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, flexDirection: 'column', width: '100%' }}>
-          <TextField
-            fullWidth
-            multiline
-            rows={rows}
-            variant="outlined"
-            value={value}
-            onChange={onChange}
-            placeholder={placeholder}
-          />
-          <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mt: 1 }}>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => generatePRFAQSection(section)}
-              disabled={isGeneratingPRFAQ}
-              sx={{ minWidth: '120px' }}
-            >
-              {hasContent ? 'Revise' : 'Generate'}
-            </Button>
-            <Button
-              variant="text"
-              size="small"
-              startIcon={expandedComments[section] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-              onClick={() => toggleCommentSection(section)}
-              sx={{ ml: 1 }}
-            >
-              {expandedComments[section] ? 'Hide Instructions' : 'Add Instructions'}
-            </Button>
-          </Box>
-          <Collapse in={expandedComments[section]} sx={{ width: '100%', mt: 1 }}>
-            <TextField
-              fullWidth
-              multiline
-              rows={2}
-              variant="outlined"
-              value={userComments[section]}
-              onChange={(e) => handleUserCommentChange(section, e.target.value)}
-              placeholder={hasContent 
-                ? "Add specific instructions for revising this section (e.g., 'Make it more concise' or 'Add details about X')" 
-                : "Add specific instructions for generating this section (e.g., 'Focus more on the problem of X' or 'Include metrics about Y')"}
-              InputProps={{
-                startAdornment: (
-                  <CommentIcon color="action" sx={{ mr: 1 }} />
-                ),
-              }}
-            />
-            {hasContent && (
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                The AI will review the existing content and modify it according to your instructions.
-              </Typography>
-            )}
-          </Collapse>
-        </Box>
-      </Grid>
-    );
-  };
-
   // Customer FAQ handlers
-  const handleCustomerFaqTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setCustomerFaqTabValue(newValue);
-  };
-
   const handleNewCustomerFAQQuestionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setNewCustomerFAQ({ ...newCustomerFAQ, question: event.target.value });
   };
@@ -702,10 +277,6 @@ const PRFAQPage: React.FC = () => {
   };
 
   // Stakeholder FAQ handlers
-  const handleStakeholderFaqTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setStakeholderFaqTabValue(newValue);
-  };
-
   const handleNewStakeholderFAQQuestionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setNewStakeholderFAQ({ ...newStakeholderFAQ, question: event.target.value });
   };
@@ -1069,556 +640,822 @@ const PRFAQPage: React.FC = () => {
     }
   };
 
-  return (
-    <Container maxWidth="lg">
-      <Typography variant="h4" component="h1" gutterBottom>
-        Press Release & FAQ (PRFAQ)
-      </Typography>
-      <Typography variant="body1" paragraph>
-        Create a press release and FAQ document as if your product has already launched. This forces clarity of thought and ensures you're building something customers will actually want.
-      </Typography>
+  // Generate a specific section of the PRFAQ
+  const generatePRFAQSection = async (section: keyof typeof prfaq.pressRelease | 'title') => {
+    if (!hasWorkingBackwardsResponses) {
+      alert('Please complete the Working Backwards questions first.');
+      navigate('/working-backwards');
+      return;
+    }
 
-      {/* Title and Actions */}
-      <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
-        <Grid item xs={12} md={6}>
+    setIsGeneratingPRFAQ(true);
+    
+    try {
+      // Create a copy of the current PRFAQ to build upon
+      const currentPRFAQ = { ...prfaq };
+      const model = process.env.REACT_APP_AI_MODEL || '';
+      const provider = process.env.REACT_APP_AI_PROVIDER || '';
+      
+      let prompt: string;
+      let sectionName: string;
+      
+      // Determine which prompt to use based on the section
+      switch (section) {
+        case 'title':
+          sectionName = 'headline';
+          setGenerationStep(`Generating ${sectionName}...`);
+          prompt = getHeadlinePrompt(workingBackwardsResponses, currentPRFAQ, '');
+          break;
+        case 'summary':
+          sectionName = 'first paragraph (summary)';
+          setGenerationStep(`Generating ${sectionName}...`);
+          prompt = getFirstParagraphPrompt(workingBackwardsResponses, currentPRFAQ, '');
+          break;
+        case 'problem':
+          sectionName = 'second paragraph (problem/opportunity)';
+          setGenerationStep(`Generating ${sectionName}...`);
+          prompt = getSecondParagraphPrompt(workingBackwardsResponses, currentPRFAQ, '');
+          break;
+        case 'solution':
+          sectionName = 'third paragraph (solution)';
+          setGenerationStep(`Generating ${sectionName}...`);
+          prompt = getThirdParagraphPrompt(workingBackwardsResponses, currentPRFAQ, '');
+          break;
+        case 'executiveQuote':
+          sectionName = 'fourth paragraph (executive quote)';
+          setGenerationStep(`Generating ${sectionName}...`);
+          prompt = getFourthParagraphPrompt(workingBackwardsResponses, currentPRFAQ, '');
+          break;
+        case 'customerJourney':
+          sectionName = 'fifth paragraph (customer journey)';
+          setGenerationStep(`Generating ${sectionName}...`);
+          prompt = getFifthParagraphPrompt(workingBackwardsResponses, currentPRFAQ, '');
+          break;
+        case 'customerQuote':
+          sectionName = 'sixth paragraph (customer quote)';
+          setGenerationStep(`Generating ${sectionName}...`);
+          prompt = getSixthParagraphPrompt(workingBackwardsResponses, currentPRFAQ, '');
+          break;
+        case 'gettingStarted':
+          sectionName = 'call to action';
+          setGenerationStep(`Generating ${sectionName}...`);
+          prompt = getCallToActionPrompt(workingBackwardsResponses, currentPRFAQ, '');
+          break;
+        default:
+          throw new Error(`Unknown section: ${section}`);
+      }
+      
+      const response = await getAIResponse({
+        prompt,
+        model,
+        provider,
+      });
+      
+      if (response.error) {
+        throw new Error(`Failed to generate ${sectionName}: ${response.error}`);
+      }
+      
+      // Update the appropriate section
+      if (section === 'title') {
+        dispatch(updatePRFAQTitle(response.content.trim()));
+      } else {
+        dispatch(updatePRFAQPressRelease({ 
+          field: section, 
+          value: response.content.trim() 
+        }));
+      }
+      
+      setGenerationStep('');
+    } catch (error) {
+      console.error(`Error generating PRFAQ section ${section}:`, error);
+      alert(`Failed to generate section: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setGenerationStep('');
+    } finally {
+      setIsGeneratingPRFAQ(false);
+    }
+  };
+
+  // Generate complete PRFAQ using AI with sequential prompts
+  const generatePRFAQ = async () => {
+    if (!hasWorkingBackwardsResponses) {
+      alert('Please complete the Working Backwards questions first.');
+      navigate('/working-backwards');
+      return;
+    }
+
+    setIsGeneratingPRFAQ(true);
+    
+    try {
+      // Generate each section sequentially
+      const sections: (keyof typeof prfaq.pressRelease | 'title')[] = [
+        'summary',
+        'problem',
+        'solution',
+        'executiveQuote',
+        'customerJourney',
+        'customerQuote',
+        'gettingStarted',
+        'title', // Generate title last as requested
+      ];
+      
+      // Create a copy of the current PRFAQ to build upon
+      let currentPRFAQ = { ...prfaq };
+      
+      // Generate each section one by one
+      for (const section of sections) {
+        try {
+          // Determine section name for progress indicator
+          let sectionName: string;
+          switch (section) {
+            case 'title':
+              sectionName = 'headline';
+              break;
+            case 'summary':
+              sectionName = 'first paragraph (summary)';
+              break;
+            case 'problem':
+              sectionName = 'second paragraph (problem/opportunity)';
+              break;
+            case 'solution':
+              sectionName = 'third paragraph (solution)';
+              break;
+            case 'executiveQuote':
+              sectionName = 'fourth paragraph (executive quote)';
+              break;
+            case 'customerJourney':
+              sectionName = 'fifth paragraph (customer journey)';
+              break;
+            case 'customerQuote':
+              sectionName = 'sixth paragraph (customer quote)';
+              break;
+            case 'gettingStarted':
+              sectionName = 'call to action';
+              break;
+            default:
+              sectionName = section;
+          }
+          
+          setGenerationStep(`Generating ${sectionName}...`);
+          
+          // Get the appropriate prompt for this section
+          let prompt: string;
+          if (section === 'title') {
+            prompt = getHeadlinePrompt(workingBackwardsResponses, currentPRFAQ, '');
+          } else if (section === 'summary') {
+            prompt = getFirstParagraphPrompt(workingBackwardsResponses, currentPRFAQ, '');
+          } else if (section === 'problem') {
+            prompt = getSecondParagraphPrompt(workingBackwardsResponses, currentPRFAQ, '');
+          } else if (section === 'solution') {
+            prompt = getThirdParagraphPrompt(workingBackwardsResponses, currentPRFAQ, '');
+          } else if (section === 'executiveQuote') {
+            prompt = getFourthParagraphPrompt(workingBackwardsResponses, currentPRFAQ, '');
+          } else if (section === 'customerJourney') {
+            prompt = getFifthParagraphPrompt(workingBackwardsResponses, currentPRFAQ, '');
+          } else if (section === 'customerQuote') {
+            prompt = getSixthParagraphPrompt(workingBackwardsResponses, currentPRFAQ, '');
+          } else if (section === 'gettingStarted') {
+            prompt = getCallToActionPrompt(workingBackwardsResponses, currentPRFAQ, '');
+          } else {
+            throw new Error(`Unknown section: ${section}`);
+          }
+          
+          // Generate content for this section
+          const response = await getAIResponse({
+            prompt,
+            model: process.env.REACT_APP_AI_MODEL || '',
+            provider: process.env.REACT_APP_AI_PROVIDER || '',
+          });
+          
+          if (response.error) {
+            throw new Error(`Failed to generate ${sectionName}: ${response.error}`);
+          }
+          
+          // Update the appropriate section in Redux and our local copy
+          if (section === 'title') {
+            dispatch(updatePRFAQTitle(response.content.trim()));
+            currentPRFAQ.title = response.content.trim();
+          } else {
+            dispatch(updatePRFAQPressRelease({ 
+              field: section, 
+              value: response.content.trim() 
+            }));
+            currentPRFAQ.pressRelease = {
+              ...currentPRFAQ.pressRelease,
+              [section]: response.content.trim()
+            };
+          }
+        } catch (error) {
+          console.error(`Error generating ${section}:`, error);
+          // Continue with the next section even if this one failed
+        }
+      }
+      
+      setGenerationStep('');
+      
+      // Switch to the Press Release tab
+      setTabValue(0);
+    } catch (error) {
+      console.error('Error generating PRFAQ:', error);
+      alert(`Failed to generate PRFAQ: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setGenerationStep('');
+    } finally {
+      setIsGeneratingPRFAQ(false);
+    }
+  };
+
+  // Handle continue to assumptions
+  const handleContinueToAssumptions = () => {
+    navigate('/assumptions');
+  };
+
+  // Handle back to Working Backwards
+  const handleBackToWorkingBackwards = () => {
+    navigate('/working-backwards');
+  };
+
+  // Create a simplified component for section with regenerate button
+  const SectionWithRegenerateButton = ({ 
+    section, 
+    label, 
+    value, 
+    onChange, 
+    rows = 3,
+    placeholder 
+  }: { 
+    section: keyof typeof prfaq.pressRelease | 'title', 
+    label: string, 
+    value: string, 
+    onChange: (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => void, 
+    rows?: number,
+    placeholder: string 
+  }) => {
+    const hasContent = value && value.trim().length > 0;
+    
+    return (
+      <Grid item xs={12}>
+        <Typography variant="subtitle1" gutterBottom>
+          {label}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, flexDirection: 'column', width: '100%' }}>
           <TextField
             fullWidth
-            label="PRFAQ Title"
+            multiline
+            rows={rows}
             variant="outlined"
-            value={prfaq.title}
-            onChange={handleTitleChange}
-            placeholder="Enter a title for your innovation"
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
           />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-            <Tooltip title={hasSomeContent ? "The AI will consider your existing content and revise it" : "Generate a complete PRFAQ based on your Working Backwards responses"}>
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={generatePRFAQ}
-                disabled={isGeneratingPRFAQ || !hasWorkingBackwardsResponses}
-                startIcon={isGeneratingPRFAQ ? <CircularProgress size={20} /> : null}
-              >
-                {isPRFAQEmpty ? 'Generate PRFAQ' : hasSomeContent ? 'Revise Full PRFAQ' : 'Regenerate PRFAQ'}
-              </Button>
-            </Tooltip>
-            {isGeneratingPRFAQ && (
-              <Typography variant="body2" color="text.secondary" sx={{ ml: 1, alignSelf: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mt: 1 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => generatePRFAQSection(section)}
+              disabled={isGeneratingPRFAQ}
+              sx={{ minWidth: '120px' }}
+            >
+              {hasContent ? 'Revise' : 'Generate'}
+            </Button>
+          </Box>
+        </Box>
+      </Grid>
+    );
+  };
+
+  return (
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Paper sx={{ p: 2, mb: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h5" component="h1">
+            Press Release & FAQ
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={generatePRFAQ}
+              disabled={isGeneratingPRFAQ}
+              startIcon={<AutoFixHighIcon />}
+              sx={{ minWidth: '250px' }}
+            >
+              Generate Complete Press Release
+            </Button>
+            {generationStep && (
+              <Typography variant="body2" sx={{ ml: 2, alignSelf: 'center', color: 'text.secondary' }}>
                 {generationStep}
               </Typography>
             )}
             <Button
               variant="outlined"
-              color="primary"
               onClick={handleExportMenuOpen}
-              startIcon={<DownloadIcon />}
-              disabled={isPRFAQEmpty}
+              aria-controls="export-menu"
+              aria-haspopup="true"
             >
               Export
             </Button>
             <Menu
+              id="export-menu"
               anchorEl={exportMenuAnchor}
+              keepMounted
               open={Boolean(exportMenuAnchor)}
               onClose={handleExportMenuClose}
             >
+              <MenuItem onClick={() => handleExport('markdown')}>
+                <ListItemIcon>
+                  <DescriptionIcon fontSize="small" />
+                </ListItemIcon>
+                Export as Markdown
+              </MenuItem>
               <MenuItem onClick={() => handleExport('pdf')}>
                 <ListItemIcon>
                   <PdfIcon fontSize="small" />
                 </ListItemIcon>
-                <ListItemText>Export as PDF</ListItemText>
+                Export as PDF
               </MenuItem>
               <MenuItem onClick={() => handleExport('docx')}>
                 <ListItemIcon>
-                  <DocIcon fontSize="small" />
+                  <ArticleIcon fontSize="small" />
                 </ListItemIcon>
-                <ListItemText>Export as Word</ListItemText>
-              </MenuItem>
-              <MenuItem onClick={() => handleExport('txt')}>
-                <ListItemIcon>
-                  <TxtIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Export as Text</ListItemText>
-              </MenuItem>
-              <MenuItem onClick={() => handleExport('email')}>
-                <ListItemIcon>
-                  <EmailIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Send via Email</ListItemText>
+                Export as Word
               </MenuItem>
             </Menu>
           </Box>
-        </Grid>
-      </Grid>
+        </Box>
 
-      {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={tabValue} onChange={handleTabChange} aria-label="prfaq tabs">
-          <Tab label="Press Release" id="prfaq-tab-0" aria-controls="prfaq-tabpanel-0" />
-          <Tab 
-            label="Customer FAQs" 
-            id="prfaq-tab-1" 
-            aria-controls="prfaq-tabpanel-1" 
-            disabled={isPRFAQEmpty}
-          />
-          <Tab 
-            label="Stakeholder FAQs" 
-            id="prfaq-tab-2" 
-            aria-controls="prfaq-tabpanel-2" 
-            disabled={isPRFAQEmpty}
-          />
-        </Tabs>
-      </Box>
+        {/* Tabs */}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs value={tabValue} onChange={handleTabChange} aria-label="prfaq tabs">
+            <Tab label="Press Release" id="prfaq-tab-0" aria-controls="prfaq-tabpanel-0" />
+            <Tab 
+              label="Customer FAQs" 
+              id="prfaq-tab-1" 
+              aria-controls="prfaq-tabpanel-1" 
+              disabled={isPRFAQEmpty}
+            />
+            <Tab 
+              label="Stakeholder FAQs" 
+              id="prfaq-tab-2" 
+              aria-controls="prfaq-tabpanel-2" 
+              disabled={isPRFAQEmpty}
+            />
+          </Tabs>
+        </Box>
 
-      {/* Press Release Tab */}
-      <TabPanel value={tabValue} index={0}>
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Press Release
-            </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              Write your press release as if your product has already launched. Focus on the customer problem and how your solution addresses it.
-            </Typography>
+        {/* Press Release Tab */}
+        <TabPanel value={tabValue} index={0}>
+          <Grid container spacing={3}>
+            {/* Title */}
+            <SectionWithRegenerateButton
+              section="title"
+              label="Headline"
+              value={prfaq.title}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => 
+                dispatch(updatePRFAQTitle(e.target.value))
+              }
+              placeholder="Enter a headline for your press release..."
+            />
+            
+            {/* First Paragraph - Summary */}
+            <SectionWithRegenerateButton
+              section="summary"
+              label="First Paragraph (Summary)"
+              value={prfaq.pressRelease.summary}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => 
+                dispatch(updatePRFAQPressRelease({ field: 'summary', value: e.target.value }))
+              }
+              placeholder="Enter a summary of your product or feature..."
+            />
+            
+            {/* Second Paragraph - Problem */}
+            <SectionWithRegenerateButton
+              section="problem"
+              label="Second Paragraph (Problem/Opportunity)"
+              value={prfaq.pressRelease.problem}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => 
+                dispatch(updatePRFAQPressRelease({ field: 'problem', value: e.target.value }))
+              }
+              placeholder="Describe the problem or opportunity your product addresses..."
+            />
+            
+            {/* Third Paragraph - Solution */}
+            <SectionWithRegenerateButton
+              section="solution"
+              label="Third Paragraph (Solution)"
+              value={prfaq.pressRelease.solution}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => 
+                dispatch(updatePRFAQPressRelease({ field: 'solution', value: e.target.value }))
+              }
+              placeholder="Explain how your product solves the problem..."
+            />
+            
+            {/* Fourth Paragraph - Executive Quote */}
+            <SectionWithRegenerateButton
+              section="executiveQuote"
+              label="Fourth Paragraph (Executive Quote)"
+              value={prfaq.pressRelease.executiveQuote}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => 
+                dispatch(updatePRFAQPressRelease({ field: 'executiveQuote', value: e.target.value }))
+              }
+              placeholder="Add a quote from an executive about the product..."
+            />
+            
+            {/* Fifth Paragraph - Customer Journey */}
+            <SectionWithRegenerateButton
+              section="customerJourney"
+              label="Fifth Paragraph (Customer Journey)"
+              value={prfaq.pressRelease.customerJourney}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => 
+                dispatch(updatePRFAQPressRelease({ field: 'customerJourney', value: e.target.value }))
+              }
+              placeholder="Describe how customers will use and benefit from your product..."
+            />
+            
+            {/* Sixth Paragraph - Customer Quote */}
+            <SectionWithRegenerateButton
+              section="customerQuote"
+              label="Sixth Paragraph (Customer Quote)"
+              value={prfaq.pressRelease.customerQuote}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => 
+                dispatch(updatePRFAQPressRelease({ field: 'customerQuote', value: e.target.value }))
+              }
+              placeholder="Add a quote from a customer about the product..."
+            />
+            
+            {/* Call to Action */}
+            <SectionWithRegenerateButton
+              section="gettingStarted"
+              label="Call to Action"
+              value={prfaq.pressRelease.gettingStarted}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => 
+                dispatch(updatePRFAQPressRelease({ field: 'gettingStarted', value: e.target.value }))
+              }
+              placeholder="Explain how customers can get started with your product..."
+            />
+          </Grid>
+        </TabPanel>
 
-            <Grid container spacing={3}>
-              <SectionWithRegenerateButton
-                section="title"
-                label="Headline"
-                value={prfaq.title}
-                onChange={handleTitleChange}
-                rows={1}
-                placeholder="A succinct one-liner (5-7 words) that captures the value of your solution"
-              />
+        {/* Customer FAQs Tab */}
+        <TabPanel value={tabValue} index={1}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Customer Frequently Asked Questions
+              </Typography>
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Add questions and answers that address common concerns, objections, and details that potential customers might have about your innovation.
+              </Typography>
 
-              <SectionWithRegenerateButton
-                section="summary"
-                label="First Paragraph - Summary"
-                value={prfaq.pressRelease.summary}
-                onChange={(e) => handlePressReleaseChange('summary', e.target.value)}
-                rows={3}
-                placeholder="Date and elevator pitch (4-5 sentences) describing what you're launching and the most important benefit"
-              />
-
-              <SectionWithRegenerateButton
-                section="problem"
-                label="Second Paragraph - Problem/Opportunity"
-                value={prfaq.pressRelease.problem}
-                onChange={(e) => handlePressReleaseChange('problem', e.target.value)}
-                rows={3}
-                placeholder="Clearly explain the opportunity or problem you are solving with your product"
-              />
-
-              <SectionWithRegenerateButton
-                section="solution"
-                label="Third Paragraph - Solution"
-                value={prfaq.pressRelease.solution}
-                onChange={(e) => handlePressReleaseChange('solution', e.target.value)}
-                rows={4}
-                placeholder="Explain the product or service in clear customer-friendly language"
-              />
-
-              <SectionWithRegenerateButton
-                section="executiveQuote"
-                label="Fourth Paragraph - Executive Quote"
-                value={prfaq.pressRelease.executiveQuote || ''}
-                onChange={(e) => handlePressReleaseChange('executiveQuote', e.target.value)}
-                rows={3}
-                placeholder="Quote from an executive explaining how this fits into a bigger vision"
-              />
-
-              <SectionWithRegenerateButton
-                section="customerJourney"
-                label="Fifth Paragraph - Customer Journey"
-                value={prfaq.pressRelease.customerJourney || ''}
-                onChange={(e) => handlePressReleaseChange('customerJourney', e.target.value)}
-                rows={3}
-                placeholder="A typical customer journey describing the experience in simple steps"
-              />
-
-              <SectionWithRegenerateButton
-                section="customerQuote"
-                label="Sixth Paragraph - Customer Testimonial"
-                value={prfaq.pressRelease.customerQuote || ''}
-                onChange={(e) => handlePressReleaseChange('customerQuote', e.target.value)}
-                rows={3}
-                placeholder="Speculative customer quote from someone who has been using your solution"
-              />
-
-              <SectionWithRegenerateButton
-                section="gettingStarted"
-                label="Last Line - Call to Action"
-                value={prfaq.pressRelease.gettingStarted}
-                onChange={(e) => handlePressReleaseChange('gettingStarted', e.target.value)}
-                rows={1}
-                placeholder="Direct the reader to where they can go to get started"
-              />
-            </Grid>
-          </CardContent>
-        </Card>
-      </TabPanel>
-
-      {/* Customer FAQs Tab */}
-      <TabPanel value={tabValue} index={1}>
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Customer Frequently Asked Questions
-            </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              Add questions and answers that address common concerns, objections, and details that potential customers might have about your innovation.
-            </Typography>
-
-            {isPRFAQEmpty ? (
-              <Box sx={{ textAlign: 'center', py: 4, bgcolor: 'info.light', borderRadius: 1, mb: 2 }}>
-                <Typography variant="body1" color="info.contrastText">
-                  Please fill out the Press Release tab first before adding FAQs.
-                </Typography>
-              </Box>
-            ) : (
-              <>
-                {/* Existing Customer FAQs */}
-                {prfaq.customerFaqs.length > 0 ? (
-              <Box sx={{ mb: 4 }}>
-                    {prfaq.customerFaqs.map((faq, index) => (
-                  <Paper key={index} sx={{ p: 2, mb: 2 }}>
-                        {editingCustomerFAQIndex === index ? (
-                      // Editing mode
-                      <>
-                        <TextField
-                          fullWidth
-                          label="Question"
-                          variant="outlined"
-                          value={faq.question}
-                              onChange={(e) => handleUpdateCustomerFAQ(index, 'question', e.target.value)}
-                          sx={{ mb: 2 }}
-                        />
-                        <Typography variant="subtitle2" gutterBottom>
-                          Answer
-                        </Typography>
-                        <Box sx={{ mb: 2 }}>
-                              <LazyReactQuill
-                                key={`customer-faq-editor-${index}`}
-                            value={faq.answer}
-                                onChange={(value) => handleUpdateCustomerFAQ(index, 'answer', value)}
-                            style={{ height: '150px', marginBottom: '50px' }}
-                                visible={tabValue === 1 && editingCustomerFAQIndex === index}
+              {isPRFAQEmpty ? (
+                <Box sx={{ textAlign: 'center', py: 4, bgcolor: 'info.light', borderRadius: 1, mb: 2 }}>
+                  <Typography variant="body1" color="info.contrastText">
+                    Please fill out the Press Release tab first before adding FAQs.
+                  </Typography>
+                </Box>
+              ) : (
+                <>
+                  {/* Existing Customer FAQs */}
+                  {prfaq.customerFaqs.length > 0 ? (
+                <Box sx={{ mb: 4 }}>
+                      {prfaq.customerFaqs.map((faq, index) => (
+                    <Paper key={index} sx={{ p: 2, mb: 2 }}>
+                          {editingCustomerFAQIndex === index ? (
+                        // Editing mode
+                        <>
+                          <TextField
+                            fullWidth
+                            label="Question"
+                            variant="outlined"
+                            value={faq.question}
+                                onChange={(e) => handleUpdateCustomerFAQ(index, 'question', e.target.value)}
+                            sx={{ mb: 2 }}
                           />
-                        </Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                          <Button
-                            variant="contained"
-                            color="primary"
-                                onClick={handleSaveCustomerFAQEdit}
-                            startIcon={<SaveIcon />}
-                          >
-                            Save
-                          </Button>
-                        </Box>
-                      </>
-                    ) : (
-                      // Display mode
-                      <>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <Typography variant="subtitle1" fontWeight="bold">
-                            Q: {faq.question}
+                          <Typography variant="subtitle2" gutterBottom>
+                            Answer
                           </Typography>
-                          <Box>
-                                <IconButton size="small" onClick={() => handleEditCustomerFAQ(index)}>
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                                <IconButton size="small" onClick={() => handleDeleteCustomerFAQ(index)}>
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Box>
-                        </Box>
-                        <Typography variant="body1" sx={{ mt: 1 }}>
-                          A: <span dangerouslySetInnerHTML={{ __html: faq.answer }} />
-                        </Typography>
-                      </>
-                    )}
-                  </Paper>
-                ))}
-              </Box>
-            ) : (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="body1" color="text.secondary">
-                      No customer FAQs added yet. Generate FAQs or add your first FAQ below.
-                </Typography>
-              </Box>
-                )}
-
-                {/* Generate Customer FAQs */}
-                <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle1" gutterBottom>
-                    Generate Customer FAQs
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    label="Instructions (optional)"
-                    variant="outlined"
-                    value={customerFaqComment}
-                    onChange={handleCustomerFaqCommentChange}
-                    placeholder="Add specific instructions for generating FAQs (e.g., 'Focus on pricing and support questions')"
-                    sx={{ mb: 2 }}
-                  />
-                  <Box sx={{ display: 'flex', gap: 2 }}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={generateCustomerFAQs}
-                      disabled={isGeneratingCustomerFAQ || !hasWorkingBackwardsResponses}
-                      startIcon={isGeneratingCustomerFAQ ? <CircularProgress size={20} /> : null}
-                    >
-                      Generate Multiple FAQs
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      onClick={generateSingleCustomerFAQ}
-                      disabled={isGeneratingCustomerFAQ || !hasWorkingBackwardsResponses}
-                      startIcon={isGeneratingCustomerFAQ ? <CircularProgress size={20} /> : null}
-                    >
-                      Generate Single FAQ
-                    </Button>
-                  </Box>
-                </Box>
-
-                <Divider sx={{ my: 3 }} />
-
-                {/* Add new Customer FAQ */}
-                <Box sx={{ mt: 3 }}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Add New Customer FAQ
-              </Typography>
-              <TextField
-                fullWidth
-                label="Question"
-                variant="outlined"
-                    value={newCustomerFAQ.question}
-                    onChange={handleNewCustomerFAQQuestionChange}
-                sx={{ mb: 2 }}
-              />
-              <Typography variant="subtitle2" gutterBottom>
-                Answer
-              </Typography>
-              <Box sx={{ mb: 2 }}>
-                    <LazyReactQuill
-                      key="new-customer-faq-editor"
-                      value={newCustomerFAQ.answer}
-                      onChange={handleNewCustomerFAQAnswerChange}
-                  style={{ height: '150px', marginBottom: '50px' }}
-                      visible={tabValue === 1}
-                />
-              </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                      onClick={handleAddCustomerFAQ}
-                  startIcon={<AddIcon />}
-                      disabled={!newCustomerFAQ.question.trim() || !newCustomerFAQ.answer.trim()}
-                >
-                  Add FAQ
-                </Button>
-              </Box>
-            </Box>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </TabPanel>
-
-      {/* Stakeholder FAQs Tab */}
-      <TabPanel value={tabValue} index={2}>
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Stakeholder Frequently Asked Questions
-            </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              Add questions and answers that address strategic concerns, risks, and implementation details that internal stakeholders (investors, executives, team members) might have.
-            </Typography>
-
-            {isPRFAQEmpty ? (
-              <Box sx={{ textAlign: 'center', py: 4, bgcolor: 'info.light', borderRadius: 1, mb: 2 }}>
-                <Typography variant="body1" color="info.contrastText">
-                  Please fill out the Press Release tab first before adding FAQs.
-                </Typography>
-              </Box>
-            ) : (
-              <>
-                {/* Existing Stakeholder FAQs */}
-                {prfaq.stakeholderFaqs.length > 0 ? (
-                  <Box sx={{ mb: 4 }}>
-                    {prfaq.stakeholderFaqs.map((faq, index) => (
-                      <Paper key={index} sx={{ p: 2, mb: 2 }}>
-                        {editingStakeholderFAQIndex === index ? (
-                          // Editing mode
-                          <>
-                            <TextField
-                              fullWidth
-                              label="Question"
-                              variant="outlined"
-                              value={faq.question}
-                              onChange={(e) => handleUpdateStakeholderFAQ(index, 'question', e.target.value)}
-                              sx={{ mb: 2 }}
+                          <Box sx={{ mb: 2 }}>
+                                <LazyReactQuill
+                                  key={`customer-faq-editor-${index}`}
+                              value={faq.answer}
+                                  onChange={(value) => handleUpdateCustomerFAQ(index, 'answer', value)}
+                              style={{ height: '150px', marginBottom: '50px' }}
+                                  visible={tabValue === 1 && editingCustomerFAQIndex === index}
                             />
-                            <Typography variant="subtitle2" gutterBottom>
-                              Answer
+                          </Box>
+                          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <Button
+                              variant="contained"
+                              color="primary"
+                                  onClick={handleSaveCustomerFAQEdit}
+                              startIcon={<SaveIcon />}
+                            >
+                              Save
+                            </Button>
+                          </Box>
+                        </>
+                      ) : (
+                        // Display mode
+                        <>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <Typography variant="subtitle1" fontWeight="bold">
+                              Q: {faq.question}
                             </Typography>
-                            <Box sx={{ mb: 2 }}>
-                              <LazyReactQuill
-                                key={`stakeholder-faq-editor-${index}`}
-                                value={faq.answer}
-                                onChange={(value) => handleUpdateStakeholderFAQ(index, 'answer', value)}
-                                style={{ height: '150px', marginBottom: '50px' }}
-                                visible={tabValue === 2 && editingStakeholderFAQIndex === index}
-                              />
+                            <Box>
+                                  <IconButton size="small" onClick={() => handleEditCustomerFAQ(index)}>
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                                  <IconButton size="small" onClick={() => handleDeleteCustomerFAQ(index)}>
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
                             </Box>
-                            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                              <Button
-                                variant="contained"
-                                color="primary"
-                                onClick={handleSaveStakeholderFAQEdit}
-                                startIcon={<SaveIcon />}
-                              >
-                                Save
-                              </Button>
-                            </Box>
-                          </>
-                        ) : (
-                          // Display mode
-                          <>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                              <Typography variant="subtitle1" fontWeight="bold">
-                                Q: {faq.question}
-                              </Typography>
-                              <Box>
-                                <IconButton size="small" onClick={() => handleEditStakeholderFAQ(index)}>
-                                  <EditIcon fontSize="small" />
-                                </IconButton>
-                                <IconButton size="small" onClick={() => handleDeleteStakeholderFAQ(index)}>
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
-                              </Box>
-                            </Box>
-                            <Typography variant="body1" sx={{ mt: 1 }}>
-                              A: <span dangerouslySetInnerHTML={{ __html: faq.answer }} />
-                            </Typography>
-                          </>
-                        )}
-                      </Paper>
-                    ))}
-                  </Box>
-                ) : (
-                  <Box sx={{ textAlign: 'center', py: 4 }}>
-                    <Typography variant="body1" color="text.secondary">
-                      No stakeholder FAQs added yet. Generate FAQs or add your first FAQ below.
+                          </Box>
+                          <Typography variant="body1" sx={{ mt: 1 }}>
+                            A: <span dangerouslySetInnerHTML={{ __html: faq.answer }} />
+                          </Typography>
+                        </>
+                      )}
+                    </Paper>
+                  ))}
+                </Box>
+              ) : (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography variant="body1" color="text.secondary">
+                        No customer FAQs added yet. Generate FAQs or add your first FAQ below.
+                  </Typography>
+                </Box>
+                  )}
+
+                  {/* Generate Customer FAQs */}
+                  <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                      Generate Customer FAQs
                     </Typography>
-                  </Box>
-                )}
-
-                {/* Generate Stakeholder FAQs */}
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Generate Stakeholder FAQs
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    label="Instructions (optional)"
-                    variant="outlined"
-                    value={stakeholderFaqComment}
-                    onChange={handleStakeholderFaqCommentChange}
-                    placeholder="Add specific instructions for generating FAQs (e.g., 'Focus on scaling and risk mitigation questions')"
-                    sx={{ mb: 2 }}
-                  />
-                  <Box sx={{ display: 'flex', gap: 2 }}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={generateStakeholderFAQs}
-                      disabled={isGeneratingStakeholderFAQ || !hasWorkingBackwardsResponses}
-                      startIcon={isGeneratingStakeholderFAQ ? <CircularProgress size={20} /> : null}
-                    >
-                      Generate Multiple FAQs
-                    </Button>
-                    <Button
+                    <TextField
+                      fullWidth
+                      label="Instructions (optional)"
                       variant="outlined"
-                      color="primary"
-                      onClick={generateSingleStakeholderFAQ}
-                      disabled={isGeneratingStakeholderFAQ || !hasWorkingBackwardsResponses}
-                      startIcon={isGeneratingStakeholderFAQ ? <CircularProgress size={20} /> : null}
-                    >
-                      Generate Single FAQ
-                    </Button>
-                  </Box>
-                </Box>
-
-                <Divider sx={{ my: 3 }} />
-
-                {/* Add new Stakeholder FAQ */}
-                <Box sx={{ mt: 3 }}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Add New Stakeholder FAQ
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    label="Question"
-                    variant="outlined"
-                    value={newStakeholderFAQ.question}
-                    onChange={handleNewStakeholderFAQQuestionChange}
-                    sx={{ mb: 2 }}
-                  />
-                  <Typography variant="subtitle2" gutterBottom>
-                    Answer
-                  </Typography>
-                  <Box sx={{ mb: 2 }}>
-                    <LazyReactQuill
-                      key="new-stakeholder-faq-editor"
-                      value={newStakeholderFAQ.answer}
-                      onChange={handleNewStakeholderFAQAnswerChange}
-                      style={{ height: '150px', marginBottom: '50px' }}
-                      visible={tabValue === 2}
+                      value={customerFaqComment || ''}
+                      onChange={handleCustomerFaqCommentChange}
+                      placeholder="Add specific instructions for generating FAQs (e.g., 'Focus on pricing and support questions')"
+                      sx={{ mb: 2 }}
                     />
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={generateCustomerFAQs}
+                        disabled={isGeneratingCustomerFAQ || !hasWorkingBackwardsResponses}
+                        startIcon={isGeneratingCustomerFAQ ? <CircularProgress size={20} /> : null}
+                      >
+                        Generate Multiple FAQs
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={generateSingleCustomerFAQ}
+                        disabled={isGeneratingCustomerFAQ || !hasWorkingBackwardsResponses}
+                        startIcon={isGeneratingCustomerFAQ ? <CircularProgress size={20} /> : null}
+                      >
+                        Generate Single FAQ
+                      </Button>
+                    </Box>
                   </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={handleAddStakeholderFAQ}
-                      startIcon={<AddIcon />}
-                      disabled={!newStakeholderFAQ.question.trim() || !newStakeholderFAQ.answer.trim()}
-                    >
-                      Add FAQ
-                    </Button>
-                  </Box>
-                </Box>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </TabPanel>
 
-      {/* Navigation buttons */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-        <Button
-          variant="outlined"
-          onClick={handleBackToWorkingBackwards}
-          startIcon={<ArrowBack />}
-        >
-          Back to Working Backwards
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleContinueToAssumptions}
-          endIcon={<ArrowForward />}
-          disabled={isPRFAQEmpty}
-        >
-          Continue to Assumptions
-        </Button>
-      </Box>
+                  <Divider sx={{ my: 3 }} />
+
+                  {/* Add new Customer FAQ */}
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="subtitle1" gutterBottom>
+                      Add New Customer FAQ
+                </Typography>
+                <TextField
+                  fullWidth
+                  label="Question"
+                  variant="outlined"
+                      value={newCustomerFAQ.question}
+                      onChange={handleNewCustomerFAQQuestionChange}
+                  sx={{ mb: 2 }}
+                />
+                <Typography variant="subtitle2" gutterBottom>
+                  Answer
+                </Typography>
+                <Box sx={{ mb: 2 }}>
+                      <LazyReactQuill
+                        key="new-customer-faq-editor"
+                        value={newCustomerFAQ.answer}
+                        onChange={handleNewCustomerFAQAnswerChange}
+                    style={{ height: '150px', marginBottom: '50px' }}
+                        visible={tabValue === 1}
+                  />
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                        onClick={handleAddCustomerFAQ}
+                    startIcon={<AddIcon />}
+                        disabled={!newCustomerFAQ.question.trim() || !newCustomerFAQ.answer.trim()}
+                  >
+                    Add FAQ
+                  </Button>
+                </Box>
+              </Box>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabPanel>
+
+        {/* Stakeholder FAQs Tab */}
+        <TabPanel value={tabValue} index={2}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Stakeholder Frequently Asked Questions
+              </Typography>
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Add questions and answers that address strategic concerns, risks, and implementation details that internal stakeholders (investors, executives, team members) might have.
+              </Typography>
+
+              {isPRFAQEmpty ? (
+                <Box sx={{ textAlign: 'center', py: 4, bgcolor: 'info.light', borderRadius: 1, mb: 2 }}>
+                  <Typography variant="body1" color="info.contrastText">
+                    Please fill out the Press Release tab first before adding FAQs.
+                  </Typography>
+                </Box>
+              ) : (
+                <>
+                  {/* Existing Stakeholder FAQs */}
+                  {prfaq.stakeholderFaqs.length > 0 ? (
+                    <Box sx={{ mb: 4 }}>
+                      {prfaq.stakeholderFaqs.map((faq, index) => (
+                        <Paper key={index} sx={{ p: 2, mb: 2 }}>
+                          {editingStakeholderFAQIndex === index ? (
+                            // Editing mode
+                            <>
+                              <TextField
+                                fullWidth
+                                label="Question"
+                                variant="outlined"
+                                value={faq.question}
+                                onChange={(e) => handleUpdateStakeholderFAQ(index, 'question', e.target.value)}
+                                sx={{ mb: 2 }}
+                              />
+                              <Typography variant="subtitle2" gutterBottom>
+                                Answer
+                              </Typography>
+                              <Box sx={{ mb: 2 }}>
+                                <LazyReactQuill
+                                  key={`stakeholder-faq-editor-${index}`}
+                                  value={faq.answer}
+                                  onChange={(value) => handleUpdateStakeholderFAQ(index, 'answer', value)}
+                                  style={{ height: '150px', marginBottom: '50px' }}
+                                  visible={tabValue === 2 && editingStakeholderFAQIndex === index}
+                                />
+                              </Box>
+                              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                <Button
+                                  variant="contained"
+                                  color="primary"
+                                  onClick={handleSaveStakeholderFAQEdit}
+                                  startIcon={<SaveIcon />}
+                                >
+                                  Save
+                                </Button>
+                              </Box>
+                            </>
+                          ) : (
+                            // Display mode
+                            <>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <Typography variant="subtitle1" fontWeight="bold">
+                                  Q: {faq.question}
+                                </Typography>
+                                <Box>
+                                  <IconButton size="small" onClick={() => handleEditStakeholderFAQ(index)}>
+                                    <EditIcon fontSize="small" />
+                                  </IconButton>
+                                  <IconButton size="small" onClick={() => handleDeleteStakeholderFAQ(index)}>
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </Box>
+                              </Box>
+                              <Typography variant="body1" sx={{ mt: 1 }}>
+                                A: <span dangerouslySetInnerHTML={{ __html: faq.answer }} />
+                              </Typography>
+                            </>
+                          )}
+                        </Paper>
+                      ))}
+                    </Box>
+                  ) : (
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <Typography variant="body1" color="text.secondary">
+                        No stakeholder FAQs added yet. Generate FAQs or add your first FAQ below.
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {/* Generate Stakeholder FAQs */}
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="subtitle1" gutterBottom>
+                      Generate Stakeholder FAQs
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      label="Instructions (optional)"
+                      variant="outlined"
+                      value={stakeholderFaqComment || ''}
+                      onChange={handleStakeholderFaqCommentChange}
+                      placeholder="Add specific instructions for generating FAQs (e.g., 'Focus on scaling and risk mitigation questions')"
+                      sx={{ mb: 2 }}
+                    />
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={generateStakeholderFAQs}
+                        disabled={isGeneratingStakeholderFAQ || !hasWorkingBackwardsResponses}
+                        startIcon={isGeneratingStakeholderFAQ ? <CircularProgress size={20} /> : null}
+                      >
+                        Generate Multiple FAQs
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={generateSingleStakeholderFAQ}
+                        disabled={isGeneratingStakeholderFAQ || !hasWorkingBackwardsResponses}
+                        startIcon={isGeneratingStakeholderFAQ ? <CircularProgress size={20} /> : null}
+                      >
+                        Generate Single FAQ
+                      </Button>
+                    </Box>
+                  </Box>
+
+                  <Divider sx={{ my: 3 }} />
+
+                  {/* Add new Stakeholder FAQ */}
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="subtitle1" gutterBottom>
+                      Add New Stakeholder FAQ
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      label="Question"
+                      variant="outlined"
+                      value={newStakeholderFAQ.question}
+                      onChange={handleNewStakeholderFAQQuestionChange}
+                      sx={{ mb: 2 }}
+                    />
+                    <Typography variant="subtitle2" gutterBottom>
+                      Answer
+                    </Typography>
+                    <Box sx={{ mb: 2 }}>
+                      <LazyReactQuill
+                        key="new-stakeholder-faq-editor"
+                        value={newStakeholderFAQ.answer}
+                        onChange={handleNewStakeholderFAQAnswerChange}
+                        style={{ height: '150px', marginBottom: '50px' }}
+                        visible={tabValue === 2}
+                      />
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleAddStakeholderFAQ}
+                        startIcon={<AddIcon />}
+                        disabled={!newStakeholderFAQ.question.trim() || !newStakeholderFAQ.answer.trim()}
+                      >
+                        Add FAQ
+                      </Button>
+                    </Box>
+                  </Box>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabPanel>
+
+        {/* Navigation buttons */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+          <Button
+            variant="outlined"
+            onClick={handleBackToWorkingBackwards}
+            startIcon={<ArrowBack />}
+          >
+            Back to Working Backwards
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleContinueToAssumptions}
+            endIcon={<ArrowForward />}
+            disabled={isPRFAQEmpty}
+          >
+            Continue to Assumptions
+          </Button>
+        </Box>
+      </Paper>
     </Container>
   );
 };
