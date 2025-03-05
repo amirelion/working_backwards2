@@ -4,10 +4,21 @@
     "description": "Suggests experiments to validate key assumptions from the PRFAQ",
     "defaults": {
       "provider": "openai",
-      "model": "gpt-4",
+      "model": "gpt-4o",
       "temperature": 0.7
     },
     "template": "You are an expert in product validation and experimentation.\nBased on the following PRFAQ and key assumptions, suggest 3-5 experiments that could validate the most critical assumptions.\n\nPRFAQ:\n{{prfaq}}\n\nKey Assumptions:\n{{#each assumptions}}{{this}}\n{{/each}}\n\nFor each experiment, provide:\n1. A clear name\n2. The hypothesis being tested\n3. A brief methodology (how to conduct the experiment)\n4. Success criteria (how to measure results)\n\nFocus on experiments that are:\n- Quick to implement\n- Low-cost\n- Provide meaningful validation\n- Address the riskiest assumptions first",
     "contextVariables": ["prfaq", "assumptions"]
+  },
+  "generateExperiments": {
+    "id": "generateExperiments",
+    "description": "Generates experiment ideas based on the press release and FAQs",
+    "defaults": {
+      "provider": "openai",
+      "model": "gpt-4o",
+      "temperature": 0.7
+    },
+    "template": "You are an expert in Amazon's Working Backwards innovation methodology.\n\n{{context}}\n\nBased on the information provided about this product/service, suggest 3 experiments or tests that could be run to validate key assumptions or hypotheses. These experiments should help prove or disprove critical aspects of the product's value proposition, market fit, or technical feasibility.\n\n{{#if userComment}}\nAdditional instructions: {{userComment}}\n{{/if}}\n\nFormat your response as a numbered list of experiment descriptions. For example:\n1. [First experiment description]\n2. [Second experiment description]\n3. [Third experiment description]",
+    "contextVariables": ["context", "userComment"]
   }
 }

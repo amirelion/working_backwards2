@@ -4,10 +4,21 @@
     "description": "Guides the Working Backwards conversation by answering specific questions about the product idea",
     "defaults": {
       "provider": "openai",
-      "model": "gpt-4",
+      "model": "gpt-4o",
       "temperature": 0.7
     },
     "template": "You are helping a product team work through the \"Working Backwards\" process to develop a new product or feature.\n\n{{#if initialThoughts}}The team has shared these initial thoughts about their idea:\n{{initialThoughts}}\n\n{{/if}}{{#if context}}{{context}}\n\n{{/if}}Please answer the following question about the product idea:\n{{question}}\n\nYour response should be concise (1-3 sentences), specific, and focused on the question.\nFormat your response as a direct answer without any prefixes or explanations.\nDo not include phrases like \"Based on the information provided\" or \"I would suggest\".\nJust provide a clear, direct response that the team can use in their working backwards document.",
     "contextVariables": ["question", "initialThoughts", "context"]
+  },
+  "generateSuggestion": {
+    "id": "generateSuggestion",
+    "description": "Generates suggestions for working backwards questions",
+    "defaults": {
+      "provider": "openai",
+      "model": "gpt-4o",
+      "temperature": 0.7
+    },
+    "template": "You are an expert in Amazon's Working Backwards innovation methodology.\n\n{{context}}\n\nBased on the information provided about this product/service, provide a suggestion for the following working backwards question:\n\n{{question}}\n\n{{#if userComment}}\nAdditional instructions: {{userComment}}\n{{/if}}\n\nProvide a clear, concise, and helpful answer that addresses the question completely while maintaining a professional and strategic focus.",
+    "contextVariables": ["context", "question", "userComment"]
   }
 }

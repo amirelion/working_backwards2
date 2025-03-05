@@ -4,7 +4,7 @@
     "description": "Generates a succinct headline for the press release that captures the customer value",
     "defaults": {
       "provider": "openai",
-      "model": "gpt-4",
+      "model": "gpt-4o",
       "temperature": 0.7
     },
     "template": "You are an expert in Amazon's Working Backwards innovation methodology.\n\n{{context}}\n\nPlease write ONLY the Headline for a press release about this innovation.\nThis should be a succinct one-liner (5-7 words) that captures the value that the new solution provides to customers.\n\nRemember:\n- Keep it short and impactful\n- Focus on the primary customer benefit\n- Avoid marketing buzz words\n- Make it memorable and attention-grabbing\n\n{{#if userComment}}Please revise the existing headline according to the user instructions.{{else}}Provide ONLY the headline text without any additional commentary.{{/if}}",
@@ -15,7 +15,7 @@
     "description": "Generates the first paragraph (summary) of the press release",
     "defaults": {
       "provider": "openai",
-      "model": "gpt-4",
+      "model": "gpt-4o",
       "temperature": 0.7
     },
     "template": "You are an expert in Amazon's Working Backwards innovation methodology.\n\n{{context}}\n\nPlease write ONLY the First Paragraph for a press release about this innovation.\nThis should include a future launch date (e.g. January 1, 2024) and a short summary (4-5 sentences) that describes what is being launched and the most important customer benefit (an elevator pitch).\n\nThis paragraph should provide a high-level overview that introduces both the problem and solution briefly, without going into extensive detail on either.\n\nRemember:\n- Start with a future launch date\n- Put the most important information at the beginning\n- Briefly mention what problem is being solved and how\n- Focus on the primary customer benefit\n- Avoid marketing buzz words (e.g. simple, easy, exciting)\n- Do not exaggerate the problem or solution\n- Only include metrics that matter to the customer (e.g. their time, their money)\n- Assume no one will read past this paragraph\n- Keep it concise but compelling\n\n{{#if userComment}}Please revise the existing paragraph according to the user instructions.{{else}}Provide ONLY the first paragraph text without any additional commentary.{{/if}}",
@@ -26,7 +26,7 @@
     "description": "Generates the second paragraph (problem/opportunity) of the press release",
     "defaults": {
       "provider": "openai",
-      "model": "gpt-4",
+      "model": "gpt-4o",
       "temperature": 0.7
     },
     "template": "You are an expert in Amazon's Working Backwards innovation methodology.\n\n{{context}}\n\nPlease write ONLY the Second Paragraph for a press release about this innovation.\nThis paragraph should EXCLUSIVELY focus on explaining the opportunity or problem being solved with this product.\nExplain why this problem or opportunity is important and what impact it has on people.\n\nIMPORTANT: Do NOT mention any solutions, products, or how the problem will be solved in this paragraph.\nFocus ONLY on describing the problem or opportunity in detail.\n\nRemember:\n- Be specific about the problem or opportunity\n- Explain why it matters to customers\n- Use clear, jargon-free language\n- Do not exaggerate the problem\n- DO NOT mention your product, solution, or how the problem will be addressed\n- This paragraph should ONLY establish the problem context, not introduce solutions\n\n{{#if userComment}}Please revise the existing paragraph according to the user instructions.{{else}}Provide ONLY the second paragraph text without any additional commentary.{{/if}}",
@@ -37,7 +37,7 @@
     "description": "Generates the third paragraph (solution) of the press release",
     "defaults": {
       "provider": "openai",
-      "model": "gpt-4",
+      "model": "gpt-4o",
       "temperature": 0.7
     },
     "template": "You are an expert in Amazon's Working Backwards innovation methodology.\n\n{{context}}\n\nPlease write ONLY the Third Paragraph for a press release about this innovation.\nThis paragraph should introduce and explain the product or service in clear, customer-friendly language.\nThis is where you should first mention the solution to the problem described in the previous paragraph.\nDescribe the key features and how they address the problem or opportunity and are set to delight customers and answer their needs.\n\nRemember:\n- Start by introducing the solution to the problem described in the previous paragraph\n- Focus on how the solution addresses the customer problem\n- Use clear, jargon-free language\n- Highlight the most important features\n- Connect features to customer benefits\n- Be specific about how your solution solves the problem\n\n{{#if userComment}}Please revise the existing paragraph according to the user instructions.{{else}}Provide ONLY the third paragraph text without any additional commentary.{{/if}}",
@@ -48,7 +48,7 @@
     "description": "Generates the fourth paragraph (executive quote) of the press release",
     "defaults": {
       "provider": "openai",
-      "model": "gpt-4",
+      "model": "gpt-4o",
       "temperature": 0.7
     },
     "template": "You are an expert in Amazon's Working Backwards innovation methodology.\n\n{{context}}\n\nPlease write ONLY the Fourth Paragraph for a press release about this innovation.\nThis paragraph should be an imaginary quote from an executive of the company or organization launching the solution.\nInclude their name and role, and convey how this is part of a bigger vision.\n\nRemember:\n- Make the quote sound authentic and conversational\n- Include the executive's name and title\n- Connect the innovation to a larger company vision or strategy\n- Express enthusiasm without using marketing buzz words\n\n{{#if userComment}}Please revise the existing paragraph according to the user instructions.{{else}}Provide ONLY the fourth paragraph text without any additional commentary.{{/if}}",
@@ -59,10 +59,10 @@
     "description": "Generates the fifth paragraph (customer journey) of the press release",
     "defaults": {
       "provider": "openai",
-      "model": "gpt-4",
+      "model": "gpt-4o",
       "temperature": 0.7
     },
-    "template": "You are an expert in Amazon's Working Backwards innovation methodology.\n\n{{context}}\n\nPlease write ONLY the Fifth Paragraph for a press release about this innovation.\nThis paragraph should describe a typical customer journey in simple easy steps, motivating the reader to try it.\n\nRemember:\n- Break down the customer experience into clear steps\n- Make it easy for the reader to visualize using the product\n- Focus on the simplicity and value of the experience\n- Highlight how the journey solves the customer's problem\n\n{{#if userComment}}Please revise the existing paragraph according to the user instructions.{{else}}Provide ONLY the fifth paragraph text without any additional commentary.{{/if}}",
+    "template": "You are an expert in Amazon's Working Backwards innovation methodology.\n\n{{context}}\n\nPlease write ONLY the Fifth Paragraph for a press release about this innovation.\nThis paragraph should describe a typical customer journey in simple easy steps, motivating the reader to try it.\n\nIMPORTANT: Do NOT include any section labels or prefixes like 'Fifth Paragraph' or 'Customer Journey' in your response.\nProvide ONLY the paragraph content itself.\n\nRemember:\n- Break down the customer experience into clear steps\n- Make it easy for the reader to visualize using the product\n- Focus on the simplicity and value of the experience\n- Highlight how the journey solves the customer's problem\n- Do NOT include any section labels or prefixes\n\n{{#if userComment}}Please revise the existing paragraph according to the user instructions.{{else}}Provide ONLY the paragraph text without any additional commentary, labels, or prefixes.{{/if}}",
     "contextVariables": ["context", "userComment"]
   },
   "sixthParagraph": {
@@ -70,7 +70,7 @@
     "description": "Generates the sixth paragraph (customer quote) of the press release",
     "defaults": {
       "provider": "openai",
-      "model": "gpt-4",
+      "model": "gpt-4o",
       "temperature": 0.7
     },
     "template": "You are an expert in Amazon's Working Backwards innovation methodology.\n\n{{context}}\n\nPlease write ONLY the Sixth Paragraph for a press release about this innovation.\nThis paragraph should be a speculative customer quote from someone who has been using the new solution recently.\nThe quote should reinforce why the customer cares about this launch.\n\nA typical structure could include:\n- What was the pain before\n- How this new solution changed it\n- How they feel about it now\n\nRemember:\n- Make the quote sound authentic and conversational\n- Include the customer's name and relevant details (e.g., role, location)\n- Focus on the emotional and practical benefits\n- Be specific about the impact on the customer's life or work\n\n{{#if userComment}}Please revise the existing paragraph according to the user instructions.{{else}}Provide ONLY the sixth paragraph text without any additional commentary.{{/if}}",
@@ -81,7 +81,7 @@
     "description": "Generates the call to action (last line) of the press release",
     "defaults": {
       "provider": "openai",
-      "model": "gpt-4",
+      "model": "gpt-4o",
       "temperature": 0.7
     },
     "template": "You are an expert in Amazon's Working Backwards innovation methodology.\n\n{{context}}\n\nPlease write ONLY the Last Line (Call to Action) for a press release about this innovation.\nThis should direct the reader to where they can go to get started (download app, go to store, call an agent, etc.).\n\nRemember:\n- Be clear and specific about what action to take\n- Include any relevant dates, URLs, or contact information\n- Keep it concise and actionable\n- Create a sense of urgency if appropriate\n\n{{#if userComment}}Please revise the existing line according to the user instructions.{{else}}Provide ONLY the call to action text without any additional commentary.{{/if}}",
@@ -92,7 +92,7 @@
     "description": "Generates a complete press release based on working backwards responses",
     "defaults": {
       "provider": "openai",
-      "model": "gpt-4",
+      "model": "gpt-4o",
       "temperature": 0.7
     },
     "template": "You an expert in Amazon's Working Backwards innovation methodology. You think of problems or opportunities to delight customers, come up with an innovative customer focused solution for the {{title}}, and write a one page Press Release about it.\n\nThe contents of the PR must answer the 5 working backwards questions:\nPressure Test your draft: Have you answered the 5 Working Backwards Questions?\n1. Who is the specific customer? Is it clear from the PR who the customer is?\n2. What is the customer problem or opportunity? Does the PR clearly outline the problem or opportunity?\n3. What is the most important customer benefit? Is it clear how the customer need is met or resolved?\n4. How do you know what customers need or want? Did the PR provide indications of customers' desire?\n5. What does the customer experience look like? Can you visualize the customer experience?\n\nTips & Tricks: Guidelines to help you write\n* Put the most important information at the beginning. Imagine no one reads past the first paragraph.\n* Avoid Marketing Buzz Words (e.g. simple, easy, exciting, etc.).\n* Do not exaggerate the problem or the solution.\n* Only include metrics and data that matters to your customer (e.g. their time, their money).\n\nInformation about the customer and problem:\n{{responses}}\n\nThe structure of your Press Release should be:\n\nHeadline: Imagine a succinct one-liner a newsie would use - 5-7 words that capture the value that the new solution provides to customers.\n\nFirst Paragraph: Date: Your future launch date (e.g. January 1, 2024), and Short Summary (4-5 sentences): Describe what you're launching and the most important benefit (i.e. Elevator Pitch). Assume no one will read past this point (unless it is intriguing).\n\nSecond paragraph - The Opportunity or The Problem: Clearly explain the opportunity or problem you are solving with your product. Why is this problem or opportunity important and what impact does it have on people.\n\nThird paragraph - Describe What You're Launching: Explain the product or service in clear customer friendly language. The key features and how do they address the problem or opportunity and are set to delight customers and answer their needs.\n\nFourth paragraph - imaginary quote from an executive of the company or organization who is launching the solution. It should mention their name and role, and convey how is this part of a bigger vision.\n\nFifth paragraph - A typical customer journey describing the customer experience in simple easy steps, motivating the reader to try it.\n\nSixth paragraph - Customer Quote: Speculative customer quote who has been using the new solution product recently, reinforcing why the customer cares about your launch. A typical anatomy could be - what was the pain before, how this new solution changed it, and how do they feel about it now.\n\nLast line - Call to Action: Direct the reader to where they can go to get started (download app, go to store, call an agent, etc.)\n\nFocus primarily on creating an excellent press release. The FAQ section will be handled separately.",
