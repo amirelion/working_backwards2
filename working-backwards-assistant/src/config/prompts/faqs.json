@@ -1,0 +1,46 @@
+{
+  "customerFAQs": {
+    "id": "customerFAQs",
+    "description": "Generates a set of frequently asked questions from potential customers",
+    "defaults": {
+      "provider": "openai",
+      "model": "gpt-4",
+      "temperature": 0.7
+    },
+    "template": "{{context}}\n\nBased on the information provided about this product/service, generate 5 frequently asked questions (FAQs) that potential customers might have, along with detailed answers. These should address common concerns, questions, and objections that customers might have.\n\nFocus on questions related to:\n- Pricing and value\n- How the product/service works\n- Support and customer service\n- Implementation and getting started\n- Compatibility and integration with existing systems\n- Features and limitations\n- Security and privacy concerns\n\n{{#if userComment}}\nAdditional instructions: {{userComment}}\n{{/if}}\n\nFormat your response as a numbered list of questions and answers, like this:\n1. Q: [Question]\n   A: [Answer]\n\n2. Q: [Question]\n   A: [Answer]\n\nAnd so on. Make sure each answer is comprehensive and addresses the question fully.",
+    "contextVariables": ["context", "userComment"]
+  },
+  "stakeholderFAQs": {
+    "id": "stakeholderFAQs",
+    "description": "Generates a set of frequently asked questions from internal stakeholders",
+    "defaults": {
+      "provider": "openai",
+      "model": "gpt-4",
+      "temperature": 0.7
+    },
+    "template": "{{context}}\n\nBased on the information provided about this product/service, generate 5 frequently asked questions (FAQs) that internal stakeholders (investors, executives, team members) might have, along with detailed answers. These should address strategic concerns, risks, and implementation details.\n\nFocus on questions related to:\n- Business model and revenue potential\n- Risks and mitigations\n- Rollout strategy and timeline\n- Scaling considerations\n- Resource requirements\n- Success metrics and KPIs\n- Competitive landscape\n- Technical implementation challenges\n\n{{#if userComment}}\nAdditional instructions: {{userComment}}\n{{/if}}\n\nFormat your response as a numbered list of questions and answers, like this:\n1. Q: [Question]\n   A: [Answer]\n\n2. Q: [Question]\n   A: [Answer]\n\nAnd so on. Make sure each answer is comprehensive and addresses the question fully from a business and strategic perspective.",
+    "contextVariables": ["context", "userComment"]
+  },
+  "singleCustomerFAQ": {
+    "id": "singleCustomerFAQ",
+    "description": "Generates a single customer FAQ",
+    "defaults": {
+      "provider": "openai",
+      "model": "gpt-4",
+      "temperature": 0.7
+    },
+    "template": "{{context}}{{#if existingFaqs}}\n\nExisting Customer FAQs:\n{{#each existingFaqs}}{{add @index 1}}. Q: {{question}}\n   A: {{answer}}\n\n{{/each}}{{/if}}\n\nBased on the information provided about this product/service, generate 1 additional frequently asked question (FAQ) that a potential customer might have, along with a detailed answer. This should address a common concern, question, or objection that hasn't been covered in the existing FAQs.\n\n{{#if userComment}}\nAdditional instructions: {{userComment}}\n{{/if}}\n\nFormat your response exactly as follows:\nQ: [Question]\nA: [Answer]\n\nMake sure the answer is comprehensive and addresses the question fully.",
+    "contextVariables": ["context", "existingFaqs", "userComment"]
+  },
+  "singleStakeholderFAQ": {
+    "id": "singleStakeholderFAQ",
+    "description": "Generates a single stakeholder FAQ",
+    "defaults": {
+      "provider": "openai",
+      "model": "gpt-4",
+      "temperature": 0.7
+    },
+    "template": "{{context}}{{#if existingFaqs}}\n\nExisting Stakeholder FAQs:\n{{#each existingFaqs}}{{add @index 1}}. Q: {{question}}\n   A: {{answer}}\n\n{{/each}}{{/if}}\n\nBased on the information provided about this product/service, generate 1 additional frequently asked question (FAQ) that an internal stakeholder (investor, executive, team member) might have, along with a detailed answer. This should address a strategic concern, risk, or implementation detail that hasn't been covered in the existing FAQs.\n\n{{#if userComment}}\nAdditional instructions: {{userComment}}\n{{/if}}\n\nFormat your response exactly as follows:\nQ: [Question]\nA: [Answer]\n\nMake sure the answer is comprehensive and addresses the question fully from a business and strategic perspective.",
+    "contextVariables": ["context", "existingFaqs", "userComment"]
+  }
+}
