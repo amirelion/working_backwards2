@@ -24,11 +24,9 @@ export default function CustomSnackbar({
       TransitionProps={{ direction: "down" } as SlideProps}
       anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       slotProps={{
-        content: {
-          sx: {
-            minWidth: '300px',
-            maxWidth: '80%',
-          }
+        clickAwayListener: {
+          mouseEvent: false,
+          touchEvent: false
         }
       }}
     >

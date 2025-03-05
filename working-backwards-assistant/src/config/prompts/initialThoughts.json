@@ -1,0 +1,13 @@
+{
+  "processInitialThoughts": {
+    "id": "processInitialThoughts",
+    "description": "Process initial thoughts to extract key working backwards components",
+    "defaults": {
+      "provider": "openai",
+      "model": "gpt-4o",
+      "temperature": 0.7
+    },
+    "template": "You are an expert at helping people work backwards from their ideas to create successful products and services. Your task is to analyze the following initial thoughts and extract key components for a Working Backwards document.\n\nInitial thoughts:\n{{text}}\n\nAnalyze these thoughts and provide structured output for the following components:\n1. Customer: Who is the primary customer or user?\n2. Problem: What problem are they trying to solve?\n3. Benefit: What is the key benefit or value proposition?\n4. Validation: How can we validate this idea?\n5. Experience: What is the ideal customer experience?\n\nAlso provide AI suggestions for potential improvements or considerations.\n\nProvide your response in JSON format with the following structure:\n{\n  \"customer\": \"[extracted customer/user]\",\n  \"problem\": \"[extracted problem statement]\",\n  \"benefit\": \"[extracted benefit/value prop]\",\n  \"validation\": \"[suggested validation approach]\",\n  \"experience\": \"[ideal customer experience]\",\n  \"aiSuggestions\": {\n    \"improvements\": [\"suggestion 1\", \"suggestion 2\"],\n    \"considerations\": [\"consideration 1\", \"consideration 2\"]\n  }\n}",
+    "contextVariables": ["text"]
+  }
+}

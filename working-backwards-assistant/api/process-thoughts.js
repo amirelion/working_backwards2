@@ -1,4 +1,5 @@
 const { OpenAI } = require('openai');
+const { PromptLoader } = require('../src/utils/promptLoader');
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -40,32 +41,11 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Text is required' });
     }
 
-    // Define the prompt for extracting insights
-    const prompt = `
-      You are an expert in Amazon's Working Backwards process. 
-      
-      Analyze the following initial thoughts about a product or service idea and extract key insights to help answer the Working Backwards questions.
-      
-      Initial thoughts:
-      ${text}
-      
-      Based on these thoughts, provide suggested answers for the following Working Backwards questions:
-      
-      1. Who is the customer?
-      2. What is the customer problem or opportunity?
-      3. What is the most important customer benefit?
-      4. How do you know what customers need or want?
-      5. What does the customer experience look like?
-      
-      Format your response as a JSON object with keys corresponding to each question number (use only the number as the key) and values containing the suggested answers. For example:
-      {
-        "1": "Answer to question 1",
-        "2": "Answer to question 2",
-        "3": "Answer to question 3",
-        "4": "Answer to question 4",
-        "5": "Answer to question 5"
-      }
-    `;
+    // Load the prompt configuration
+    const promptLoader = PromptLoader.getInstance();
+    const prompt = await promptLoader.buildPrompt('initialThoughts', 'processInitialThoughts', {
+      variables: { text }
+    });
 
     // Call OpenAI API to process the text
     const completion = await openai.chat.completions.create({

@@ -96,6 +96,7 @@ const prfaqMapping: PRFAQMapping = {
     'problemStatement': 'problem',
     'solution': 'solution',
     'stakeholderQuote': 'executiveQuote',
+    'customerJourney': 'customerJourney',
     'customerQuote': 'customerQuote',
     'callToAction': 'gettingStarted'
   },
@@ -104,7 +105,7 @@ const prfaqMapping: PRFAQMapping = {
     'problem': 'problemStatement',
     'solution': 'solution',
     'executiveQuote': 'stakeholderQuote',
-    'customerJourney': 'introduction', // Map to introduction as a fallback
+    'customerJourney': 'customerJourney',
     'customerQuote': 'customerQuote',
     'gettingStarted': 'callToAction'
   }
@@ -353,7 +354,18 @@ const PRFAQPage: React.FC = () => {
 
   // Fix the mapSectionToFieldName function to return the correct type
   const mapSectionToFieldName = (section: string): keyof PRFAQState['pressRelease'] => {
-    // Map UI section names to Redux state field names
+    // For sections that directly match Redux state field names
+    if (section === 'headline' || 
+        section === 'introduction' || 
+        section === 'problemStatement' || 
+        section === 'solution' || 
+        section === 'stakeholderQuote' || 
+        section === 'customerJourney' || 
+        section === 'customerQuote' || 
+        section === 'callToAction') {
+      return section as keyof PRFAQState['pressRelease'];
+    }
+    // Map other section names
     switch (section) {
       case 'summary':
         return 'introduction';
@@ -363,25 +375,9 @@ const PRFAQPage: React.FC = () => {
         return 'solution';
       case 'executiveQuote':
         return 'stakeholderQuote';
-      case 'customerJourney':
-        return 'customerJourney';
-      case 'customerQuote':
-        return 'customerQuote';
       case 'gettingStarted':
         return 'callToAction';
       default:
-        // For sections that directly match Redux state field names
-        if (section === 'headline' || 
-            section === 'introduction' || 
-            section === 'problemStatement' || 
-            section === 'solution' || 
-            section === 'stakeholderQuote' || 
-            section === 'customerJourney' || 
-            section === 'customerQuote' || 
-            section === 'callToAction') {
-          return section as keyof PRFAQState['pressRelease'];
-        }
-        // Throw error for unknown section names instead of defaulting to 'introduction'
         throw new Error(`Unknown section name: ${section}`);
     }
   };
@@ -948,7 +944,9 @@ const PRFAQPage: React.FC = () => {
         if (section === 'title') {
           dispatch(updatePRFAQTitle(response.content));
         } else {
-          dispatch(updatePRFAQPressRelease({ field: section as keyof PRFAQState['pressRelease'], value: response.content }));
+          // Map the response to the correct field in the Redux state
+          const field = mapSectionToFieldName(section);
+          dispatch(updatePRFAQPressRelease({ field, value: response.content }));
         }
       }
       

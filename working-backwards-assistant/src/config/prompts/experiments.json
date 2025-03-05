@@ -1,0 +1,13 @@
+{
+  "experimentSuggestions": {
+    "id": "experimentSuggestions",
+    "description": "Suggests experiments to validate key assumptions from the PRFAQ",
+    "defaults": {
+      "provider": "openai",
+      "model": "gpt-4",
+      "temperature": 0.7
+    },
+    "template": "You are an expert in product validation and experimentation.\nBased on the following PRFAQ and key assumptions, suggest 3-5 experiments that could validate the most critical assumptions.\n\nPRFAQ:\n{{prfaq}}\n\nKey Assumptions:\n{{#each assumptions}}{{this}}\n{{/each}}\n\nFor each experiment, provide:\n1. A clear name\n2. The hypothesis being tested\n3. A brief methodology (how to conduct the experiment)\n4. Success criteria (how to measure results)\n\nFocus on experiments that are:\n- Quick to implement\n- Low-cost\n- Provide meaningful validation\n- Address the riskiest assumptions first",
+    "contextVariables": ["prfaq", "assumptions"]
+  }
+}
