@@ -16,6 +16,8 @@ import {
   ClickAwayListener
 } from '@mui/material';
 import { useRecoilState } from 'recoil';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store';
 import { initialThoughtsState } from '../atoms/initialThoughtsState';
 import { workingBackwardsQuestionsState } from '../atoms/workingBackwardsQuestionsState';
 import VoiceTranscriber from '../components/VoiceTranscriber';
@@ -54,6 +56,7 @@ function InitialThoughtsPage() {
   const location = useLocation();
   const [initialThoughts, setInitialThoughts] = useRecoilState(initialThoughtsState);
   const [workingBackwardsQuestions, setWorkingBackwardsQuestions] = useRecoilState(workingBackwardsQuestionsState);
+  const prfaq = useSelector((state: RootState) => state.prfaq);
   const [tabValue, setTabValue] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingError, setProcessingError] = useState<string | null>(null);
@@ -206,7 +209,7 @@ function InitialThoughtsPage() {
         {currentProcessId && (
           <Box sx={{ p: 2, bgcolor: 'primary.light', color: 'white' }}>
             <Typography variant="subtitle1">
-              Working on: {workingBackwardsQuestions.customer || 'Untitled Process'}
+              Working on: {prfaq.title || 'Untitled Process'}
             </Typography>
           </Box>
         )}
