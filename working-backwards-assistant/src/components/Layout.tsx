@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar,
@@ -9,13 +9,6 @@ import {
   Container,
   useMediaQuery,
   useTheme,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  TextField,
-  CircularProgress,
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -27,14 +20,8 @@ import {
   Person as PersonIcon,
   AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
-import { useDispatch } from 'react-redux';
-import { resetSession } from '../store/sessionSlice';
 import AuthMenu from './AuthMenu';
 import { useAuth } from '../contexts/AuthContext';
-import { useWorkingBackwards } from '../contexts/WorkingBackwardsContext';
-import { useRecoilState } from 'recoil';
-import { initialThoughtsState } from '../atoms/initialThoughtsState';
-import { workingBackwardsQuestionsState } from '../atoms/workingBackwardsQuestionsState';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -45,77 +32,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const location = useLocation();
-  const dispatch = useDispatch();
   const { userProfile, isAdmin, currentUser, loading: authLoading } = useAuth();
-  const { currentProcessId, saveCurrentProcess, isSaving, createNewProcess, setCurrentProcessId } = useWorkingBackwards();
-  
-  // Recoil state
-  const [_, setInitialThoughts] = useRecoilState(initialThoughtsState);
-  const [__, setWorkingBackwardsQuestions] = useRecoilState(workingBackwardsQuestionsState);
-  
-  // State for new session dialog
-  const [newSessionDialogOpen, setNewSessionDialogOpen] = useState(false);
-  const [newProcessTitle, setNewProcessTitle] = useState('');
-  const [isCreatingProcess, setIsCreatingProcess] = useState(false);
 
   const handleNavigation = (path: string) => {
     navigate(path);
-  };
-
-  const handleNewSessionClick = () => {
-    if (currentProcessId) {
-      // If there's a current process, open the dialog to save or discard
-      setNewSessionDialogOpen(true);
-    } else {
-      // If no current process, just reset the session
-      handleNewSession();
-    }
-  };
-
-  const handleNewSession = async (saveFirst: boolean = false, newTitle: string = '') => {
-    try {
-      if (saveFirst && currentProcessId) {
-        // Save the current process before resetting
-        await saveCurrentProcess();
-      } else if (saveFirst && !currentProcessId && newTitle) {
-        // Create a new process with the current data
-        setIsCreatingProcess(true);
-        await createNewProcess(newTitle);
-        setIsCreatingProcess(false);
-      }
-      
-      // Reset the session state
-      dispatch(resetSession());
-      
-      // Reset Recoil state
-      setInitialThoughts('');
-      setWorkingBackwardsQuestions({
-        customer: '',
-        problem: '',
-        benefit: '',
-        validation: '',
-        experience: '',
-        aiSuggestions: {}
-      });
-      
-      // Clear the current process ID
-      setCurrentProcessId(null);
-      
-      // Close the dialog if it's open
-      setNewSessionDialogOpen(false);
-      setNewProcessTitle('');
-      
-      // Navigate to the home page
-      navigate('/');
-    } catch (error) {
-      console.error('Error handling new session:', error);
-      // Keep the dialog open if there was an error
-    }
-  };
-
-  const handleCancelNewSession = () => {
-    setNewSessionDialogOpen(false);
-    setNewProcessTitle('');
   };
 
   const navItems = [
@@ -173,62 +93,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               {authLoading ? 'Auth loading...' : 
                currentUser ? `Logged in: ${currentUser.email}` : 'Not logged in'}
             </Typography>
-            <Button 
-              color="secondary" 
-              variant="outlined" 
-              onClick={handleNewSessionClick}
-              disabled={isSaving}
-            >
-              {isSaving ? <CircularProgress size={24} color="secondary" /> : 'New Session'}
-            </Button>
             <AuthMenu />
           </Box>
         </Toolbar>
       </AppBar>
-      
-      {/* New Session Dialog */}
-      <Dialog open={newSessionDialogOpen} onClose={handleCancelNewSession}>
-        <DialogTitle>Start New Session</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            You have unsaved changes in your current session. Would you like to save them before starting a new session?
-          </DialogContentText>
-          {!currentProcessId && (
-            <TextField
-              autoFocus
-              margin="dense"
-              id="process-title"
-              label="Process Title"
-              type="text"
-              fullWidth
-              variant="outlined"
-              value={newProcessTitle}
-              onChange={(e) => setNewProcessTitle(e.target.value)}
-              sx={{ mt: 2 }}
-            />
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCancelNewSession} color="primary">
-            Cancel
-          </Button>
-          <Button 
-            onClick={() => handleNewSession(false)} 
-            color="error"
-            disabled={isCreatingProcess || isSaving}
-          >
-            Discard Changes
-          </Button>
-          <Button 
-            onClick={() => handleNewSession(true, newProcessTitle)} 
-            color="primary"
-            variant="contained"
-            disabled={(isCreatingProcess || isSaving) || (!currentProcessId && !newProcessTitle.trim())}
-          >
-            {isCreatingProcess || isSaving ? <CircularProgress size={24} /> : 'Save & Start New'}
-          </Button>
-        </DialogActions>
-      </Dialog>
       
       <Box
         component="main"
