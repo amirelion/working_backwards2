@@ -181,11 +181,39 @@ export function WorkingBackwardsProvider({ children }: { children: React.ReactNo
     }
     
     try {
+      // Create the process first
       const processId = await workingBackwardsService.createProcess(
         currentUser.uid, 
         title,
-        initialThoughts
+        '' // Start with empty initial thoughts
       );
+      
+      // Then clear all state
+      setInitialThoughts('');
+      setWorkingBackwardsQuestions({
+        customer: '',
+        problem: '',
+        benefit: '',
+        validation: '',
+        experience: '',
+        aiSuggestions: {}
+      });
+      
+      // Clear PRFAQ state
+      dispatch(updatePRFAQTitle(title)); // Use the provided title
+      dispatch(updatePRFAQPressRelease({ field: 'introduction', value: '' }));
+      dispatch(updatePRFAQPressRelease({ field: 'problemStatement', value: '' }));
+      dispatch(updatePRFAQPressRelease({ field: 'solution', value: '' }));
+      dispatch(updatePRFAQPressRelease({ field: 'stakeholderQuote', value: '' }));
+      dispatch(updatePRFAQPressRelease({ field: 'customerJourney', value: '' }));
+      dispatch(updatePRFAQPressRelease({ field: 'customerQuote', value: '' }));
+      dispatch(updatePRFAQPressRelease({ field: 'callToAction', value: '' }));
+      
+      // Clear FAQs
+      dispatch(setFAQs([]));
+      dispatch(setCustomerFAQs([]));
+      dispatch(setStakeholderFAQs([]));
+      
       setCurrentProcessId(processId);
       setLastSaved(new Date());
       return processId;
