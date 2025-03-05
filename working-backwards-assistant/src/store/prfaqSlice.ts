@@ -19,6 +19,7 @@ export interface PRFAQState {
     solution: string;
     customerQuote: string;
     stakeholderQuote: string;
+    customerJourney: string;
     callToAction: string;
     aboutCompany: string;
   };
@@ -40,6 +41,7 @@ const initialState: PRFAQState = {
     solution: '',
     customerQuote: '',
     stakeholderQuote: '',
+    customerJourney: '',
     callToAction: '',
     aboutCompany: 'Amazon is guided by four principles: customer obsession rather than competitor focus, passion for invention, commitment to operational excellence, and long-term thinking.',
   },

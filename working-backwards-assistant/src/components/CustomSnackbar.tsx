@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, AlertProps, Slide } from '@mui/material';
+import { Alert, AlertProps, Slide, Snackbar, SlideProps } from '@mui/material';
 
 interface CustomSnackbarProps extends Omit<AlertProps, 'children'> {
   open: boolean;
@@ -17,25 +17,33 @@ export default function CustomSnackbar({
   if (!open) return null;
 
   return (
-    <Slide direction="down" in={open} mountOnEnter unmountOnExit>
+    <Snackbar
+      open={open}
+      onClose={onClose}
+      TransitionComponent={Slide}
+      TransitionProps={{ direction: "down" } as SlideProps}
+      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      slotProps={{
+        content: {
+          sx: {
+            minWidth: '300px',
+            maxWidth: '80%',
+          }
+        }
+      }}
+    >
       <Alert
         {...props}
         severity={severity}
         onClose={onClose}
+        variant="filled"
         sx={{
-          position: 'fixed',
-          top: 24,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 9999,
-          minWidth: '300px',
-          maxWidth: '80%',
           boxShadow: 6,
           ...props.sx
         }}
       >
         {message}
       </Alert>
-    </Slide>
+    </Snackbar>
   );
 } 

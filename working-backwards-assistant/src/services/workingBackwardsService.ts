@@ -11,7 +11,11 @@ import {
   Timestamp, 
   serverTimestamp, 
   orderBy,
-  onSnapshot
+  onSnapshot,
+  writeBatch,
+  runTransaction,
+  DocumentReference,
+  Firestore
 } from 'firebase/firestore';
 import { db } from '../lib/firebase/firebase';
 import { WorkingBackwardsProcess, WorkingBackwardsProcessSummary } from '../types/workingBackwards';
@@ -36,6 +40,20 @@ export const createProcess = async (userId: string, title: string, initialThough
         experience: '',
         aiSuggestions: {}
       },
+      prfaq: {
+        title: '',
+        pressRelease: {
+          introduction: '',
+          problemStatement: '',
+          solution: '',
+          stakeholderQuote: '',
+          customerJourney: '',
+          customerQuote: '',
+          callToAction: ''
+        },
+        customerFaqs: [],
+        stakeholderFaqs: []
+      },
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
@@ -44,7 +62,7 @@ export const createProcess = async (userId: string, title: string, initialThough
     return docRef.id;
   } catch (error) {
     console.error('Error creating process:', error);
-    throw error;
+    throw new Error(`Failed to create process: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
@@ -75,7 +93,7 @@ export const getUserProcesses = async (userId: string): Promise<WorkingBackwards
     return processes.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
   } catch (error) {
     console.error('Error getting user processes:', error);
-    throw error;
+    throw new Error(`Failed to get user processes: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
@@ -113,7 +131,7 @@ export const getProcessById = async (processId: string): Promise<WorkingBackward
     return null;
   } catch (error) {
     console.error('Error getting process:', error);
-    throw error;
+    throw new Error(`Failed to get process: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
@@ -133,7 +151,68 @@ export const updateProcess = async (processId: string, processData: Partial<Work
     await updateDoc(docRef, updateData);
   } catch (error) {
     console.error('Error updating process:', error);
-    throw error;
+    throw new Error(`Failed to update process: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+/**
+ * Update specific fields of a Working Backwards process
+ * This is more efficient than updating the entire process
+ */
+export const updateProcessFields = async (
+  processId: string, 
+  fields: Record<string, any>
+): Promise<void> => {
+  try {
+    const docRef = doc(processesCollection, processId);
+    
+    // Add server timestamp for updatedAt
+    fields.updatedAt = serverTimestamp();
+    
+    await updateDoc(docRef, fields);
+  } catch (error) {
+    console.error('Error updating process fields:', error);
+    throw new Error(`Failed to update process fields: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+/**
+ * Batch update multiple processes
+ */
+export const batchUpdateProcesses = async (
+  updates: Array<{ id: string; data: Partial<WorkingBackwardsProcess> }>
+): Promise<void> => {
+  try {
+    const batch = writeBatch(db);
+    
+    updates.forEach(({ id, data }) => {
+      const docRef = doc(processesCollection, id);
+      
+      // Remove id and userId from update data
+      const { id: _, userId, createdAt, ...updateData } = data as any;
+      
+      // Add server timestamp for updatedAt
+      updateData.updatedAt = serverTimestamp();
+      
+      batch.update(docRef, updateData);
+    });
+    
+    await batch.commit();
+  } catch (error) {
+    console.error('Error batch updating processes:', error);
+    throw new Error(`Failed to batch update processes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+/**
+ * Rename a Working Backwards process
+ */
+export const renameProcess = async (processId: string, newTitle: string): Promise<void> => {
+  try {
+    await updateProcessFields(processId, { title: newTitle });
+  } catch (error) {
+    console.error('Error renaming process:', error);
+    throw new Error(`Failed to rename process: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
@@ -146,7 +225,7 @@ export const deleteProcess = async (processId: string): Promise<void> => {
     await deleteDoc(docRef);
   } catch (error) {
     console.error('Error deleting process:', error);
-    throw error;
+    throw new Error(`Failed to delete process: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
@@ -230,4 +309,62 @@ export const subscribeToProcess = (
       if (onError) onError(error);
     }
   );
+};
+
+/**
+ * Duplicate a Working Backwards process
+ */
+export const duplicateProcess = async (processId: string, newTitle?: string): Promise<string> => {
+  try {
+    // Get the original process
+    const originalProcess = await getProcessById(processId);
+    
+    if (!originalProcess) {
+      throw new Error('Process not found');
+    }
+    
+    // Create a new process with the same data
+    const processData = {
+      userId: originalProcess.userId,
+      title: newTitle || `${originalProcess.title} (Copy)`,
+      initialThoughts: originalProcess.initialThoughts,
+      workingBackwardsQuestions: originalProcess.workingBackwardsQuestions,
+      prfaq: originalProcess.prfaq,
+      assumptions: originalProcess.assumptions,
+      experiments: originalProcess.experiments,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+    
+    const docRef = await addDoc(processesCollection, processData);
+    return docRef.id;
+  } catch (error) {
+    console.error('Error duplicating process:', error);
+    throw new Error(`Failed to duplicate process: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+/**
+ * Archive a Working Backwards process
+ * This doesn't delete the process, but marks it as archived
+ */
+export const archiveProcess = async (processId: string): Promise<void> => {
+  try {
+    await updateProcessFields(processId, { archived: true });
+  } catch (error) {
+    console.error('Error archiving process:', error);
+    throw new Error(`Failed to archive process: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+};
+
+/**
+ * Unarchive a Working Backwards process
+ */
+export const unarchiveProcess = async (processId: string): Promise<void> => {
+  try {
+    await updateProcessFields(processId, { archived: false });
+  } catch (error) {
+    console.error('Error unarchiving process:', error);
+    throw new Error(`Failed to unarchive process: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }; 

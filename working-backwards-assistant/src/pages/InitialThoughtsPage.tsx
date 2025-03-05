@@ -332,7 +332,11 @@ function InitialThoughtsPage() {
           open={saveSuccess}
           autoHideDuration={3000}
           onClose={() => setSaveSuccess(false)}
-          message="Progress saved successfully"
+          slotProps={{
+            content: {
+              children: "Progress saved successfully"
+            }
+          }}
         />
       )}
     </Container>

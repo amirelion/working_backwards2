@@ -147,6 +147,39 @@ app.post('/api/process-thoughts', async (req, res) => {
   }
 });
 
+// Generate suggestion for a specific question
+app.post('/api/generate-suggestion', async (req, res) => {
+  try {
+    const { prompt, model, provider } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    console.log('Generating suggestion for prompt:', prompt.substring(0, 100) + '...');
+
+    // Call OpenAI API to generate a suggestion
+    const completion = await openai.chat.completions.create({
+      model: model || "gpt-4o",
+      messages: [
+        { role: "system", content: "You are an AI assistant that helps with the Amazon Working Backwards process." },
+        { role: "user", content: prompt }
+      ]
+    });
+
+    // Return the suggestion
+    return res.status(200).json({ 
+      content: completion.choices[0].message.content.trim() 
+    });
+  } catch (error) {
+    console.error('OpenAI API error:', error);
+    return res.status(500).json({ 
+      error: 'Suggestion generation failed', 
+      details: error.message 
+    });
+  }
+});
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

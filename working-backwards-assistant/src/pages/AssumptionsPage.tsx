@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Box,
@@ -27,6 +27,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -36,15 +38,28 @@ import {
   ArrowDownward as ArrowDownwardIcon,
   ArrowForward,
   ArrowBack,
+  Save as SaveIcon,
 } from '@mui/icons-material';
 import { RootState } from '../store';
 import { addAssumption, updateAssumption, removeAssumption } from '../store/sessionSlice';
 import { Assumption } from '../types';
+import { useWorkingBackwards } from '../contexts/WorkingBackwardsContext';
+import { format } from 'date-fns';
 
 const AssumptionsPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { assumptions, prfaq } = useSelector((state: RootState) => state.session);
+  
+  // Working Backwards context
+  const { 
+    currentProcessId, 
+    saveCurrentProcess, 
+    isSaving, 
+    lastSaved,
+    error: processError
+  } = useWorkingBackwards();
   
   const [newAssumption, setNewAssumption] = useState<Omit<Assumption, 'id'>>({
     statement: '',
@@ -57,11 +72,35 @@ const AssumptionsPage: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
   
+  // Track if the content has been modified since last save
+  const [isModified, setIsModified] = useState(false);
+  
+  // Snackbar state
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'info' | 'warning' | 'error'>('info');
+  
   // Check if PRFAQ is filled
   const hasPRFAQ = prfaq.title && 
     (prfaq.pressRelease.summary || 
      prfaq.pressRelease.problem || 
      prfaq.pressRelease.solution);
+
+  // Reset modified flag when saving completes
+  useEffect(() => {
+    if (!isSaving && lastSaved) {
+      setIsModified(false);
+    }
+  }, [isSaving, lastSaved]);
+
+  // Show error message if process error occurs
+  useEffect(() => {
+    if (processError) {
+      setSnackbarMessage(`Error: ${processError}`);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
+  }, [processError]);
 
   // Get impact color
   const getImpactColor = (impact: 'high' | 'medium' | 'low') => {
@@ -142,6 +181,32 @@ const AssumptionsPage: React.FC = () => {
     setIsDialogOpen(false);
   };
 
+  // Handle snackbar close
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+
+  // Handle manual save
+  const handleManualSave = async () => {
+    if (currentProcessId) {
+      try {
+        await saveCurrentProcess();
+        setSnackbarMessage('Assumptions saved successfully');
+        setSnackbarSeverity('success');
+        setSnackbarOpen(true);
+      } catch (error) {
+        console.error('Error saving process:', error);
+        setSnackbarMessage('Failed to save assumptions');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+      }
+    } else {
+      setSnackbarMessage('No active process to save');
+      setSnackbarSeverity('warning');
+      setSnackbarOpen(true);
+    }
+  };
+
   // Handle add assumption
   const handleAddAssumption = () => {
     if (newAssumption.statement.trim()) {
@@ -153,6 +218,7 @@ const AssumptionsPage: React.FC = () => {
         priority: assumptions.length + 1,
       });
       setIsDialogOpen(false);
+      setIsModified(true);
     }
   };
 
@@ -168,6 +234,7 @@ const AssumptionsPage: React.FC = () => {
         },
       }));
       setIsDialogOpen(false);
+      setIsModified(true);
     }
   };
 
@@ -175,6 +242,7 @@ const AssumptionsPage: React.FC = () => {
   const handleDeleteAssumption = (id: string) => {
     if (window.confirm('Are you sure you want to delete this assumption?')) {
       dispatch(removeAssumption(id));
+      setIsModified(true);
     }
   };
 
@@ -193,6 +261,8 @@ const AssumptionsPage: React.FC = () => {
         id: prevAssumption.id,
         updates: { priority: prevAssumption.priority + 1 },
       }));
+      
+      setIsModified(true);
     }
   };
 
@@ -211,17 +281,43 @@ const AssumptionsPage: React.FC = () => {
         id: nextAssumption.id,
         updates: { priority: nextAssumption.priority - 1 },
       }));
+      
+      setIsModified(true);
     }
   };
 
   // Handle continue to experiments
   const handleContinueToExperiments = () => {
-    navigate('/experiments');
+    // Save before navigating
+    if (isModified && currentProcessId) {
+      saveCurrentProcess()
+        .then(() => navigate('/experiments'))
+        .catch(error => {
+          console.error('Error saving before navigation:', error);
+          setSnackbarMessage('Failed to save before navigating');
+          setSnackbarSeverity('error');
+          setSnackbarOpen(true);
+        });
+    } else {
+      navigate('/experiments');
+    }
   };
 
   // Handle back to PRFAQ
   const handleBackToPRFAQ = () => {
-    navigate('/prfaq');
+    // Save before navigating
+    if (isModified && currentProcessId) {
+      saveCurrentProcess()
+        .then(() => navigate('/prfaq'))
+        .catch(error => {
+          console.error('Error saving before navigation:', error);
+          setSnackbarMessage('Failed to save before navigating');
+          setSnackbarSeverity('error');
+          setSnackbarOpen(true);
+        });
+    } else {
+      navigate('/prfaq');
+    }
   };
 
   // Sort assumptions by priority
@@ -232,6 +328,35 @@ const AssumptionsPage: React.FC = () => {
       <Typography variant="h4" component="h1" gutterBottom>
         Key Assumptions
       </Typography>
+      
+      {/* Save status indicators */}
+      <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+        {isSaving && (
+          <Chip 
+            label="Saving..." 
+            color="primary" 
+            size="small" 
+            variant="outlined" 
+          />
+        )}
+        {lastSaved && !isModified && (
+          <Chip 
+            label={`Last saved: ${format(new Date(lastSaved), 'h:mm a')}`} 
+            color="success" 
+            size="small" 
+            variant="outlined" 
+          />
+        )}
+        {isModified && (
+          <Chip 
+            label="Unsaved changes" 
+            color="warning" 
+            size="small" 
+            variant="outlined" 
+          />
+        )}
+      </Box>
+      
       <Typography variant="body1" paragraph>
         Identify and prioritize the key assumptions in your PRFAQ. These are the things that must be true for your innovation to succeed.
       </Typography>
@@ -400,15 +525,28 @@ const AssumptionsPage: React.FC = () => {
         >
           Back to PRFAQ
         </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleContinueToExperiments}
-          endIcon={<ArrowForward />}
-          disabled={assumptions.length === 0}
-        >
-          Continue to Experiments
-        </Button>
+        
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={handleManualSave}
+            startIcon={<SaveIcon />}
+            disabled={isSaving || !isModified || !currentProcessId}
+          >
+            Save
+          </Button>
+          
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleContinueToExperiments}
+            endIcon={<ArrowForward />}
+            disabled={assumptions.length === 0}
+          >
+            Continue to Experiments
+          </Button>
+        </Box>
       </Box>
 
       {/* Add/Edit Assumption Dialog */}
@@ -473,6 +611,27 @@ const AssumptionsPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar 
+        open={snackbarOpen} 
+        autoHideDuration={6000} 
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        slotProps={{
+          content: {
+            sx: { width: '100%' }
+          }
+        }}
+      >
+        <Alert 
+          onClose={handleSnackbarClose} 
+          severity={snackbarSeverity}
+          variant="filled"
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

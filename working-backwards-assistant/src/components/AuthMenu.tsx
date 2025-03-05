@@ -37,9 +37,9 @@ const AuthMenu: React.FC = () => {
     }
   };
 
-  const handleSignIn = async () => {
+  const handleGoogleSignIn = async () => {
     try {
-      console.log('Starting Google sign-in process from AuthMenu...');
+      console.log('Starting Google sign-in process...');
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({
         prompt: 'select_account'
@@ -62,25 +62,25 @@ const AuthMenu: React.FC = () => {
 
   if (!user) {
     return (
-      <>
+      <Box sx={{ display: 'flex', gap: 1 }}>
         <Button
-          color="inherit"
-          onClick={handleSignIn}
+          color="secondary"
+          variant="outlined"
+          onClick={handleGoogleSignIn}
           sx={{
-            ml: 2,
             '&:hover': {
               backgroundColor: 'rgba(255, 255, 255, 0.1)',
             },
           }}
         >
-          Sign In
+          Sign in with Google
         </Button>
         {error && (
           <Box sx={{ color: 'error.main', ml: 2 }}>
             {error}
           </Box>
         )}
-      </>
+      </Box>
     );
   }
 

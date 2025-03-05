@@ -99,22 +99,26 @@ export const getWorkingBackwardsPrompt = (
   previousResponses: Record<string, string> = {},
   initialThoughts: string = ''
 ): string => {
-  const context = Object.entries(previousResponses)
-    .map(([key, value]) => `${key}: ${value}`)
-    .join('\n');
+  // Create context from previous responses
+  const contextParts = Object.entries(previousResponses).map(
+    ([key, value]) => `${key}: ${value}`
+  );
+  const context = contextParts.length > 0 ? `Previous responses:\n${contextParts.join('\n')}` : '';
 
+  // Format the prompt with context and initial thoughts
   return `
-You are an expert in Amazon's Working Backwards innovation methodology. 
-You're helping a user develop their innovation idea using this approach.
+You are helping a product team work through the "Working Backwards" process to develop a new product or feature.
 
-${context ? `Context from previous responses:\n${context}\n\n` : ''}
-${initialThoughts ? `Initial thoughts from the user:\n${initialThoughts}\n\n` : ''}
+${initialThoughts ? `The team has shared these initial thoughts about their idea:\n${initialThoughts}\n\n` : ''}
+${context ? `${context}\n\n` : ''}
 
-The current question is: "${question}"
+Please answer the following question about the product idea:
+${question}
 
-Please provide a thoughtful response that helps the user think deeply about this aspect of their innovation.
-Include 1-2 examples from well-known products or services to illustrate your points.
-End with 1-2 follow-up questions that will help the user refine their thinking.
+Your response should be concise (1-3 sentences), specific, and focused on the question.
+Format your response as a direct answer without any prefixes or explanations.
+Do not include phrases like "Based on the information provided" or "I would suggest".
+Just provide a clear, direct response that the team can use in their working backwards document.
 `;
 };
 

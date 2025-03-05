@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -13,6 +13,14 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  CircularProgress,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import {
   Description,
@@ -21,12 +29,87 @@ import {
   CheckCircle,
   QuestionAnswer,
 } from '@mui/icons-material';
+import { useWorkingBackwards } from '../contexts/WorkingBackwardsContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { createNewProcess } = useWorkingBackwards();
+  const { currentUser } = useAuth();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [processTitle, setProcessTitle] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('info');
 
   const handleGetStarted = () => {
-    navigate('/initial-thoughts');
+    if (currentUser) {
+      // Create a new process with default name instead of showing dialog
+      createProcessWithDefaultName();
+    } else {
+      // If not logged in, just navigate to initial thoughts
+      navigate('/initial-thoughts');
+    }
+  };
+
+  const createProcessWithDefaultName = async () => {
+    setIsCreating(true);
+    try {
+      const defaultTitle = "New Working Backwards";
+      const processId = await createNewProcess(defaultTitle);
+      
+      if (!processId) {
+        throw new Error("Failed to create process - no process ID returned");
+      }
+      
+      // Navigate to the initial thoughts page with the new process ID
+      navigate(`/initial-thoughts?process=${processId}`);
+    } catch (error) {
+      console.error('Error creating process:', error);
+      setSnackbarMessage('Failed to create process. Please try again.');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+      // If process creation fails, still navigate to initial thoughts
+      navigate('/initial-thoughts');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleCreateProcess = async () => {
+    if (!processTitle.trim()) {
+      setSnackbarMessage('Please enter a title for your process');
+      setSnackbarSeverity('warning');
+      setSnackbarOpen(true);
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const processId = await createNewProcess(processTitle);
+      setDialogOpen(false);
+      setProcessTitle('');
+      
+      // Navigate to the initial thoughts page with the new process ID
+      navigate(`/initial-thoughts?process=${processId}`);
+    } catch (error) {
+      console.error('Error creating process:', error);
+      setSnackbarMessage('Failed to create process. Please try again.');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setProcessTitle('');
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
   };
 
   return (
@@ -195,6 +278,55 @@ export default function LandingPage() {
           </Button>
         </Box>
       </Container>
+
+      {/* Create Process Dialog */}
+      <Dialog open={dialogOpen} onClose={handleCloseDialog}>
+        <DialogTitle>Create New Process</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Process Title"
+            fullWidth
+            variant="outlined"
+            value={processTitle}
+            onChange={(e) => setProcessTitle(e.target.value)}
+            placeholder="Enter a title for your new process"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button 
+            onClick={handleCreateProcess} 
+            variant="contained" 
+            color="primary"
+            disabled={isCreating}
+            startIcon={isCreating ? <CircularProgress size={20} /> : undefined}
+          >
+            {isCreating ? 'Creating...' : 'Create'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar 
+        open={snackbarOpen} 
+        autoHideDuration={6000} 
+        onClose={handleCloseSnackbar}
+        slotProps={{
+          content: {
+            sx: { width: '100%' }
+          }
+        }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbarSeverity}
+          variant="filled"
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 } 

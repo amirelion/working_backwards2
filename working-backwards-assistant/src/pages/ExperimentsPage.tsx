@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Box,
@@ -26,6 +26,8 @@ import {
   AccordionDetails,
   CircularProgress,
   Autocomplete,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -36,16 +38,29 @@ import {
   ArrowBack,
   CheckCircle,
   Psychology,
+  Save as SaveIcon,
 } from '@mui/icons-material';
 import { RootState } from '../store';
 import { addExperiment, updateExperiment, removeExperiment } from '../store/sessionSlice';
 import { getAIResponse, getExperimentSuggestionsPrompt } from '../services/aiService';
 import { Experiment } from '../types';
+import { useWorkingBackwards } from '../contexts/WorkingBackwardsContext';
+import { format } from 'date-fns';
 
 const ExperimentsPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { experiments, assumptions, prfaq } = useSelector((state: RootState) => state.session);
+  
+  // Working Backwards context
+  const { 
+    currentProcessId, 
+    saveCurrentProcess, 
+    isSaving, 
+    lastSaved,
+    error: processError
+  } = useWorkingBackwards();
   
   const [newExperiment, setNewExperiment] = useState<Omit<Experiment, 'id'>>({
     name: '',
@@ -62,6 +77,30 @@ const ExperimentsPage: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string>('');
   
+  // Track if the content has been modified since last save
+  const [isModified, setIsModified] = useState(false);
+  
+  // Snackbar state
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'info' | 'warning' | 'error'>('info');
+  
+  // Reset modified flag when saving completes
+  useEffect(() => {
+    if (!isSaving && lastSaved) {
+      setIsModified(false);
+    }
+  }, [isSaving, lastSaved]);
+
+  // Show error message if process error occurs
+  useEffect(() => {
+    if (processError) {
+      setSnackbarMessage(`Error: ${processError}`);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
+  }, [processError]);
+
   // Get status color
   const getStatusColor = (status: 'planned' | 'in-progress' | 'completed') => {
     switch (status) {
@@ -133,6 +172,7 @@ const ExperimentsPage: React.FC = () => {
         relatedAssumptions: [],
       });
       setIsDialogOpen(false);
+      setIsModified(true);
     }
   };
 
@@ -151,6 +191,7 @@ const ExperimentsPage: React.FC = () => {
         },
       }));
       setIsDialogOpen(false);
+      setIsModified(true);
     }
   };
 
@@ -158,6 +199,7 @@ const ExperimentsPage: React.FC = () => {
   const handleDeleteExperiment = (id: string) => {
     if (window.confirm('Are you sure you want to delete this experiment?')) {
       dispatch(removeExperiment(id));
+      setIsModified(true);
     }
   };
 
@@ -167,11 +209,41 @@ const ExperimentsPage: React.FC = () => {
       id,
       updates: { status },
     }));
+    setIsModified(true);
   };
 
   // Handle back to assumptions
   const handleBackToAssumptions = () => {
-    navigate('/assumptions');
+    // Save before navigating
+    if (isModified && currentProcessId) {
+      saveCurrentProcess()
+        .then(() => navigate('/assumptions'))
+        .catch(error => {
+          console.error('Error saving before navigation:', error);
+          setSnackbarMessage('Failed to save before navigating');
+          setSnackbarSeverity('error');
+          setSnackbarOpen(true);
+        });
+    } else {
+      navigate('/assumptions');
+    }
+  };
+
+  // Handle finish
+  const handleFinish = () => {
+    // Save before navigating
+    if (isModified && currentProcessId) {
+      saveCurrentProcess()
+        .then(() => navigate('/'))
+        .catch(error => {
+          console.error('Error saving before navigation:', error);
+          setSnackbarMessage('Failed to save before navigating');
+          setSnackbarSeverity('error');
+          setSnackbarOpen(true);
+        });
+    } else {
+      navigate('/');
+    }
   };
 
   // Generate experiment suggestions using AI
@@ -238,11 +310,66 @@ FAQs: ${prfaq.faq.map(faq => `Q: ${faq.question}\nA: ${faq.answer}`).join('\n\n'
     return assumption ? assumption.statement : 'Unknown assumption';
   };
 
+  // Handle snackbar close
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+
+  // Handle manual save
+  const handleManualSave = async () => {
+    if (currentProcessId) {
+      try {
+        await saveCurrentProcess();
+        setSnackbarMessage('Experiments saved successfully');
+        setSnackbarSeverity('success');
+        setSnackbarOpen(true);
+      } catch (error) {
+        console.error('Error saving process:', error);
+        setSnackbarMessage('Failed to save experiments');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+      }
+    } else {
+      setSnackbarMessage('No active process to save');
+      setSnackbarSeverity('warning');
+      setSnackbarOpen(true);
+    }
+  };
+
   return (
     <Container maxWidth="lg">
       <Typography variant="h4" component="h1" gutterBottom>
         Experiments
       </Typography>
+      
+      {/* Save status indicators */}
+      <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+        {isSaving && (
+          <Chip 
+            label="Saving..." 
+            color="primary" 
+            size="small" 
+            variant="outlined" 
+          />
+        )}
+        {lastSaved && !isModified && (
+          <Chip 
+            label={`Last saved: ${format(new Date(lastSaved), 'h:mm a')}`} 
+            color="success" 
+            size="small" 
+            variant="outlined" 
+          />
+        )}
+        {isModified && (
+          <Chip 
+            label="Unsaved changes" 
+            color="warning" 
+            size="small" 
+            variant="outlined" 
+          />
+        )}
+      </Box>
+      
       <Typography variant="body1" paragraph>
         Design experiments to test your key assumptions. Good experiments are quick, low-cost, and provide clear validation of your riskiest assumptions.
       </Typography>
@@ -453,14 +580,27 @@ FAQs: ${prfaq.faq.map(faq => `Q: ${faq.question}\nA: ${faq.answer}`).join('\n\n'
         >
           Back to Assumptions
         </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          endIcon={<CheckCircle />}
-          onClick={() => navigate('/')}
-        >
-          Finish
-        </Button>
+        
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={handleManualSave}
+            startIcon={<SaveIcon />}
+            disabled={isSaving || !isModified || !currentProcessId}
+          >
+            Save
+          </Button>
+          
+          <Button
+            variant="contained"
+            color="primary"
+            endIcon={<CheckCircle />}
+            onClick={handleFinish}
+          >
+            Finish
+          </Button>
+        </Box>
       </Box>
 
       {/* Add/Edit Experiment Dialog */}
@@ -558,6 +698,27 @@ FAQs: ${prfaq.faq.map(faq => `Q: ${faq.question}\nA: ${faq.answer}`).join('\n\n'
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar 
+        open={snackbarOpen} 
+        autoHideDuration={6000} 
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        slotProps={{
+          content: {
+            sx: { width: '100%' }
+          }
+        }}
+      >
+        <Alert 
+          onClose={handleSnackbarClose} 
+          severity={snackbarSeverity}
+          variant="filled"
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

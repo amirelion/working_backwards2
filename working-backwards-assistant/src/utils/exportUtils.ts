@@ -285,15 +285,19 @@ export const exportAsDocx = (prfaq: PRFAQ): void => {
 
 // Send PRFAQ via email
 export const sendViaEmail = (prfaq: PRFAQ, email?: string): void => {
-  const subject = encodeURIComponent(`${prfaq.title} - PRFAQ`);
-  const body = encodeURIComponent(prfaqToText(prfaq));
-  
-  // If email is provided, use mailto with to field
-  const mailtoLink = email 
-    ? `mailto:${email}?subject=${subject}&body=${body}`
-    : `mailto:?subject=${subject}&body=${body}`;
-  
-  window.open(mailtoLink);
+  console.log('sendViaEmail called');
+  try {
+    // Create a mailto link with the PRFAQ content
+    const subject = encodeURIComponent(`PRFAQ: ${prfaq.title}`);
+    const body = encodeURIComponent(prfaqToText(prfaq));
+    
+    // Open the default email client
+    window.location.href = `mailto:${email || ''}?subject=${subject}&body=${body}`;
+    console.log('Email client opened');
+  } catch (error) {
+    console.error('Error sending email:', error);
+    alert('Failed to open email client. Please try another export format.');
+  }
 };
 
 // Export PRFAQ as Markdown
@@ -313,24 +317,44 @@ export const exportAsMarkdown = (prfaq: PRFAQ): void => {
 
 // Main export function
 export const exportPRFAQ = (prfaq: PRFAQ, format: ExportFormat): void => {
-  switch (format) {
-    case 'pdf':
-      exportAsPdf(prfaq);
-      break;
-    case 'docx':
-      exportAsDocx(prfaq);
-      break;
-    case 'txt':
-      exportAsTxt(prfaq);
-      break;
-    case 'email':
-      sendViaEmail(prfaq);
-      break;
-    case 'markdown':
-      exportAsMarkdown(prfaq);
-      break;
-    default:
-      console.error(`Unsupported export format: ${format}`);
+  console.log('exportPRFAQ called with format:', format);
+  console.log('PRFAQ data:', {
+    title: prfaq.title,
+    date: prfaq.date,
+    pressReleaseKeys: Object.keys(prfaq.pressRelease || {}),
+    faqCount: prfaq.faq?.length || 0,
+    customerFaqCount: prfaq.customerFaqs?.length || 0,
+    stakeholderFaqCount: prfaq.stakeholderFaqs?.length || 0
+  });
+  
+  try {
+    switch (format) {
+      case 'pdf':
+        console.log('Exporting as PDF');
+        exportAsPdf(prfaq);
+        break;
+      case 'docx':
+        console.log('Exporting as DOCX');
+        exportAsDocx(prfaq);
+        break;
+      case 'txt':
+        console.log('Exporting as TXT');
+        exportAsTxt(prfaq);
+        break;
+      case 'email':
+        console.log('Sending via Email');
+        sendViaEmail(prfaq);
+        break;
+      case 'markdown':
+        console.log('Exporting as Markdown');
+        exportAsMarkdown(prfaq);
+        break;
+      default:
+        console.error(`Unsupported export format: ${format}`);
+    }
+    console.log('Export completed successfully');
+  } catch (error) {
+    console.error('Error in exportPRFAQ:', error);
   }
 };
 

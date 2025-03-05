@@ -20,6 +20,15 @@ import {
   Tooltip,
   Divider,
   Paper,
+  Menu,
+  MenuItem,
+  Chip,
+  Badge,
+  InputAdornment,
+  FormControl,
+  InputLabel,
+  Select,
+  SelectChangeEvent,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -31,10 +40,15 @@ import {
   Sort as SortIcon,
   Search as SearchIcon,
   MoreVert as MoreVertIcon,
+  CalendarToday as CalendarIcon,
+  Update as UpdateIcon,
+  Check as CheckIcon,
+  Clear as ClearIcon,
 } from '@mui/icons-material';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { useAuth } from '../contexts/AuthContext';
 import { useWorkingBackwards } from '../contexts/WorkingBackwardsContext';
+import * as workingBackwardsService from '../services/workingBackwardsService';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -45,7 +59,8 @@ const DashboardPage: React.FC = () => {
     createNewProcess,
     loadProcess,
     deleteProcess,
-    error
+    error,
+    isSaving
   } = useWorkingBackwards();
 
   // New process dialog state
@@ -59,7 +74,17 @@ const DashboardPage: React.FC = () => {
 
   // Filtering and sorting state
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'alphabetical'>('newest');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'alphabetical' | 'lastUpdated'>('lastUpdated');
+  const [filterType, setFilterType] = useState<'all' | 'recent' | 'completed'>('all');
+  
+  // Process menu state
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedProcessId, setSelectedProcessId] = useState<string | null>(null);
+  
+  // Rename dialog state
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [processToRename, setProcessToRename] = useState<string | null>(null);
 
   // Load processes on component mount
   useEffect(() => {
@@ -111,15 +136,96 @@ const DashboardPage: React.FC = () => {
       }
     }
   };
+  
+  // Handle renaming a process
+  const handleRenameProcess = async () => {
+    if (processToRename && newName.trim()) {
+      try {
+        await workingBackwardsService.renameProcess(processToRename, newName);
+        setRenameDialogOpen(false);
+        setProcessToRename(null);
+        setNewName('');
+      } catch (error) {
+        console.error('Error renaming process:', error);
+      }
+    }
+  };
+  
+  // Handle process menu open
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, processId: string) => {
+    event.stopPropagation();
+    setMenuAnchorEl(event.currentTarget);
+    setSelectedProcessId(processId);
+  };
+  
+  // Handle process menu close
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+    setSelectedProcessId(null);
+  };
+  
+  // Handle menu actions
+  const handleMenuAction = (action: 'open' | 'rename' | 'delete') => {
+    if (!selectedProcessId) return;
+    
+    switch (action) {
+      case 'open':
+        handleOpenProcess(selectedProcessId);
+        break;
+      case 'rename':
+        const processToRename = processes.find(p => p.id === selectedProcessId);
+        if (processToRename) {
+          setProcessToRename(selectedProcessId);
+          setNewName(processToRename.title);
+          setRenameDialogOpen(true);
+        }
+        break;
+      case 'delete':
+        setProcessToDelete(selectedProcessId);
+        setDeleteDialogOpen(true);
+        break;
+    }
+    
+    handleMenuClose();
+  };
+  
+  // Handle filter change
+  const handleFilterChange = (event: SelectChangeEvent<string>) => {
+    setFilterType(event.target.value as 'all' | 'recent' | 'completed');
+  };
+  
+  // Handle sort change
+  const handleSortChange = () => {
+    const sortOrders: ('newest' | 'oldest' | 'alphabetical' | 'lastUpdated')[] = 
+      ['lastUpdated', 'newest', 'oldest', 'alphabetical'];
+    const currentIndex = sortOrders.indexOf(sortOrder);
+    const nextIndex = (currentIndex + 1) % sortOrders.length;
+    setSortOrder(sortOrders[nextIndex]);
+  };
 
   // Filter and sort processes
   const filteredProcesses = processes
-    .filter((process) => process.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter((process) => {
+      // Apply search filter
+      const matchesSearch = process.title.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // Apply type filter
+      if (filterType === 'all') return matchesSearch;
+      if (filterType === 'recent') {
+        const isRecent = new Date().getTime() - process.updatedAt.getTime() < 7 * 24 * 60 * 60 * 1000; // 7 days
+        return matchesSearch && isRecent;
+      }
+      // For 'completed' we would need to add a completion status to the process type
+      // For now, we'll just return all processes
+      return matchesSearch;
+    })
     .sort((a, b) => {
       if (sortOrder === 'newest') {
-        return b.updatedAt.getTime() - a.updatedAt.getTime();
+        return b.createdAt.getTime() - a.createdAt.getTime();
       } else if (sortOrder === 'oldest') {
-        return a.updatedAt.getTime() - b.updatedAt.getTime();
+        return a.createdAt.getTime() - b.createdAt.getTime();
+      } else if (sortOrder === 'lastUpdated') {
+        return b.updatedAt.getTime() - a.updatedAt.getTime();
       } else {
         return a.title.localeCompare(b.title);
       }
@@ -174,7 +280,7 @@ const DashboardPage: React.FC = () => {
       
       {/* Controls Bar */}
       <Paper sx={{ p: 2, mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1, maxWidth: '70%' }}>
           <TextField
             size="small"
             placeholder="Search processes..."
@@ -182,15 +288,50 @@ const DashboardPage: React.FC = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             InputProps={{
               startAdornment: <SearchIcon color="action" sx={{ mr: 1 }} />,
+              endAdornment: searchQuery ? (
+                <InputAdornment position="end">
+                  <IconButton
+                    size="small"
+                    onClick={() => setSearchQuery('')}
+                    edge="end"
+                  >
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ) : null,
             }}
             sx={{ width: 250 }}
           />
-          <Tooltip title="Sort processes">
-            <IconButton onClick={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : sortOrder === 'oldest' ? 'alphabetical' : 'newest')}>
-              <SortIcon />
-            </IconButton>
+          
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel id="filter-label">Filter</InputLabel>
+            <Select
+              labelId="filter-label"
+              value={filterType}
+              label="Filter"
+              onChange={handleFilterChange}
+            >
+              <MenuItem value="all">All Processes</MenuItem>
+              <MenuItem value="recent">Recent (7 days)</MenuItem>
+              <MenuItem value="completed">Completed</MenuItem>
+            </Select>
+          </FormControl>
+          
+          <Tooltip title={`Sort by: ${sortOrder}`}>
+            <Button 
+              size="small" 
+              startIcon={<SortIcon />} 
+              onClick={handleSortChange}
+              variant="outlined"
+            >
+              {sortOrder === 'newest' && 'Newest First'}
+              {sortOrder === 'oldest' && 'Oldest First'}
+              {sortOrder === 'alphabetical' && 'A-Z'}
+              {sortOrder === 'lastUpdated' && 'Last Updated'}
+            </Button>
           </Tooltip>
         </Box>
+        
         <Button
           variant="contained"
           color="secondary"
@@ -248,39 +389,47 @@ const DashboardPage: React.FC = () => {
                   }
                 }}
               >
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Box display="flex" alignItems="center" mb={1}>
-                    <FolderIcon color="primary" sx={{ mr: 1 }} />
-                    <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+                <CardContent sx={{ flexGrow: 1, cursor: 'pointer' }} onClick={() => handleOpenProcess(process.id)}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                    <Typography variant="h6" component="h2" noWrap sx={{ maxWidth: '80%' }}>
                       {process.title}
                     </Typography>
+                    <IconButton 
+                      size="small" 
+                      onClick={(e) => handleMenuOpen(e, process.id)}
+                      aria-label="process options"
+                    >
+                      <MoreVertIcon />
+                    </IconButton>
                   </Box>
+                  
                   <Divider sx={{ my: 1 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Last updated: {format(process.updatedAt, 'MMM d, yyyy')}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Created: {format(process.createdAt, 'MMM d, yyyy')}
-                  </Typography>
+                  
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CalendarIcon fontSize="small" color="action" />
+                      <Typography variant="body2" color="text.secondary">
+                        Created: {format(process.createdAt, 'MMM d, yyyy')}
+                      </Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <UpdateIcon fontSize="small" color="action" />
+                      <Typography variant="body2" color="text.secondary">
+                        Updated: {formatDistanceToNow(process.updatedAt, { addSuffix: true })}
+                      </Typography>
+                    </Box>
+                  </Box>
                 </CardContent>
-                <CardActions sx={{ justifyContent: 'space-between', p: 2 }}>
+                
+                <CardActions sx={{ justifyContent: 'flex-end', p: 2, pt: 0 }}>
                   <Button
+                    size="small"
                     startIcon={<LaunchIcon />}
                     onClick={() => handleOpenProcess(process.id)}
-                    size="small"
                   >
                     Open
                   </Button>
-                  <IconButton 
-                    color="error" 
-                    size="small"
-                    onClick={() => {
-                      setProcessToDelete(process.id);
-                      setDeleteDialogOpen(true);
-                    }}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
                 </CardActions>
               </Card>
             </Grid>
@@ -288,54 +437,47 @@ const DashboardPage: React.FC = () => {
         </Grid>
       ) : (
         <Box textAlign="center" py={8}>
-          <Typography variant="h6" gutterBottom>
-            No Working Backwards processes found
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            No processes found
           </Typography>
           <Typography variant="body1" color="text.secondary" paragraph>
-            {searchQuery 
-              ? "No processes match your search query. Try a different search term."
-              : "Start by creating your first Working Backwards process!"
-            }
+            {searchQuery ? 'Try a different search term' : 'Create your first Working Backwards process'}
           </Typography>
           {!searchQuery && (
             <Button
               variant="contained"
-              color="secondary"
+              color="primary"
               startIcon={<AddIcon />}
               onClick={() => setOpenNewDialog(true)}
               disabled={!canCreateProcess}
             >
-              Create New Process
+              Create Process
             </Button>
           )}
         </Box>
       )}
       
       {/* New Process Dialog */}
-      <Dialog open={openNewDialog} onClose={() => !isCreating && setOpenNewDialog(false)}>
-        <DialogTitle>Create New Working Backwards Process</DialogTitle>
+      <Dialog open={openNewDialog} onClose={() => setOpenNewDialog(false)}>
+        <DialogTitle>Create New Process</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Give your new Working Backwards process a name. This will help you identify it later.
+            Enter a title for your new Working Backwards process.
           </DialogContentText>
           <TextField
             autoFocus
             margin="dense"
+            id="name"
             label="Process Title"
             type="text"
             fullWidth
+            variant="outlined"
             value={newProcessTitle}
             onChange={(e) => setNewProcessTitle(e.target.value)}
-            disabled={isCreating}
           />
         </DialogContent>
         <DialogActions>
-          <Button 
-            onClick={() => setOpenNewDialog(false)} 
-            disabled={isCreating}
-          >
-            Cancel
-          </Button>
+          <Button onClick={() => setOpenNewDialog(false)}>Cancel</Button>
           <Button 
             onClick={handleCreateProcess} 
             variant="contained" 
@@ -348,22 +490,79 @@ const DashboardPage: React.FC = () => {
       </Dialog>
       
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>Delete Process</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete this Working Backwards process? This action cannot be undone.
+            Are you sure you want to delete this process? This action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleConfirmDelete} color="error" variant="contained">
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleConfirmDelete} color="error">
             Delete
           </Button>
         </DialogActions>
       </Dialog>
+      
+      {/* Rename Process Dialog */}
+      <Dialog
+        open={renameDialogOpen}
+        onClose={() => setRenameDialogOpen(false)}
+      >
+        <DialogTitle>Rename Process</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Enter a new name for this process.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            id="rename"
+            label="New Process Title"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRenameDialogOpen(false)}>Cancel</Button>
+          <Button 
+            onClick={handleRenameProcess} 
+            variant="contained" 
+            color="primary"
+            disabled={!newName.trim()}
+          >
+            Rename
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Process Menu */}
+      <Menu
+        anchorEl={menuAnchorEl}
+        open={Boolean(menuAnchorEl)}
+        onClose={handleMenuClose}
+      >
+        <MenuItem onClick={() => handleMenuAction('open')}>
+          <LaunchIcon fontSize="small" sx={{ mr: 1 }} />
+          Open
+        </MenuItem>
+        <MenuItem onClick={() => handleMenuAction('rename')}>
+          <EditIcon fontSize="small" sx={{ mr: 1 }} />
+          Rename
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={() => handleMenuAction('delete')} sx={{ color: 'error.main' }}>
+          <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+          Delete
+        </MenuItem>
+      </Menu>
     </Container>
   );
 };

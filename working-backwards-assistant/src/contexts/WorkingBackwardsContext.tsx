@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useRecoilState } from 'recoil';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useRecoilState, useRecoilValue } from 'recoil';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { initialThoughtsState } from '../atoms/initialThoughtsState';
@@ -9,6 +9,7 @@ import * as workingBackwardsService from '../services/workingBackwardsService';
 import { useSelector, useDispatch } from 'react-redux';
 import { updatePRFAQTitle, updatePRFAQPressRelease, setFAQs, setCustomerFAQs, setStakeholderFAQs, PRFAQState } from '../store/prfaqSlice';
 import { RootState } from '../store';
+import { debounce } from 'lodash';
 
 interface WorkingBackwardsContextType {
   // Current process management
@@ -25,8 +26,12 @@ interface WorkingBackwardsContextType {
   saveCurrentProcess: () => Promise<void>;
   deleteProcess: (processId: string) => Promise<void>;
   
-  // Error handling
+  // Status indicators
   error: string | null;
+  isSaving: boolean;
+  lastSaved: Date | null;
+  isModified: boolean;
+  setIsModified: (isModified: boolean) => void;
 }
 
 const WorkingBackwardsContext = createContext<WorkingBackwardsContextType | null>(null);
@@ -49,6 +54,9 @@ export function WorkingBackwardsProvider({ children }: { children: React.ReactNo
   const [processes, setProcesses] = useState<WorkingBackwardsProcessSummary[]>([]);
   const [loadingProcesses, setLoadingProcesses] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isModified, setIsModified] = useState<boolean>(false);
   
   // State from Recoil and Redux
   const [initialThoughts, setInitialThoughts] = useRecoilState(initialThoughtsState);
@@ -93,9 +101,15 @@ export function WorkingBackwardsProvider({ children }: { children: React.ReactNo
       unsubscribe = workingBackwardsService.subscribeToProcess(
         currentProcessId,
         (process) => {
+          // Update state with process data
           if (process) {
+            // Reset modified flag when loading a process
+            setIsModified(false);
+            
             // Update initial thoughts
-            setInitialThoughts(process.initialThoughts || '');
+            if (process.initialThoughts) {
+              setInitialThoughts(process.initialThoughts);
+            }
             
             // Update working backwards questions
             setWorkingBackwardsQuestions(process.workingBackwardsQuestions || {
@@ -107,21 +121,33 @@ export function WorkingBackwardsProvider({ children }: { children: React.ReactNo
               aiSuggestions: {}
             });
             
-            // Update PRFAQ if it exists
+            // Update PRFAQ state
             if (process.prfaq) {
-              // Update title
-              dispatch(updatePRFAQTitle(process.prfaq.title));
+              // Set title
+              dispatch(updatePRFAQTitle(process.prfaq.title || ''));
               
-              // Update press release
-              Object.entries(process.prfaq.pressRelease).forEach(([key, value]) => {
-                dispatch(updatePRFAQPressRelease({ 
-                  field: key as keyof PRFAQState['pressRelease'], 
-                  value 
+              // Map Firebase fields to Redux fields
+              const fieldMappings: Record<string, keyof PRFAQState['pressRelease']> = {
+                'introduction': 'introduction',
+                'problemStatement': 'problemStatement',
+                'solution': 'solution',
+                'stakeholderQuote': 'stakeholderQuote',
+                'customerJourney': 'introduction', // Map to introduction as fallback
+                'customerQuote': 'customerQuote',
+                'callToAction': 'callToAction'
+              };
+              
+              // Update press release fields
+              Object.entries(fieldMappings).forEach(([firebaseField, reduxField]) => {
+                const value = process.prfaq?.pressRelease[firebaseField as keyof typeof process.prfaq.pressRelease] || '';
+                dispatch(updatePRFAQPressRelease({
+                  field: reduxField,
+                  value
                 }));
               });
               
               // Update FAQs
-              dispatch(setFAQs(process.prfaq.internalFaqs || []));
+              dispatch(setFAQs([]));
               dispatch(setCustomerFAQs(process.prfaq.customerFaqs || []));
               dispatch(setStakeholderFAQs(process.prfaq.stakeholderFaqs || []));
             }
@@ -141,6 +167,13 @@ export function WorkingBackwardsProvider({ children }: { children: React.ReactNo
     };
   }, [currentProcessId, dispatch, setInitialThoughts, setWorkingBackwardsQuestions]);
   
+  // Update isModified when state changes
+  useEffect(() => {
+    if (currentProcessId) {
+      setIsModified(true);
+    }
+  }, [initialThoughts, workingBackwardsQuestions, prfaq, currentProcessId]);
+  
   // Create a new process
   const createNewProcess = async (title: string): Promise<string> => {
     if (!currentUser) {
@@ -153,6 +186,8 @@ export function WorkingBackwardsProvider({ children }: { children: React.ReactNo
         title,
         initialThoughts
       );
+      setCurrentProcessId(processId);
+      setLastSaved(new Date());
       return processId;
     } catch (error) {
       console.error('Error creating process:', error);
@@ -163,72 +198,236 @@ export function WorkingBackwardsProvider({ children }: { children: React.ReactNo
   
   // Load a process into state
   const loadProcess = async (processId: string): Promise<void> => {
+    console.log('Loading process:', processId);
+    
+    if (!currentUser) {
+      console.error('Cannot load process - no current user');
+      throw new Error('Cannot load process - no current user');
+    }
+    
+    setIsSaving(true);
     setError(null);
-    setCurrentProcessId(processId);
     
     try {
       const process = await workingBackwardsService.getProcessById(processId);
-      if (process) {
-        // Update all the state
-        setInitialThoughts(process.initialThoughts || '');
-        setWorkingBackwardsQuestions(process.workingBackwardsQuestions);
-        dispatch(updatePRFAQTitle(process.prfaq?.title || ''));
-        
-        // Update each press release field individually
-        if (process.prfaq?.pressRelease) {
-          const fields = [
-            'date', 'location', 'headline', 'subheadline', 'introduction',
-            'problemStatement', 'solution', 'customerQuote', 'stakeholderQuote',
-            'callToAction', 'aboutCompany'
-          ] as const;
-          
-          fields.forEach(field => {
-            dispatch(updatePRFAQPressRelease({
-              field,
-              value: process.prfaq?.pressRelease[field] || ''
-            }));
-          });
-        }
-
-        if (process.prfaq) {
-          dispatch(setFAQs(process.prfaq.internalFaqs || []));
-          dispatch(setCustomerFAQs(process.prfaq.customerFaqs || []));
-          dispatch(setStakeholderFAQs(process.prfaq.stakeholderFaqs || []));
-        }
+      
+      if (!process) {
+        console.error('Process not found:', processId);
+        setError('Process not found');
+        throw new Error('Process not found');
       }
+      
+      if (process.userId !== currentUser.uid) {
+        console.error('Process belongs to another user');
+        setError('You do not have permission to access this process');
+        throw new Error('Process belongs to another user');
+      }
+      
+      console.log('Process loaded:', process);
+      
+      // Set the current process ID
+      setCurrentProcessId(processId);
+      
+      // Set the initial thoughts
+      setInitialThoughts(process.initialThoughts || '');
+      
+      // Set the working backwards questions
+      setWorkingBackwardsQuestions(process.workingBackwardsQuestions || {
+        customer: '',
+        problem: '',
+        benefit: '',
+        validation: '',
+        experience: '',
+        aiSuggestions: {}
+      });
+      
+      // Set the PRFAQ data in Redux
+      if (process.prfaq) {
+        dispatch(updatePRFAQTitle(process.prfaq.title || ''));
+        
+        // Set press release fields
+        if (process.prfaq.pressRelease) {
+          dispatch(updatePRFAQPressRelease({
+            field: 'introduction',
+            value: process.prfaq.pressRelease.introduction || ''
+          }));
+          dispatch(updatePRFAQPressRelease({
+            field: 'problemStatement',
+            value: process.prfaq.pressRelease.problemStatement || ''
+          }));
+          dispatch(updatePRFAQPressRelease({
+            field: 'solution',
+            value: process.prfaq.pressRelease.solution || ''
+          }));
+          dispatch(updatePRFAQPressRelease({
+            field: 'stakeholderQuote',
+            value: process.prfaq.pressRelease.stakeholderQuote || ''
+          }));
+          dispatch(updatePRFAQPressRelease({
+            field: 'customerJourney',
+            value: process.prfaq.pressRelease.customerJourney || ''
+          }));
+          dispatch(updatePRFAQPressRelease({
+            field: 'customerQuote',
+            value: process.prfaq.pressRelease.customerQuote || ''
+          }));
+          dispatch(updatePRFAQPressRelease({
+            field: 'callToAction',
+            value: process.prfaq.pressRelease.callToAction || ''
+          }));
+        }
+        
+        // Set FAQs - use empty array
+        dispatch(setFAQs([]));
+        
+        // Set customer FAQs
+        dispatch(setCustomerFAQs(process.prfaq.customerFaqs || []));
+        
+        // Set stakeholder FAQs
+        dispatch(setStakeholderFAQs(process.prfaq.stakeholderFaqs || []));
+      }
+      
+      setLastSaved(new Date(process.updatedAt));
+      setIsModified(false);
     } catch (error) {
       console.error('Error loading process:', error);
-      setError('Failed to load process');
       throw error;
+    } finally {
+      setIsSaving(false);
     }
   };
   
-  // Save current process
-  const saveCurrentProcess = async (): Promise<void> => {
+  // Wrap saveCurrentProcess in useCallback to prevent it from changing on every render
+  const saveCurrentProcess = useCallback(async (): Promise<void> => {
+    console.log('saveCurrentProcess called with:', {
+      hasCurrentUser: !!currentUser,
+      currentUserId: currentUser?.uid,
+      currentProcessId,
+      initialThoughtsLength: initialThoughts?.length || 0,
+      workingBackwardsQuestionsKeys: Object.keys(workingBackwardsQuestions || {}),
+      prfaqTitle: prfaq?.title
+    });
+    
     if (!currentUser || !currentProcessId) {
+      console.error('Cannot save process - no current process or user', {
+        hasCurrentUser: !!currentUser,
+        currentProcessId
+      });
       throw new Error('Cannot save process - no current process or user');
     }
     
+    // Skip saving if nothing has changed
+    if (!isModified) {
+      console.log('No changes detected, skipping save');
+      return;
+    }
+    
+    setIsSaving(true);
     try {
+      console.log('Preparing process data for save...');
+      
+      // Map the Redux PRFAQ state to the Firebase structure
+      const mappedPrfaq = {
+        title: prfaq.title,
+        pressRelease: {
+          introduction: prfaq.pressRelease.introduction,
+          problemStatement: prfaq.pressRelease.problemStatement,
+          solution: prfaq.pressRelease.solution,
+          stakeholderQuote: prfaq.pressRelease.stakeholderQuote,
+          customerJourney: prfaq.pressRelease.customerJourney, // Use customerJourney field
+          customerQuote: prfaq.pressRelease.customerQuote,
+          callToAction: prfaq.pressRelease.callToAction
+        },
+        // No internalFaqs field
+        customerFaqs: prfaq.customerFaqs,
+        stakeholderFaqs: prfaq.stakeholderFaqs
+      };
+      
       const processData: Partial<WorkingBackwardsProcess> = {
         initialThoughts,
         workingBackwardsQuestions,
-        prfaq: {
-          title: prfaq.title,
-          pressRelease: prfaq.pressRelease,
-          internalFaqs: prfaq.faqs,
-          customerFaqs: prfaq.customerFaqs,
-          stakeholderFaqs: prfaq.stakeholderFaqs
-        }
+        prfaq: mappedPrfaq
       };
       
+      console.log('Saving process data:', {
+        processId: currentProcessId,
+        dataKeys: Object.keys(processData)
+      });
+      
       await workingBackwardsService.updateProcess(currentProcessId, processData);
+      console.log('Process saved successfully');
+      
+      setLastSaved(new Date());
+      setIsModified(false);
     } catch (error) {
       console.error('Error saving process:', error);
       setError('Failed to save process');
       throw error;
+    } finally {
+      setIsSaving(false);
     }
-  };
+  }, [
+    currentUser, 
+    currentProcessId, 
+    initialThoughts, 
+    workingBackwardsQuestions, 
+    prfaq,
+    isModified,
+    setIsSaving, 
+    setLastSaved, 
+    setIsModified, 
+    setError
+  ]);
+  
+  // Debounced save function
+  const debouncedSave = useCallback(
+    debounce(async () => {
+      if (currentProcessId && currentUser) {
+        try {
+          setIsSaving(true);
+          const processData: Partial<WorkingBackwardsProcess> = {
+            initialThoughts,
+            workingBackwardsQuestions,
+            prfaq: {
+              title: prfaq.title,
+              pressRelease: {
+                introduction: prfaq.pressRelease.introduction,
+                problemStatement: prfaq.pressRelease.problemStatement,
+                solution: prfaq.pressRelease.solution,
+                stakeholderQuote: prfaq.pressRelease.stakeholderQuote,
+                customerJourney: prfaq.pressRelease.customerJourney,
+                customerQuote: prfaq.pressRelease.customerQuote,
+                callToAction: prfaq.pressRelease.callToAction
+              },
+              customerFaqs: prfaq.customerFaqs,
+              stakeholderFaqs: prfaq.stakeholderFaqs
+            }
+          };
+          
+          await workingBackwardsService.updateProcess(currentProcessId, processData);
+          setLastSaved(new Date());
+          setError(null);
+        } catch (error) {
+          console.error('Error auto-saving process:', error);
+          setError('Failed to auto-save process');
+        } finally {
+          setIsSaving(false);
+        }
+      }
+    }, 5000),
+    [currentProcessId, currentUser, initialThoughts, workingBackwardsQuestions, prfaq]
+  );
+  
+  // Auto-save when state changes
+  useEffect(() => {
+    if (currentProcessId && currentUser) {
+      debouncedSave();
+    }
+    
+    return () => {
+      debouncedSave.cancel();
+    };
+  }, [currentProcessId, currentUser, initialThoughts, workingBackwardsQuestions, prfaq, debouncedSave]);
   
   // Delete a process
   const deleteProcess = async (processId: string): Promise<void> => {
@@ -246,6 +445,17 @@ export function WorkingBackwardsProvider({ children }: { children: React.ReactNo
     }
   };
   
+  // Set up auto-save with debounce
+  useEffect(() => {
+    if (!currentProcessId || !isModified) return;
+    
+    const saveTimer = setTimeout(() => {
+      saveCurrentProcess();
+    }, 5000); // Increased from 2000ms to 5000ms to give more time for AI generation
+    
+    return () => clearTimeout(saveTimer);
+  }, [currentProcessId, isModified, saveCurrentProcess]);
+  
   const value = {
     currentProcessId,
     setCurrentProcessId,
@@ -255,7 +465,11 @@ export function WorkingBackwardsProvider({ children }: { children: React.ReactNo
     loadProcess,
     saveCurrentProcess,
     deleteProcess,
-    error
+    error,
+    isSaving,
+    lastSaved,
+    isModified,
+    setIsModified
   };
   
   return (

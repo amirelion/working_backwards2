@@ -12,22 +12,14 @@ export interface WorkingBackwardsProcess {
   prfaq?: {
     title: string;
     pressRelease: {
-      date: string;
-      location: string;
-      headline: string;
-      subheadline: string;
       introduction: string;
       problemStatement: string;
       solution: string;
-      customerQuote: string;
       stakeholderQuote: string;
+      customerJourney: string;
+      customerQuote: string;
       callToAction: string;
-      aboutCompany: string;
     };
-    internalFaqs: Array<{
-      question: string;
-      answer: string;
-    }>;
     customerFaqs: Array<{
       question: string;
       answer: string;
