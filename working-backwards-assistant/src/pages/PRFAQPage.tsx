@@ -1185,10 +1185,14 @@ const PRFAQPage: React.FC = () => {
   }) => {
     const hasContent = value && value.trim().length > 0;
     const [localValue, setLocalValue] = React.useState(value);
+    const inputRef = React.useRef<HTMLTextAreaElement>(null);
     
     // Update local value when prop value changes (for initial load or external changes)
+    // But only if the field doesn't have focus to prevent losing focus while typing
     React.useEffect(() => {
-      setLocalValue(value);
+      if (document.activeElement !== inputRef.current) {
+        setLocalValue(value);
+      }
     }, [value]);
     
     // Handle local changes without losing focus
@@ -1196,28 +1200,12 @@ const PRFAQPage: React.FC = () => {
       setLocalValue(e.target.value);
     };
     
-    // Update parent state when user finishes typing (onBlur)
+    // Update parent state only when user finishes typing (onBlur)
     const handleBlur = () => {
       if (localValue !== value) {
         onChange({ target: { value: localValue } } as React.ChangeEvent<HTMLTextAreaElement>);
       }
     };
-    
-    // Also update after typing stops for a short period
-    const debouncedUpdate = React.useCallback(
-      debounce(() => {
-        if (localValue !== value) {
-          onChange({ target: { value: localValue } } as React.ChangeEvent<HTMLTextAreaElement>);
-        }
-      }, 1000),
-      [localValue, value, onChange]
-    );
-    
-    // Call debounced update when local value changes
-    React.useEffect(() => {
-      debouncedUpdate();
-      return () => debouncedUpdate.cancel();
-    }, [localValue, debouncedUpdate]);
     
     return (
       <Grid item xs={12}>
@@ -1234,6 +1222,13 @@ const PRFAQPage: React.FC = () => {
             onChange={handleLocalChange}
             onBlur={handleBlur}
             placeholder={placeholder}
+            inputRef={inputRef}
+            InputProps={{
+              // This helps maintain focus in MUI components
+              inputProps: {
+                ref: inputRef
+              }
+            }}
           />
           <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mt: 1 }}>
             <Button
