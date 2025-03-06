@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import {
   Paper,
   Box,
@@ -6,6 +6,7 @@ import {
   IconButton,
   TextField,
   Button,
+  CircularProgress,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -13,6 +14,9 @@ import {
   Save as SaveIcon,
 } from '@mui/icons-material';
 import { FAQ } from '../../../../types';
+
+// Lazy-loaded ReactQuill component
+const LazyReactQuill = lazy(() => import('react-quill'));
 
 interface FAQItemProps {
   faq: FAQ;
@@ -22,14 +26,7 @@ interface FAQItemProps {
   onDelete: (index: number) => void;
   onUpdate: (index: number, field: 'question' | 'answer', value: string) => void;
   onSave: () => void;
-  reactQuillComponent: React.FC<{
-    value: string;
-    onChange: (value: string) => void;
-    style?: React.CSSProperties;
-    visible?: boolean;
-  }>;
-  tabValue: number;
-  currentTabIndex: number;
+  disabled?: boolean;
 }
 
 /**
@@ -43,9 +40,7 @@ export const FAQItem: React.FC<FAQItemProps> = ({
   onDelete,
   onUpdate,
   onSave,
-  reactQuillComponent: ReactQuill,
-  tabValue,
-  currentTabIndex,
+  disabled = false,
 }) => {
   return (
     <Paper key={index} sx={{ p: 2, mb: 2 }}>
@@ -59,17 +54,30 @@ export const FAQItem: React.FC<FAQItemProps> = ({
             value={faq.question}
             onChange={(e) => onUpdate(index, 'question', e.target.value)}
             sx={{ mb: 2 }}
+            disabled={disabled}
           />
           <Typography variant="subtitle2" gutterBottom>
             Answer
           </Typography>
           <Box sx={{ mb: 2 }}>
-            <ReactQuill
-              value={faq.answer}
-              onChange={(value) => onUpdate(index, 'answer', value)}
-              style={{ height: '150px', marginBottom: '50px' }}
-              visible={tabValue === currentTabIndex}
-            />
+            <Suspense fallback={<div style={{ height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CircularProgress />
+            </div>}>
+              <LazyReactQuill
+                value={faq.answer}
+                onChange={(value) => onUpdate(index, 'answer', value)}
+                style={{ height: '150px', marginBottom: '50px' }}
+                modules={{
+                  toolbar: [
+                    [{ 'header': [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['link'],
+                    ['clean']
+                  ],
+                }}
+              />
+            </Suspense>
           </Box>
           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
             <Button
@@ -77,6 +85,7 @@ export const FAQItem: React.FC<FAQItemProps> = ({
               color="primary"
               onClick={onSave}
               startIcon={<SaveIcon />}
+              disabled={disabled}
             >
               Save
             </Button>
@@ -90,10 +99,10 @@ export const FAQItem: React.FC<FAQItemProps> = ({
               Q: {faq.question}
             </Typography>
             <Box>
-              <IconButton size="small" onClick={() => onEdit(index)}>
+              <IconButton size="small" onClick={() => onEdit(index)} disabled={disabled}>
                 <EditIcon fontSize="small" />
               </IconButton>
-              <IconButton size="small" onClick={() => onDelete(index)}>
+              <IconButton size="small" onClick={() => onDelete(index)} disabled={disabled}>
                 <DeleteIcon fontSize="small" />
               </IconButton>
             </Box>

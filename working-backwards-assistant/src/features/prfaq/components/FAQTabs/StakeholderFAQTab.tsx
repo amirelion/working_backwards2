@@ -1,58 +1,53 @@
 import React from 'react';
 import { Card, CardContent, Typography, Box } from '@mui/material';
 import { FAQ } from '../../../../types';
+import { PRFAQState } from '../../../../store/prfaqSlice';
 import FAQList from './FAQList';
 import { FAQForm, FAQGenerate } from './FAQForm';
 
-interface StakeholderFAQTabProps {
-  isPRFAQEmpty: boolean;
-  stakeholderFaqs: FAQ[];
-  editingStakeholderFAQIndex: number;
+export interface StakeholderFAQTabProps {
+  prfaq: PRFAQState;
   newStakeholderFAQ: FAQ;
+  editingStakeholderFAQIndex: number;
   stakeholderFaqComment: string;
-  tabValue: number;
-  onEditStakeholderFAQ: (index: number) => void;
-  onDeleteStakeholderFAQ: (index: number) => void;
-  onUpdateStakeholderFAQ: (index: number, field: 'question' | 'answer', value: string) => void;
-  onSaveStakeholderFAQ: () => void;
-  onStakeholderFAQQuestionChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onStakeholderFAQAnswerChange: (value: string) => void;
-  onStakeholderFaqCommentChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onGenerateStakeholderFAQs: () => void;
-  onGenerateSingleStakeholderFAQ: () => void;
-  isGeneratingStakeholderFAQ: boolean;
-  hasWorkingBackwardsResponses: boolean;
-  reactQuillComponent: React.FC<{
-    value: string;
-    onChange: (value: string) => void;
-    style?: React.CSSProperties;
-    visible?: boolean;
-  }>;
+  onQuestionChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onAnswerChange: (value: string) => void;
+  onSaveFAQ: () => void;
+  onEditFAQ: (index: number) => void;
+  onDeleteFAQ: (index: number) => void;
+  onCommentChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onUpdateFAQ: (index: number, field: 'question' | 'answer', value: string) => void;
+  onGenerateFAQs: () => void;
+  onGenerateSingleFAQ: () => void;
+  isGenerating: boolean;
+  disabled?: boolean;
 }
 
 /**
  * Component for the Stakeholder FAQ tab
  */
 export const StakeholderFAQTab: React.FC<StakeholderFAQTabProps> = ({
-  isPRFAQEmpty,
-  stakeholderFaqs,
-  editingStakeholderFAQIndex,
+  prfaq,
   newStakeholderFAQ,
+  editingStakeholderFAQIndex,
   stakeholderFaqComment,
-  tabValue,
-  onEditStakeholderFAQ,
-  onDeleteStakeholderFAQ,
-  onUpdateStakeholderFAQ,
-  onSaveStakeholderFAQ,
-  onStakeholderFAQQuestionChange,
-  onStakeholderFAQAnswerChange,
-  onStakeholderFaqCommentChange,
-  onGenerateStakeholderFAQs,
-  onGenerateSingleStakeholderFAQ,
-  isGeneratingStakeholderFAQ,
-  hasWorkingBackwardsResponses,
-  reactQuillComponent,
+  onQuestionChange,
+  onAnswerChange,
+  onSaveFAQ,
+  onEditFAQ,
+  onDeleteFAQ,
+  onCommentChange,
+  onUpdateFAQ,
+  onGenerateFAQs,
+  onGenerateSingleFAQ,
+  isGenerating,
+  disabled = false,
 }) => {
+  const isPRFAQEmpty = !prfaq.title || 
+    !prfaq.pressRelease.introduction || 
+    !prfaq.pressRelease.problemStatement || 
+    !prfaq.pressRelease.solution;
+
   return (
     <Card>
       <CardContent>
@@ -60,7 +55,7 @@ export const StakeholderFAQTab: React.FC<StakeholderFAQTabProps> = ({
           Stakeholder Frequently Asked Questions
         </Typography>
         <Typography variant="body2" color="text.secondary" paragraph>
-          Add questions and answers that address strategic concerns, risks, and implementation details that internal stakeholders (investors, executives, team members) might have.
+          Add questions and answers that address concerns from internal stakeholders such as executives, legal, marketing, finance, and engineering.
         </Typography>
 
         {isPRFAQEmpty ? (
@@ -73,38 +68,34 @@ export const StakeholderFAQTab: React.FC<StakeholderFAQTabProps> = ({
           <>
             {/* Existing Stakeholder FAQs */}
             <FAQList
-              faqs={stakeholderFaqs}
+              faqs={prfaq.stakeholderFaqs}
               editingIndex={editingStakeholderFAQIndex}
-              onEdit={onEditStakeholderFAQ}
-              onDelete={onDeleteStakeholderFAQ}
-              onUpdate={onUpdateStakeholderFAQ}
-              onSave={onSaveStakeholderFAQ}
-              reactQuillComponent={reactQuillComponent}
-              tabValue={tabValue}
-              currentTabIndex={2}
+              onEdit={onEditFAQ}
+              onDelete={onDeleteFAQ}
+              onUpdate={onUpdateFAQ}
+              onSave={onSaveFAQ}
+              disabled={disabled}
               emptyMessage="No stakeholder FAQs added yet. Generate FAQs or add your first FAQ below."
             />
 
             {/* Generate Stakeholder FAQs */}
             <FAQGenerate
               comment={stakeholderFaqComment}
-              onCommentChange={onStakeholderFaqCommentChange}
-              onGenerateMultiple={onGenerateStakeholderFAQs}
-              onGenerateSingle={onGenerateSingleStakeholderFAQ}
-              isGenerating={isGeneratingStakeholderFAQ}
-              isDisabled={!hasWorkingBackwardsResponses}
+              onCommentChange={onCommentChange}
+              onGenerateMultiple={onGenerateFAQs}
+              onGenerateSingle={onGenerateSingleFAQ}
+              isGenerating={isGenerating}
+              isDisabled={disabled}
             />
 
             {/* Add new Stakeholder FAQ */}
             <FAQForm
               newFAQ={newStakeholderFAQ}
-              onQuestionChange={onStakeholderFAQQuestionChange}
-              onAnswerChange={onStakeholderFAQAnswerChange}
-              onSave={onSaveStakeholderFAQ}
-              reactQuillComponent={reactQuillComponent}
+              onQuestionChange={onQuestionChange}
+              onAnswerChange={onAnswerChange}
+              onSave={onSaveFAQ}
+              disabled={disabled}
               title="Add New Stakeholder FAQ"
-              tabValue={tabValue}
-              currentTabIndex={2}
             />
           </>
         )}

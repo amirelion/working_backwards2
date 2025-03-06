@@ -1,58 +1,53 @@
 import React from 'react';
 import { Card, CardContent, Typography, Box } from '@mui/material';
 import { FAQ } from '../../../../types';
+import { PRFAQState } from '../../../../store/prfaqSlice';
 import FAQList from './FAQList';
 import { FAQForm, FAQGenerate } from './FAQForm';
 
-interface CustomerFAQTabProps {
-  isPRFAQEmpty: boolean;
-  customerFaqs: FAQ[];
-  editingCustomerFAQIndex: number;
+export interface CustomerFAQTabProps {
+  prfaq: PRFAQState;
   newCustomerFAQ: FAQ;
+  editingCustomerFAQIndex: number;
   customerFaqComment: string;
-  tabValue: number;
-  onEditCustomerFAQ: (index: number) => void;
-  onDeleteCustomerFAQ: (index: number) => void;
-  onUpdateCustomerFAQ: (index: number, field: 'question' | 'answer', value: string) => void;
-  onSaveCustomerFAQ: () => void;
-  onCustomerFAQQuestionChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onCustomerFAQAnswerChange: (value: string) => void;
-  onCustomerFaqCommentChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onGenerateCustomerFAQs: () => void;
-  onGenerateSingleCustomerFAQ: () => void;
-  isGeneratingCustomerFAQ: boolean;
-  hasWorkingBackwardsResponses: boolean;
-  reactQuillComponent: React.FC<{
-    value: string;
-    onChange: (value: string) => void;
-    style?: React.CSSProperties;
-    visible?: boolean;
-  }>;
+  onQuestionChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onAnswerChange: (value: string) => void;
+  onSaveFAQ: () => void;
+  onEditFAQ: (index: number) => void;
+  onDeleteFAQ: (index: number) => void;
+  onCommentChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onUpdateFAQ: (index: number, field: 'question' | 'answer', value: string) => void;
+  onGenerateFAQs: () => void;
+  onGenerateSingleFAQ: () => void;
+  isGenerating: boolean;
+  disabled?: boolean;
 }
 
 /**
  * Component for the Customer FAQ tab
  */
 export const CustomerFAQTab: React.FC<CustomerFAQTabProps> = ({
-  isPRFAQEmpty,
-  customerFaqs,
-  editingCustomerFAQIndex,
+  prfaq,
   newCustomerFAQ,
+  editingCustomerFAQIndex,
   customerFaqComment,
-  tabValue,
-  onEditCustomerFAQ,
-  onDeleteCustomerFAQ,
-  onUpdateCustomerFAQ,
-  onSaveCustomerFAQ,
-  onCustomerFAQQuestionChange,
-  onCustomerFAQAnswerChange,
-  onCustomerFaqCommentChange,
-  onGenerateCustomerFAQs,
-  onGenerateSingleCustomerFAQ,
-  isGeneratingCustomerFAQ,
-  hasWorkingBackwardsResponses,
-  reactQuillComponent,
+  onQuestionChange,
+  onAnswerChange,
+  onSaveFAQ,
+  onEditFAQ,
+  onDeleteFAQ,
+  onCommentChange,
+  onUpdateFAQ,
+  onGenerateFAQs,
+  onGenerateSingleFAQ,
+  isGenerating,
+  disabled = false,
 }) => {
+  const isPRFAQEmpty = !prfaq.title || 
+    !prfaq.pressRelease.introduction || 
+    !prfaq.pressRelease.problemStatement || 
+    !prfaq.pressRelease.solution;
+
   return (
     <Card>
       <CardContent>
@@ -73,38 +68,34 @@ export const CustomerFAQTab: React.FC<CustomerFAQTabProps> = ({
           <>
             {/* Existing Customer FAQs */}
             <FAQList
-              faqs={customerFaqs}
+              faqs={prfaq.customerFaqs}
               editingIndex={editingCustomerFAQIndex}
-              onEdit={onEditCustomerFAQ}
-              onDelete={onDeleteCustomerFAQ}
-              onUpdate={onUpdateCustomerFAQ}
-              onSave={onSaveCustomerFAQ}
-              reactQuillComponent={reactQuillComponent}
-              tabValue={tabValue}
-              currentTabIndex={1}
+              onEdit={onEditFAQ}
+              onDelete={onDeleteFAQ}
+              onUpdate={onUpdateFAQ}
+              onSave={onSaveFAQ}
+              disabled={disabled}
               emptyMessage="No customer FAQs added yet. Generate FAQs or add your first FAQ below."
             />
 
             {/* Generate Customer FAQs */}
             <FAQGenerate
               comment={customerFaqComment}
-              onCommentChange={onCustomerFaqCommentChange}
-              onGenerateMultiple={onGenerateCustomerFAQs}
-              onGenerateSingle={onGenerateSingleCustomerFAQ}
-              isGenerating={isGeneratingCustomerFAQ}
-              isDisabled={!hasWorkingBackwardsResponses}
+              onCommentChange={onCommentChange}
+              onGenerateMultiple={onGenerateFAQs}
+              onGenerateSingle={onGenerateSingleFAQ}
+              isGenerating={isGenerating}
+              isDisabled={disabled}
             />
 
             {/* Add new Customer FAQ */}
             <FAQForm
               newFAQ={newCustomerFAQ}
-              onQuestionChange={onCustomerFAQQuestionChange}
-              onAnswerChange={onCustomerFAQAnswerChange}
-              onSave={onSaveCustomerFAQ}
-              reactQuillComponent={reactQuillComponent}
+              onQuestionChange={onQuestionChange}
+              onAnswerChange={onAnswerChange}
+              onSave={onSaveFAQ}
+              disabled={disabled}
               title="Add New Customer FAQ"
-              tabValue={tabValue}
-              currentTabIndex={1}
             />
           </>
         )}

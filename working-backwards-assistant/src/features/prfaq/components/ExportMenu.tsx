@@ -4,10 +4,8 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
-  Button,
 } from '@mui/material';
 import {
-  Download as DownloadIcon,
   PictureAsPdf as PdfIcon,
   Description as DescriptionIcon,
   TextSnippet as TxtIcon,
@@ -60,27 +58,10 @@ export const ExportMenu: React.FC<ExportMenuProps> = ({
           <ListItemIcon>
             <EmailIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Send via Email</ListItemText>
+          <ListItemText>Export as Email</ListItemText>
         </MenuItem>
       </Menu>
     </>
-  );
-};
-
-/**
- * ExportMenuButton component that displays the button to open the export menu
- */
-export const ExportMenuButton: React.FC<{
-  onClick: (event: React.MouseEvent<HTMLElement>) => void;
-}> = ({ onClick }) => {
-  return (
-    <Button
-      variant="outlined"
-      onClick={onClick}
-      startIcon={<DownloadIcon />}
-    >
-      Export
-    </Button>
   );
 };
 

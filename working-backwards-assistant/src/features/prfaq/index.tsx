@@ -40,7 +40,8 @@ import PressReleaseForm from './components/PressReleaseTab/PressReleaseForm';
 import CustomerFAQTab from './components/FAQTabs/CustomerFAQTab';
 import StakeholderFAQTab from './components/FAQTabs/StakeholderFAQTab';
 import PRFAQTabPanel from './components/PRFAQTabPanel';
-import { ExportMenu, ExportMenuButton } from './components/ExportMenu';
+import { ExportMenu } from './components/ExportMenu';
+import ExportMenuButton from './components/ExportMenuButton';
 
 // Utils
 import { handleExport as exportUtils } from './utils/exportUtils';
@@ -264,66 +265,58 @@ const PRFAQPage: React.FC = () => {
                 icon={<CircularProgress size={16} color="inherit" />} 
                 label="Saving..." 
                 size="small" 
-                color="default"
+                sx={{ bgcolor: 'primary.main', color: 'white' }}
               />
             )}
             
-            {!isContextSaving && contextLastSaved && (
-              <Tooltip title={`Last saved: ${format(contextLastSaved, 'MMM d, yyyy h:mm a')}`}>
-                <Chip 
-                  label={`Saved ${format(contextLastSaved, 'h:mm a')}`} 
+            {!isContextSaving && contextLastSaved && !contextIsModified && (
+              <Chip 
+                label={`Saved at ${format(new Date(contextLastSaved), 'h:mm a')}`} 
+                size="small" 
+                sx={{ bgcolor: 'success.main', color: 'white' }}
+              />
+            )}
+            
+            {!isContextSaving && contextIsModified && (
+              <Tooltip title="Save your work">
+                <Button 
                   size="small" 
-                  color="success"
-                  variant="outlined"
-                />
+                  variant="contained" 
+                  color="success" 
+                  startIcon={<SaveIcon />} 
+                  onClick={handleManualSave}
+                >
+                  Save
+                </Button>
               </Tooltip>
             )}
-            
-            {contextIsModified && !isContextSaving && (
-              <Chip 
-                label="Unsaved changes" 
-                size="small" 
-                color="warning"
-                variant="outlined"
-              />
-            )}
           </Box>
         </Box>
         
-        {/* Main controls */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h4" gutterBottom>
-            Press Release & FAQ
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
-              variant="outlined"
-              color="primary"
-              onClick={handleManualSave}
-              startIcon={<SaveIcon />}
-              disabled={isContextSaving || !contextIsModified || !currentProcessId}
-            >
-              Save
-            </Button>
-            <ExportMenuButton onClick={handleExportMenuOpen} />
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={generateFullPRFAQ}
-              disabled={isGeneratingPRFAQ || !hasWorkingBackwardsResponses}
-              startIcon={isGeneratingPRFAQ ? <CircularProgress size={20} /> : <AutoFixHighIcon />}
-            >
-              {isGeneratingPRFAQ ? `${generationStep}` : 'Generate Complete PRFAQ'}
-            </Button>
-          </Box>
+        {/* Export menu button */}
+        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+          <ExportMenuButton 
+            onClick={handleExportMenuOpen} 
+            disabled={isPRFAQEmpty} 
+          />
+          
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={isGeneratingPRFAQ ? <CircularProgress size={20} color="inherit" /> : <AutoFixHighIcon />}
+            onClick={generateFullPRFAQ}
+            disabled={isGeneratingPRFAQ || !hasWorkingBackwardsResponses}
+          >
+            {isGeneratingPRFAQ ? `Generating (Step ${generationStep}/7)` : "Generate All Sections"}
+          </Button>
         </Box>
         
-        {/* Export Menu */}
+        {/* Export menu */}
         <ExportMenu 
-          anchorEl={exportMenuAnchor}
-          open={Boolean(exportMenuAnchor)}
-          onClose={handleExportMenuClose}
-          onExport={handleExport}
+          anchorEl={exportMenuAnchor} 
+          open={Boolean(exportMenuAnchor)} 
+          onClose={handleExportMenuClose} 
+          onExport={handleExport} 
         />
         
         {/* Tabs and content */}
@@ -348,7 +341,7 @@ const PRFAQPage: React.FC = () => {
 
           {/* Press Release Tab */}
           <PRFAQTabPanel value={tabValue} index={0}>
-            <PressReleaseForm
+            <PressReleaseForm 
               prfaq={prfaq}
               onTitleChange={handleTitleChange}
               onPressReleaseChange={handlePressReleaseChange}
@@ -360,55 +353,49 @@ const PRFAQPage: React.FC = () => {
 
           {/* Customer FAQs Tab */}
           <PRFAQTabPanel value={tabValue} index={1}>
-            <CustomerFAQTab 
-              isPRFAQEmpty={isPRFAQEmpty}
-              customerFaqs={prfaq.customerFaqs}
-              editingCustomerFAQIndex={editingCustomerFAQIndex}
+            <CustomerFAQTab
+              prfaq={prfaq}
               newCustomerFAQ={newCustomerFAQ}
+              editingCustomerFAQIndex={editingCustomerFAQIndex}
               customerFaqComment={customerFaqComment}
-              tabValue={tabValue}
-              onEditCustomerFAQ={handleEditCustomerFAQ}
-              onDeleteCustomerFAQ={handleDeleteCustomerFAQ}
-              onUpdateCustomerFAQ={handleUpdateCustomerFAQ}
-              onSaveCustomerFAQ={handleSaveCustomerFAQ}
-              onCustomerFAQQuestionChange={handleNewCustomerFAQQuestionChange}
-              onCustomerFAQAnswerChange={handleNewCustomerFAQAnswerChange}
-              onCustomerFaqCommentChange={handleCustomerFaqCommentChange}
-              onGenerateCustomerFAQs={generateCustomerFAQs}
-              onGenerateSingleCustomerFAQ={generateSingleCustomerFAQ}
-              isGeneratingCustomerFAQ={isGeneratingCustomerFAQ}
-              hasWorkingBackwardsResponses={hasWorkingBackwardsResponses}
-              reactQuillComponent={QuillWrapper}
+              onQuestionChange={handleNewCustomerFAQQuestionChange}
+              onAnswerChange={handleNewCustomerFAQAnswerChange}
+              onSaveFAQ={handleSaveCustomerFAQ}
+              onEditFAQ={handleEditCustomerFAQ}
+              onDeleteFAQ={handleDeleteCustomerFAQ}
+              onCommentChange={handleCustomerFaqCommentChange}
+              onUpdateFAQ={handleUpdateCustomerFAQ}
+              onGenerateFAQs={generateCustomerFAQs}
+              onGenerateSingleFAQ={generateSingleCustomerFAQ}
+              isGenerating={isGeneratingCustomerFAQ}
+              disabled={isGeneratingPRFAQ || isGeneratingCustomerFAQ}
             />
           </PRFAQTabPanel>
 
           {/* Stakeholder FAQs Tab */}
           <PRFAQTabPanel value={tabValue} index={2}>
-            <StakeholderFAQTab 
-              isPRFAQEmpty={isPRFAQEmpty}
-              stakeholderFaqs={prfaq.stakeholderFaqs}
-              editingStakeholderFAQIndex={editingStakeholderFAQIndex}
+            <StakeholderFAQTab
+              prfaq={prfaq}
               newStakeholderFAQ={newStakeholderFAQ}
+              editingStakeholderFAQIndex={editingStakeholderFAQIndex}
               stakeholderFaqComment={stakeholderFaqComment}
-              tabValue={tabValue}
-              onEditStakeholderFAQ={handleEditStakeholderFAQ}
-              onDeleteStakeholderFAQ={handleDeleteStakeholderFAQ}
-              onUpdateStakeholderFAQ={handleUpdateStakeholderFAQ}
-              onSaveStakeholderFAQ={handleSaveStakeholderFAQ}
-              onStakeholderFAQQuestionChange={handleNewStakeholderFAQQuestionChange}
-              onStakeholderFAQAnswerChange={handleNewStakeholderFAQAnswerChange}
-              onStakeholderFaqCommentChange={handleStakeholderFaqCommentChange}
-              onGenerateStakeholderFAQs={generateStakeholderFAQs}
-              onGenerateSingleStakeholderFAQ={generateSingleStakeholderFAQ}
-              isGeneratingStakeholderFAQ={isGeneratingStakeholderFAQ}
-              hasWorkingBackwardsResponses={hasWorkingBackwardsResponses}
-              reactQuillComponent={QuillWrapper}
+              onQuestionChange={handleNewStakeholderFAQQuestionChange}
+              onAnswerChange={handleNewStakeholderFAQAnswerChange}
+              onSaveFAQ={handleSaveStakeholderFAQ}
+              onEditFAQ={handleEditStakeholderFAQ}
+              onDeleteFAQ={handleDeleteStakeholderFAQ}
+              onCommentChange={handleStakeholderFaqCommentChange}
+              onUpdateFAQ={handleUpdateStakeholderFAQ}
+              onGenerateFAQs={generateStakeholderFAQs}
+              onGenerateSingleFAQ={generateSingleStakeholderFAQ}
+              isGenerating={isGeneratingStakeholderFAQ}
+              disabled={isGeneratingPRFAQ || isGeneratingStakeholderFAQ}
             />
           </PRFAQTabPanel>
         </Paper>
         
         {/* Navigation buttons */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
           <Button
             variant="outlined"
             startIcon={<ArrowBack />}

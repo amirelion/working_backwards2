@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import {
   Box,
   Typography,
@@ -10,21 +10,16 @@ import {
 import { Save as SaveIcon } from '@mui/icons-material';
 import { FAQ } from '../../../../types';
 
+// Lazy-loaded ReactQuill component
+const LazyReactQuill = lazy(() => import('react-quill'));
+
 interface FAQFormProps {
   newFAQ: FAQ;
   onQuestionChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onAnswerChange: (value: string) => void;
   onSave: () => void;
-  reactQuillComponent: React.FC<{
-    value: string;
-    onChange: (value: string) => void;
-    style?: React.CSSProperties;
-    visible?: boolean;
-  }>;
+  disabled?: boolean;
   title: string;
-  tabValue: number;
-  currentTabIndex: number;
-  isSaveDisabled?: boolean;
 }
 
 /**
@@ -35,11 +30,8 @@ export const FAQForm: React.FC<FAQFormProps> = ({
   onQuestionChange,
   onAnswerChange,
   onSave,
-  reactQuillComponent: ReactQuill,
+  disabled = false,
   title,
-  tabValue,
-  currentTabIndex,
-  isSaveDisabled = false,
 }) => {
   return (
     <Box sx={{ mt: 3 }}>
@@ -54,17 +46,30 @@ export const FAQForm: React.FC<FAQFormProps> = ({
         value={newFAQ.question}
         onChange={onQuestionChange}
         sx={{ mb: 2 }}
+        disabled={disabled}
       />
       <Typography variant="subtitle2" gutterBottom>
         Answer
       </Typography>
       <Box sx={{ mb: 2 }}>
-        <ReactQuill
-          value={newFAQ.answer}
-          onChange={onAnswerChange}
-          style={{ height: '150px', marginBottom: '50px' }}
-          visible={tabValue === currentTabIndex}
-        />
+        <Suspense fallback={<div style={{ height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <CircularProgress />
+        </div>}>
+          <LazyReactQuill
+            value={newFAQ.answer}
+            onChange={onAnswerChange}
+            style={{ height: '150px', marginBottom: '50px' }}
+            modules={{
+              toolbar: [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['link'],
+                ['clean']
+              ],
+            }}
+          />
+        </Suspense>
       </Box>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
         <Button
@@ -72,7 +77,7 @@ export const FAQForm: React.FC<FAQFormProps> = ({
           color="primary"
           onClick={onSave}
           startIcon={<SaveIcon />}
-          disabled={isSaveDisabled || !newFAQ.question.trim() || !newFAQ.answer.trim()}
+          disabled={disabled || !newFAQ.question.trim() || !newFAQ.answer.trim()}
         >
           Add FAQ
         </Button>
@@ -114,6 +119,7 @@ export const FAQGenerate: React.FC<FAQGenerateProps> = ({
         onChange={onCommentChange}
         placeholder="Add specific instructions for generating FAQs (e.g., 'Focus on pricing and support questions')"
         sx={{ mb: 2 }}
+        disabled={isDisabled}
       />
       <Box sx={{ display: 'flex', gap: 2 }}>
         <Button

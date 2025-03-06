@@ -10,14 +10,7 @@ interface FAQListProps {
   onDelete: (index: number) => void;
   onUpdate: (index: number, field: 'question' | 'answer', value: string) => void;
   onSave: () => void;
-  reactQuillComponent: React.FC<{
-    value: string;
-    onChange: (value: string) => void;
-    style?: React.CSSProperties;
-    visible?: boolean;
-  }>;
-  tabValue: number;
-  currentTabIndex: number;
+  disabled?: boolean;
   emptyMessage?: string;
 }
 
@@ -31,9 +24,7 @@ export const FAQList: React.FC<FAQListProps> = ({
   onDelete,
   onUpdate,
   onSave,
-  reactQuillComponent,
-  tabValue,
-  currentTabIndex,
+  disabled = false,
   emptyMessage = 'No FAQs added yet. Generate FAQs or add your first FAQ below.',
 }) => {
   if (faqs.length === 0) {
@@ -58,9 +49,7 @@ export const FAQList: React.FC<FAQListProps> = ({
           onDelete={onDelete}
           onUpdate={onUpdate}
           onSave={onSave}
-          reactQuillComponent={reactQuillComponent}
-          tabValue={tabValue}
-          currentTabIndex={currentTabIndex}
+          disabled={disabled}
         />
       ))}
     </Box>
