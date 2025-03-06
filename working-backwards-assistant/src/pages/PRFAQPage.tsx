@@ -78,6 +78,7 @@ import { exportPRFAQ } from '../utils/exportUtils';
 import { ExportFormat, FAQ, PRFAQ as BackendPRFAQ, WorkingBackwardsResponses } from '../types';
 import { workingBackwardsQuestionsState } from '../atoms/workingBackwardsQuestionsState';
 import { useAuth } from '../contexts/AuthContext';
+import { debounce } from 'lodash';
 
 // Define a mapping interface to convert between UI and backend fields
 interface PRFAQMapping {
@@ -1183,6 +1184,40 @@ const PRFAQPage: React.FC = () => {
     placeholder?: string;
   }) => {
     const hasContent = value && value.trim().length > 0;
+    const [localValue, setLocalValue] = React.useState(value);
+    
+    // Update local value when prop value changes (for initial load or external changes)
+    React.useEffect(() => {
+      setLocalValue(value);
+    }, [value]);
+    
+    // Handle local changes without losing focus
+    const handleLocalChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+      setLocalValue(e.target.value);
+    };
+    
+    // Update parent state when user finishes typing (onBlur)
+    const handleBlur = () => {
+      if (localValue !== value) {
+        onChange({ target: { value: localValue } } as React.ChangeEvent<HTMLTextAreaElement>);
+      }
+    };
+    
+    // Also update after typing stops for a short period
+    const debouncedUpdate = React.useCallback(
+      debounce(() => {
+        if (localValue !== value) {
+          onChange({ target: { value: localValue } } as React.ChangeEvent<HTMLTextAreaElement>);
+        }
+      }, 1000),
+      [localValue, value, onChange]
+    );
+    
+    // Call debounced update when local value changes
+    React.useEffect(() => {
+      debouncedUpdate();
+      return () => debouncedUpdate.cancel();
+    }, [localValue, debouncedUpdate]);
     
     return (
       <Grid item xs={12}>
@@ -1195,8 +1230,9 @@ const PRFAQPage: React.FC = () => {
             multiline
             rows={rows}
             variant="outlined"
-            value={value}
-            onChange={onChange}
+            value={localValue}
+            onChange={handleLocalChange}
+            onBlur={handleBlur}
             placeholder={placeholder}
           />
           <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mt: 1 }}>
