@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense, useCallback } from 'react';
+import React, { useState, lazy, Suspense, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useRecoilValue } from 'recoil';
@@ -88,7 +88,7 @@ const QuillWrapper = ({ value, onChange, style, visible = true }: {
 const PRFAQPage: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { currentProcessId, lastSaved: contextLastSaved, isModified: contextIsModified } = useWorkingBackwards();
+  const { currentProcessId, lastSaved: contextLastSaved } = useWorkingBackwards();
   const workingBackwardsResponses = useRecoilValue(workingBackwardsQuestionsState);
   
   // Get PRFAQ state from Redux
@@ -108,8 +108,7 @@ const PRFAQPage: React.FC = () => {
   // Use our custom hooks
   const { 
     handleTitleChange, 
-    handlePressReleaseChange, 
-    mapSectionToFieldName, 
+    handlePressReleaseChange,
     isPRFAQEmpty: checkIfPRFAQEmpty 
   } = usePressRelease();
   
@@ -122,6 +121,7 @@ const PRFAQPage: React.FC = () => {
   
   // Derived state
   const hasUnsavedChanges = checkUnsavedChanges();
+  const prfaqIsEmpty = checkIfPRFAQEmpty(prfaq);
   
   const {
     isGeneratingPRFAQ,
@@ -160,9 +160,6 @@ const PRFAQPage: React.FC = () => {
     handleStakeholderFaqCommentChange,
     handleUpdateStakeholderFAQ,
   } = useFAQs();
-  
-  // Check if PRFAQ is empty
-  const prfaqIsEmpty = checkIfPRFAQEmpty(prfaq);
   
   // Handle manual save
   const handleManualSave = useCallback(async () => {

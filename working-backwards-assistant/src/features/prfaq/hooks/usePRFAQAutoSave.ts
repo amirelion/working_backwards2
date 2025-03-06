@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { isEqual } from 'lodash';
 import { PRFAQState } from '../../../store/prfaqSlice';
 import { useWorkingBackwards } from '../../../contexts/WorkingBackwardsContext';
@@ -23,14 +23,14 @@ export const usePRFAQAutoSave = (
   const lastSavedState = useRef<PRFAQState | null>(null);
   const autoSaveTimeout = useRef<NodeJS.Timeout | null>(null);
   
-  // Function to check if there are actual changes
-  const hasChanges = () => {
+  // Function to check if there are actual changes - wrapped in useCallback to use in dependencies
+  const hasChanges = useCallback(() => {
     if (!lastSavedState.current) return true;
     return !isEqual(prfaq, lastSavedState.current);
-  };
+  }, [prfaq, lastSavedState]);
   
-  // Schedule auto-save with debounce
-  const scheduleAutoSave = () => {
+  // Schedule auto-save with debounce - wrapped in useCallback to use in dependencies
+  const scheduleAutoSave = useCallback(() => {
     // Clear any existing timeout
     if (autoSaveTimeout.current) {
       clearTimeout(autoSaveTimeout.current);
@@ -59,7 +59,7 @@ export const usePRFAQAutoSave = (
         }
       }, 5000);
     }
-  };
+  }, [hasChanges, currentProcessId, prfaq, saveCurrentProcess, setIsModified]);
   
   // Manual save function
   const saveNow = async () => {
@@ -93,7 +93,7 @@ export const usePRFAQAutoSave = (
         autoSaveTimeout.current = null;
       }
     };
-  }, [prfaq, isGenerating, currentProcessId]);
+  }, [prfaq, isGenerating, currentProcessId, scheduleAutoSave]);
   
   // Effect to save after generation completes
   useEffect(() => {
@@ -101,14 +101,14 @@ export const usePRFAQAutoSave = (
     if (!isGenerating && lastSavedState.current && hasChanges()) {
       scheduleAutoSave();
     }
-  }, [isGenerating]);
+  }, [isGenerating, hasChanges, scheduleAutoSave]);
   
   // Initialize lastSavedState on first render or when process ID changes
   useEffect(() => {
     if (currentProcessId) {
       lastSavedState.current = JSON.parse(JSON.stringify(prfaq));
     }
-  }, [currentProcessId]);
+  }, [currentProcessId, prfaq]);
   
   return {
     isSaving,
