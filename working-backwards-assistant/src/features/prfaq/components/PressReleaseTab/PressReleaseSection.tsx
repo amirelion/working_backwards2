@@ -9,7 +9,6 @@ import {
   Tooltip,
 } from '@mui/material';
 import { AutoFixHigh as AutoFixHighIcon } from '@mui/icons-material';
-import { useWorkingBackwards } from '../../../../contexts/WorkingBackwardsContext';
 
 interface PressReleaseSectionProps {
   section: string;
@@ -40,19 +39,10 @@ export const PressReleaseSection: React.FC<PressReleaseSectionProps> = ({
   generatingSection = '',
   disabled = false,
 }) => {
-  const { saveCurrentProcess } = useWorkingBackwards();
   const isCurrentSectionGenerating = isGenerating && generatingSection === section;
   
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     onChange(e.target.value);
-  };
-  
-  const handleBlur = async () => {
-    try {
-      await saveCurrentProcess();
-    } catch (error) {
-      console.error('Error saving on blur:', error);
-    }
   };
 
   return (
@@ -87,7 +77,6 @@ export const PressReleaseSection: React.FC<PressReleaseSectionProps> = ({
         placeholder={placeholder}
         value={value}
         onChange={handleChange}
-        onBlur={handleBlur}
         variant="outlined"
         disabled={isCurrentSectionGenerating || disabled}
       />

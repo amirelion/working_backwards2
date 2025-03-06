@@ -34,6 +34,7 @@ import { ExportFormat } from '../../types';
 import useAIGeneration from './hooks/useAIGeneration';
 import useFAQs from './hooks/useFAQs';
 import usePressRelease from './hooks/usePressRelease';
+import usePRFAQAutoSave from './hooks/usePRFAQAutoSave';
 
 // Components
 import PressReleaseForm from './components/PressReleaseTab/PressReleaseForm';
@@ -87,7 +88,7 @@ const QuillWrapper = ({ value, onChange, style, visible = true }: {
 const PRFAQPage: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { currentProcessId, saveCurrentProcess, isSaving: isContextSaving, lastSaved: contextLastSaved, isModified: contextIsModified, setIsModified } = useWorkingBackwards();
+  const { currentProcessId, lastSaved: contextLastSaved, isModified: contextIsModified } = useWorkingBackwards();
   const workingBackwardsResponses = useRecoilValue(workingBackwardsQuestionsState);
   
   // Get PRFAQ state from Redux
@@ -100,18 +101,32 @@ const PRFAQPage: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState<string>('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('success');
   
-  // Custom hooks
+  // AI generation state
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [generatingSection, setGeneratingSection] = useState<string>('');
+  
+  // Use our custom hooks
   const { 
     handleTitleChange, 
     handlePressReleaseChange, 
-    isPRFAQEmpty: checkIsPRFAQEmpty 
+    mapSectionToFieldName, 
+    isPRFAQEmpty: checkIfPRFAQEmpty 
   } = usePressRelease();
+  
+  // Use our new auto-save hook
+  const { isSaving, saveNow, hasUnsavedChanges: checkUnsavedChanges } = usePRFAQAutoSave(
+    prfaq,
+    isGenerating,
+    currentProcessId
+  );
+  
+  // Derived state
+  const hasUnsavedChanges = checkUnsavedChanges();
   
   const {
     isGeneratingPRFAQ,
     isGeneratingCustomerFAQ,
     isGeneratingStakeholderFAQ,
-    generatingSection,
     generationStep,
     hasWorkingBackwardsResponses,
     generateSection,
@@ -147,14 +162,14 @@ const PRFAQPage: React.FC = () => {
   } = useFAQs();
   
   // Check if PRFAQ is empty
-  const isPRFAQEmpty = checkIsPRFAQEmpty(prfaq);
+  const prfaqIsEmpty = checkIfPRFAQEmpty(prfaq);
   
-  // Handle manual save - wrapped in useCallback to prevent recreation on every render
+  // Handle manual save
   const handleManualSave = useCallback(async () => {
     if (!currentProcessId) return;
     
     try {
-      await saveCurrentProcess();
+      await saveNow();
       
       setSnackbarMessage('PRFAQ saved successfully');
       setSnackbarSeverity('success');
@@ -166,19 +181,7 @@ const PRFAQPage: React.FC = () => {
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     }
-  }, [currentProcessId, saveCurrentProcess, setSnackbarMessage, setSnackbarSeverity, setSnackbarOpen]);
-  
-  // Auto-save when PRFAQ state changes
-  useEffect(() => {
-    setIsModified(true);
-    const autoSaveTimeout = setTimeout(() => {
-      if (currentProcessId) {
-        handleManualSave();
-      }
-    }, 5000);
-    
-    return () => clearTimeout(autoSaveTimeout);
-  }, [prfaq, currentProcessId, handleManualSave, setIsModified]);
+  }, [currentProcessId, saveNow, setSnackbarMessage, setSnackbarSeverity, setSnackbarOpen]);
   
   // Handle tab change
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -211,6 +214,41 @@ const PRFAQPage: React.FC = () => {
   
   const handleBackToWorkingBackwards = () => {
     navigate('/working-backwards', { state: { from: 'prfaq' } });
+  };
+
+  // Wrap the AI generation functions to track generation state
+  const handleGenerateSection = async (section: string) => {
+    setIsGenerating(true);
+    setGeneratingSection(section);
+    
+    try {
+      await generateSection(section);
+    } catch (error) {
+      console.error(`Error generating ${section}:`, error);
+      setSnackbarMessage(`Failed to generate ${section}`);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    } finally {
+      setIsGenerating(false);
+      setGeneratingSection('');
+    }
+  };
+  
+  const handleGenerateFullPRFAQ = async () => {
+    setIsGenerating(true);
+    setGeneratingSection('fullPRFAQ');
+    
+    try {
+      await generateFullPRFAQ();
+    } catch (error) {
+      console.error('Error generating full PRFAQ:', error);
+      setSnackbarMessage('Failed to generate full PRFAQ');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    } finally {
+      setIsGenerating(false);
+      setGeneratingSection('');
+    }
   };
 
   return (
@@ -260,7 +298,7 @@ const PRFAQPage: React.FC = () => {
           </Typography>
           
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {isContextSaving && (
+            {isSaving && (
               <Chip 
                 icon={<CircularProgress size={16} color="inherit" />} 
                 label="Saving..." 
@@ -269,7 +307,7 @@ const PRFAQPage: React.FC = () => {
               />
             )}
             
-            {!isContextSaving && contextLastSaved && !contextIsModified && (
+            {!isSaving && contextLastSaved && !hasUnsavedChanges && (
               <Chip 
                 label={`Saved at ${format(new Date(contextLastSaved), 'h:mm a')}`} 
                 size="small" 
@@ -277,7 +315,7 @@ const PRFAQPage: React.FC = () => {
               />
             )}
             
-            {!isContextSaving && contextIsModified && (
+            {!isSaving && hasUnsavedChanges && (
               <Tooltip title="Save your work">
                 <Button 
                   size="small" 
@@ -297,14 +335,14 @@ const PRFAQPage: React.FC = () => {
         <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
           <ExportMenuButton 
             onClick={handleExportMenuOpen} 
-            disabled={isPRFAQEmpty} 
+            disabled={prfaqIsEmpty} 
           />
           
           <Button
             variant="contained"
             color="primary"
             startIcon={isGeneratingPRFAQ ? <CircularProgress size={20} color="inherit" /> : <AutoFixHighIcon />}
-            onClick={generateFullPRFAQ}
+            onClick={handleGenerateFullPRFAQ}
             disabled={isGeneratingPRFAQ || !hasWorkingBackwardsResponses}
           >
             {isGeneratingPRFAQ ? `Generating (Step ${generationStep}/7)` : "Generate All Sections"}
@@ -328,26 +366,27 @@ const PRFAQPage: React.FC = () => {
                 label="Customer FAQs" 
                 id="prfaq-tab-1" 
                 aria-controls="prfaq-tabpanel-1" 
-                disabled={isPRFAQEmpty}
+                disabled={prfaqIsEmpty}
               />
               <Tab 
                 label="Stakeholder FAQs" 
                 id="prfaq-tab-2" 
                 aria-controls="prfaq-tabpanel-2" 
-                disabled={isPRFAQEmpty}
+                disabled={prfaqIsEmpty}
               />
             </Tabs>
           </Box>
 
           {/* Press Release Tab */}
           <PRFAQTabPanel value={tabValue} index={0}>
-            <PressReleaseForm 
+            <PressReleaseForm
               prfaq={prfaq}
               onTitleChange={handleTitleChange}
               onPressReleaseChange={handlePressReleaseChange}
-              onGenerateSection={generateSection}
-              isGenerating={isGeneratingPRFAQ}
+              onGenerateSection={handleGenerateSection}
+              isGenerating={isGenerating}
               generatingSection={generatingSection}
+              disabled={isGenerating}
             />
           </PRFAQTabPanel>
 
@@ -408,7 +447,7 @@ const PRFAQPage: React.FC = () => {
             variant="contained"
             endIcon={<ArrowForward />}
             onClick={handleContinueToAssumptions}
-            disabled={isPRFAQEmpty}
+            disabled={prfaqIsEmpty}
           >
             Continue to Assumptions
           </Button>

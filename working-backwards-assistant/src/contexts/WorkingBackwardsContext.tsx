@@ -132,7 +132,7 @@ export function WorkingBackwardsProvider({ children }: { children: React.ReactNo
                 'problemStatement': 'problemStatement',
                 'solution': 'solution',
                 'stakeholderQuote': 'stakeholderQuote',
-                'customerJourney': 'introduction', // Map to introduction as fallback
+                'customerJourney': 'customerJourney',
                 'customerQuote': 'customerQuote',
                 'callToAction': 'callToAction'
               };
@@ -348,6 +348,63 @@ export function WorkingBackwardsProvider({ children }: { children: React.ReactNo
     if (!isModified) {
       console.log('No changes detected, skipping save');
       return;
+    }
+    
+    // Check if we have cached the last saved process
+    // If we have and it's deep-equal to the current process, skip saving
+    try {
+      // Get the last process from service - we don't want to do this for every check,
+      // but only when we're about to save to avoid unnecessary network calls
+      const lastProcess = await workingBackwardsService.getProcessById(currentProcessId);
+      
+      if (lastProcess) {
+        const currentMappedPrfaq = {
+          title: prfaq.title,
+          pressRelease: {
+            introduction: prfaq.pressRelease.introduction || '',
+            problemStatement: prfaq.pressRelease.problemStatement || '',
+            solution: prfaq.pressRelease.solution || '',
+            stakeholderQuote: prfaq.pressRelease.stakeholderQuote || '',
+            customerJourney: prfaq.pressRelease.customerJourney || '',
+            customerQuote: prfaq.pressRelease.customerQuote || '',
+            callToAction: prfaq.pressRelease.callToAction || ''
+          },
+          customerFaqs: prfaq.customerFaqs || [],
+          stakeholderFaqs: prfaq.stakeholderFaqs || []
+        };
+        
+        // For initial thoughts and working backwards questions, use simple JSON string compare
+        const lastInitialThoughts = JSON.stringify(lastProcess.initialThoughts || '');
+        const currentInitialThoughts = JSON.stringify(initialThoughts || '');
+        
+        const lastWBQuestions = JSON.stringify(lastProcess.workingBackwardsQuestions || {});
+        const currentWBQuestions = JSON.stringify(workingBackwardsQuestions || {});
+        
+        // For PRFAQ, check each field explicitly since order matters in JSON stringification
+        const prfaqMatch = lastProcess.prfaq && 
+          lastProcess.prfaq.title === currentMappedPrfaq.title &&
+          lastProcess.prfaq.pressRelease?.introduction === currentMappedPrfaq.pressRelease.introduction &&
+          lastProcess.prfaq.pressRelease?.problemStatement === currentMappedPrfaq.pressRelease.problemStatement &&
+          lastProcess.prfaq.pressRelease?.solution === currentMappedPrfaq.pressRelease.solution &&
+          lastProcess.prfaq.pressRelease?.stakeholderQuote === currentMappedPrfaq.pressRelease.stakeholderQuote &&
+          lastProcess.prfaq.pressRelease?.customerJourney === currentMappedPrfaq.pressRelease.customerJourney &&
+          lastProcess.prfaq.pressRelease?.customerQuote === currentMappedPrfaq.pressRelease.customerQuote &&
+          lastProcess.prfaq.pressRelease?.callToAction === currentMappedPrfaq.pressRelease.callToAction &&
+          JSON.stringify(lastProcess.prfaq.customerFaqs || []) === JSON.stringify(currentMappedPrfaq.customerFaqs) &&
+          JSON.stringify(lastProcess.prfaq.stakeholderFaqs || []) === JSON.stringify(currentMappedPrfaq.stakeholderFaqs);
+        
+        // If everything matches, no real changes were made
+        if (lastInitialThoughts === currentInitialThoughts && 
+            lastWBQuestions === currentWBQuestions && 
+            prfaqMatch) {
+          console.log('No actual changes detected after deep comparison, skipping save');
+          setIsModified(false);
+          return;
+        }
+      }
+    } catch (error) {
+      // If there's an error in checking, we'll continue with the save operation
+      console.error('Error checking for changes:', error);
     }
     
     setIsSaving(true);
