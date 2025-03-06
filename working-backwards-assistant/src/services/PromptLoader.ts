@@ -17,8 +17,16 @@ class PromptLoader {
   }
 
   private loadPromptConfigs() {
+    // Clear require cache for prompt configs
+    Object.keys(require.cache).forEach(key => {
+      if (key.includes('/config/prompts/')) {
+        delete require.cache[key];
+      }
+    });
+
     // Import all JSON configurations
     this.promptConfigs = {
+      initialThoughts: require('../config/prompts/initialThoughts.json'),
       workingBackwards: require('../config/prompts/workingBackwards.json'),
       pressRelease: require('../config/prompts/pressRelease.json'),
       faqs: require('../config/prompts/faqs.json'),
