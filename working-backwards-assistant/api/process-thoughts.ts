@@ -1,12 +1,12 @@
-const { OpenAI } = require('openai');
-const { PromptLoader } = require('../src/utils/promptLoader');
+import { OpenAI } from 'openai';
+import { PromptLoader } from '../src/services/promptLoader';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.REACT_APP_AI_API_KEY || process.env.AI_API_KEY,
 });
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -43,7 +43,7 @@ module.exports = async (req, res) => {
 
     // Load the prompt configuration
     const promptLoader = PromptLoader.getInstance();
-    const prompt = await promptLoader.buildPrompt('initialThoughts', 'processInitialThoughts', {
+    const { prompt } = await promptLoader.buildPrompt('initialThoughts', 'processInitialThoughts', {
       variables: { text }
     });
 
@@ -69,4 +69,4 @@ module.exports = async (req, res) => {
       details: error.message 
     });
   }
-}; 
+} 
