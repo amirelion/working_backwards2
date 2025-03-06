@@ -1,0 +1,48 @@
+---
+description: Technical Stack for Working backwrds app
+globs: 
+alwaysApply: false
+---
+## Technical Stack
+
+### Frontend
+- **Framework**: React 18+ with TypeScript 4.9+
+- **State Management**: Redux Toolkit exclusively (standardize on this and migrate away from Recoil)
+- **UI Library**: Material UI (MUI) v6+ with Emotion for styling
+- **Routing**: React Router v7+
+- **Forms Management**: Use React Hook Form for complex forms
+- **API Client**: Axios for HTTP requests
+- **Rich Text Editing**: React Quill for WYSIWYG editing
+- **Date Handling**: date-fns for all date/time operations
+- **Utility Libraries**: 
+  - Lodash for data manipulation
+  - UUID for generating unique identifiers
+
+### Backend/Services
+- **Authentication**: Firebase Authentication
+- **Database**: Firestore for document storage
+- **Storage**: Firebase Storage for file storage
+- **File Processing**: Multer for handling file uploads
+- **Security**: Use environment variables with proper secrets management
+
+### Build & Deployment
+- **Build Tool**: Maintain Create React App configuration
+- **Hosting**: Vercel for all environments. Testing on localhost
+
+### Performance Optimization
+- **Code Splitting**: React.lazy and Suspense for component loading
+- **Caching Strategy**: Implement consistent caching headers
+- **Bundle Size**: Regular monitoring and optimization of dependencies
+
+### Security Considerations
+- **Authentication Flow**: Follow OAuth 2.0 best practices
+- **API Keys**: Store in Vercel environment variables, never client-side, .env for local
+- **Content Security**: Implement proper CSP headers
+- **Input Validation**: Server-side validation for all user inputs
+- **Firestore Rules**: Implement proper security rules based on user roles
+
+When moving from Recoil to Redux, maintain a consistent pattern of:
+- Slice-based organization for features
+- Typed selectors and actions
+- Normalized state shape for related data
+- Thunks for async operations

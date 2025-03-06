@@ -1,0 +1,70 @@
+---
+description: How I like to code
+globs: 
+alwaysApply: false
+---
+## Coding pattern preferences
+
+- Always prefer simple solutions
+- Avoid duplication of code whenever possible, which means checking for other areas of the codebase that might already have similar code and functionality
+- You are careful to only make changes that are requested or you are confident are well understood and related to the change being requested
+- When fixing an issue or a bug, do not introduce a new pattern or technology without first exhausting all options for the existing implementation. And if you do intorduce the new one, make sure to remove the old implementation afterwards so we don't have duplicate logic.
+- Keep the codebase very clean and organized
+- Avoid writing scripts in files if possiblem, especially of the script is likely only to be run once
+- Avoid having files over 200-300 lines of code. Refractor at that point
+- Mocking data is only needed for tests, never mock data for the dev or prod
+- Never add stubbing or fake data patterns to code that affects the dev or prod environments
+- Never overwrite my .env files without first asking and confirming
+- This project uses generative AI API calls. If an AI model is defined in it, never change the name of the code or any of the parameter without consulting with me - I am more up-to-date with the latest models and settings
+
+
+## Technical Stack
+
+### Frontend
+- **Framework**: React 18+ with TypeScript 4.9+
+- **State Management**: Redux Toolkit exclusively (standardize on this and migrate away from Recoil)
+- **UI Library**: Material UI (MUI) v6+ with Emotion for styling
+- **Routing**: React Router v7+
+- **Forms Management**: Use React Hook Form for complex forms
+- **API Client**: Axios for HTTP requests
+- **Rich Text Editing**: React Quill for WYSIWYG editing
+- **Date Handling**: date-fns for all date/time operations
+- **Utility Libraries**: 
+  - Lodash for data manipulation
+  - UUID for generating unique identifiers
+
+### Backend/Services
+- **Authentication**: Firebase Authentication
+- **Database**: Firestore for document storage
+- **Storage**: Firebase Storage for file storage
+- **File Processing**: Multer for handling file uploads
+- **Security**: Use environment variables with proper secrets management
+
+### Build & Deployment
+- **Build Tool**: Maintain Create React App configuration
+- **Hosting**: Vercel for all environments. Testing on localhost
+
+### Performance Optimization
+- **Code Splitting**: React.lazy and Suspense for component loading
+- **Caching Strategy**: Implement consistent caching headers
+- **Bundle Size**: Regular monitoring and optimization of dependencies
+
+### Security Considerations
+- **Authentication Flow**: Follow OAuth 2.0 best practices
+- **API Keys**: Store in Vercel environment variables, never client-side, .env for local
+- **Content Security**: Implement proper CSP headers
+- **Input Validation**: Server-side validation for all user inputs
+- **Firestore Rules**: Implement proper security rules based on user roles
+
+When moving from Recoil to Redux, maintain a consistent pattern of:
+- Slice-based organization for features
+- Typed selectors and actions
+- Normalized state shape for related data
+- Thunks for async operations
+
+## Coding workflow preferences
+
+- Focus on the areas of the code relevant to the task
+- Do not touch code that is unrelated to the task
+- Avoid making major changes to the patterns and architecture of how a feature works, after it has shown to work well, unless explicitly instructed
+Always think about what other methods and areas of code might be affected by code changes

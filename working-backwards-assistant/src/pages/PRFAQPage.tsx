@@ -78,7 +78,6 @@ import { exportPRFAQ } from '../utils/exportUtils';
 import { ExportFormat, FAQ, PRFAQ as BackendPRFAQ, WorkingBackwardsResponses } from '../types';
 import { workingBackwardsQuestionsState } from '../atoms/workingBackwardsQuestionsState';
 import { useAuth } from '../contexts/AuthContext';
-import { debounce } from 'lodash';
 
 // Define a mapping interface to convert between UI and backend fields
 interface PRFAQMapping {
@@ -226,63 +225,6 @@ const LazyReactQuill = ({ value, onChange, style, visible = true }: {
     </Suspense>
   );
 };
-
-// Create an independent text input component that's resistant to re-renders
-const StableTextInput = React.memo(({
-  value: initialValue,
-  onChange,
-  placeholder,
-  rows = 3,
-  label,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  rows?: number;
-  label?: string;
-}) => {
-  // Use state ref instead of state to avoid re-renders during typing
-  const valueRef = React.useRef(initialValue);
-  const inputRef = React.useRef<HTMLTextAreaElement>(null);
-  
-  // Update our ref if initialValue changes and we haven't edited
-  React.useEffect(() => {
-    // Only update if the input doesn't have focus
-    if (document.activeElement !== inputRef.current) {
-      valueRef.current = initialValue;
-      
-      // Force update the DOM directly to avoid re-renders
-      if (inputRef.current) {
-        inputRef.current.value = initialValue;
-      }
-    }
-  }, [initialValue]);
-  
-  // Handle changes locally without triggering re-renders
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    valueRef.current = e.target.value;
-  };
-  
-  // Only notify parent when focus is lost
-  const handleBlur = () => {
-    onChange(valueRef.current);
-  };
-  
-  return (
-    <TextField
-      fullWidth
-      multiline
-      label={label}
-      rows={rows}
-      variant="outlined"
-      defaultValue={valueRef.current}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      placeholder={placeholder}
-      inputRef={inputRef}
-    />
-  );
-});
 
 const PRFAQPage: React.FC = () => {
   const navigate = useNavigate();
@@ -1242,22 +1184,20 @@ const PRFAQPage: React.FC = () => {
   }) => {
     const hasContent = value && value.trim().length > 0;
     
-    // Handle value changes from the stable input
-    const handleStableInputChange = (newValue: string) => {
-      onChange({ target: { value: newValue } } as React.ChangeEvent<HTMLTextAreaElement>);
-    };
-    
     return (
       <Grid item xs={12}>
         <Typography variant="subtitle1" gutterBottom>
           {label}
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, flexDirection: 'column', width: '100%' }}>
-          <StableTextInput 
-            value={value}
-            onChange={handleStableInputChange}
-            placeholder={placeholder}
+          <TextField
+            fullWidth
+            multiline
             rows={rows}
+            variant="outlined"
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
           />
           <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mt: 1 }}>
             <Button

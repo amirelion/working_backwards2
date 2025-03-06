@@ -13,7 +13,7 @@ import LandingPage from './pages/LandingPage';
 import DashboardPage from './pages/DashboardPage';
 import InitialThoughtsPage from './pages/InitialThoughtsPage';
 import WorkingBackwardsPage from './pages/WorkingBackwardsPage';
-import PRFAQPage from './pages/PRFAQPage';
+import PRFAQPage from './features/prfaq';
 import AssumptionsPage from './pages/AssumptionsPage';
 import ExperimentsPage from './pages/ExperimentsPage';
 import NotFoundPage from './pages/NotFoundPage';

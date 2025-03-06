@@ -132,7 +132,7 @@ export function WorkingBackwardsProvider({ children }: { children: React.ReactNo
                 'problemStatement': 'problemStatement',
                 'solution': 'solution',
                 'stakeholderQuote': 'stakeholderQuote',
-                'customerJourney': 'customerJourney',
+                'customerJourney': 'introduction', // Map to introduction as fallback
                 'customerQuote': 'customerQuote',
                 'callToAction': 'callToAction'
               };
