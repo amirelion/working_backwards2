@@ -87,6 +87,7 @@ const WorkingBackwardsPage: React.FC = () => {
   const [showSummary, setShowSummary] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState('');
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [isLoadingFirstSuggestion, setIsLoadingFirstSuggestion] = useState(false);
 
   // Get AI suggestion for the current question
   const getAISuggestion = useCallback(async () => {
@@ -144,6 +145,9 @@ const WorkingBackwardsPage: React.FC = () => {
         // Only generate suggestions if we have initial thoughts and no existing suggestions
         if (Object.keys(questionsState.aiSuggestions || {}).length === 0) {
           try {
+            // Show loading state for first suggestion
+            setIsLoadingFirstSuggestion(true);
+            
             // Create a context object from existing responses
             const contextObj: Record<string, string> = {};
             const suggestions: Record<string, string> = {};
@@ -179,11 +183,13 @@ const WorkingBackwardsPage: React.FC = () => {
                 // If this is the first question and we're still on it, show the suggestion
                 if (i === 0 && currentStep === 0) {
                   setAiSuggestion(response.content);
+                  setIsLoadingFirstSuggestion(false);
                 }
               }
             }
           } catch (error) {
             console.error('Error generating initial AI suggestions:', error);
+            setIsLoadingFirstSuggestion(false);
           }
         }
       }
@@ -336,7 +342,21 @@ const WorkingBackwardsPage: React.FC = () => {
                               sx={{ mb: 2 }}
                             />
                             
-                            {aiSuggestion && (
+                            {(isLoadingFirstSuggestion && index === 0) ? (
+                              <Box sx={{ mb: 2 }}>
+                                <Typography variant="subtitle2" gutterBottom>
+                                  AI Suggestion:
+                                </Typography>
+                                <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <CircularProgress size={20} />
+                                    <Typography variant="body2" color="text.secondary">
+                                      Generating suggestion...
+                                    </Typography>
+                                  </Box>
+                                </Paper>
+                              </Box>
+                            ) : aiSuggestion ? (
                               <Box sx={{ mb: 2 }}>
                                 <Typography variant="subtitle2" gutterBottom>
                                   AI Suggestion:
@@ -353,7 +373,7 @@ const WorkingBackwardsPage: React.FC = () => {
                                   Use Suggestion
                                 </Button>
                               </Box>
-                            )}
+                            ) : null}
                             
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
                               <Button
