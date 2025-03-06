@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
-import { useNavigate } from 'react-router-dom';
+import { useRecoilState } from 'recoil';
 import { useAuth } from './AuthContext';
 import { initialThoughtsState } from '../atoms/initialThoughtsState';
 import { workingBackwardsQuestionsState } from '../atoms/workingBackwardsQuestionsState';
@@ -47,7 +46,6 @@ export function useWorkingBackwards(): WorkingBackwardsContextType {
 export function WorkingBackwardsProvider({ children }: { children: React.ReactNode }) {
   const { currentUser } = useAuth();
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   
   // State for process management
   const [currentProcessId, setCurrentProcessId] = useState<string | null>(null);
@@ -325,123 +323,42 @@ export function WorkingBackwardsProvider({ children }: { children: React.ReactNo
     }
   };
   
-  // Wrap saveCurrentProcess in useCallback to prevent it from changing on every render
+  // Save the current process
   const saveCurrentProcess = useCallback(async (): Promise<void> => {
-    console.log('saveCurrentProcess called with:', {
-      hasCurrentUser: !!currentUser,
-      currentUserId: currentUser?.uid,
-      currentProcessId,
-      initialThoughtsLength: initialThoughts?.length || 0,
-      workingBackwardsQuestionsKeys: Object.keys(workingBackwardsQuestions || {}),
-      prfaqTitle: prfaq?.title
-    });
-    
-    if (!currentUser || !currentProcessId) {
-      console.error('Cannot save process - no current process or user', {
-        hasCurrentUser: !!currentUser,
-        currentProcessId
-      });
+    if (!currentProcessId || !currentUser) {
+      console.error('Cannot save process - no current process or user');
       throw new Error('Cannot save process - no current process or user');
     }
     
-    // Skip saving if nothing has changed
     if (!isModified) {
-      console.log('No changes detected, skipping save');
+      console.log('No changes to save');
       return;
     }
     
-    // Check if we have cached the last saved process
-    // If we have and it's deep-equal to the current process, skip saving
-    try {
-      // Get the last process from service - we don't want to do this for every check,
-      // but only when we're about to save to avoid unnecessary network calls
-      const lastProcess = await workingBackwardsService.getProcessById(currentProcessId);
-      
-      if (lastProcess) {
-        const currentMappedPrfaq = {
-          title: prfaq.title,
-          pressRelease: {
-            introduction: prfaq.pressRelease.introduction || '',
-            problemStatement: prfaq.pressRelease.problemStatement || '',
-            solution: prfaq.pressRelease.solution || '',
-            stakeholderQuote: prfaq.pressRelease.stakeholderQuote || '',
-            customerJourney: prfaq.pressRelease.customerJourney || '',
-            customerQuote: prfaq.pressRelease.customerQuote || '',
-            callToAction: prfaq.pressRelease.callToAction || ''
-          },
-          customerFaqs: prfaq.customerFaqs || [],
-          stakeholderFaqs: prfaq.stakeholderFaqs || []
-        };
-        
-        // For initial thoughts and working backwards questions, use simple JSON string compare
-        const lastInitialThoughts = JSON.stringify(lastProcess.initialThoughts || '');
-        const currentInitialThoughts = JSON.stringify(initialThoughts || '');
-        
-        const lastWBQuestions = JSON.stringify(lastProcess.workingBackwardsQuestions || {});
-        const currentWBQuestions = JSON.stringify(workingBackwardsQuestions || {});
-        
-        // For PRFAQ, check each field explicitly since order matters in JSON stringification
-        const prfaqMatch = lastProcess.prfaq && 
-          lastProcess.prfaq.title === currentMappedPrfaq.title &&
-          lastProcess.prfaq.pressRelease?.introduction === currentMappedPrfaq.pressRelease.introduction &&
-          lastProcess.prfaq.pressRelease?.problemStatement === currentMappedPrfaq.pressRelease.problemStatement &&
-          lastProcess.prfaq.pressRelease?.solution === currentMappedPrfaq.pressRelease.solution &&
-          lastProcess.prfaq.pressRelease?.stakeholderQuote === currentMappedPrfaq.pressRelease.stakeholderQuote &&
-          lastProcess.prfaq.pressRelease?.customerJourney === currentMappedPrfaq.pressRelease.customerJourney &&
-          lastProcess.prfaq.pressRelease?.customerQuote === currentMappedPrfaq.pressRelease.customerQuote &&
-          lastProcess.prfaq.pressRelease?.callToAction === currentMappedPrfaq.pressRelease.callToAction &&
-          JSON.stringify(lastProcess.prfaq.customerFaqs || []) === JSON.stringify(currentMappedPrfaq.customerFaqs) &&
-          JSON.stringify(lastProcess.prfaq.stakeholderFaqs || []) === JSON.stringify(currentMappedPrfaq.stakeholderFaqs);
-        
-        // If everything matches, no real changes were made
-        if (lastInitialThoughts === currentInitialThoughts && 
-            lastWBQuestions === currentWBQuestions && 
-            prfaqMatch) {
-          console.log('No actual changes detected after deep comparison, skipping save');
-          setIsModified(false);
-          return;
-        }
-      }
-    } catch (error) {
-      // If there's an error in checking, we'll continue with the save operation
-      console.error('Error checking for changes:', error);
-    }
-    
     setIsSaving(true);
+    setError(null);
+    
     try {
-      console.log('Preparing process data for save...');
-      
-      // Map the Redux PRFAQ state to the Firebase structure
-      const mappedPrfaq = {
-        title: prfaq.title,
-        pressRelease: {
-          introduction: prfaq.pressRelease.introduction,
-          problemStatement: prfaq.pressRelease.problemStatement,
-          solution: prfaq.pressRelease.solution,
-          stakeholderQuote: prfaq.pressRelease.stakeholderQuote,
-          customerJourney: prfaq.pressRelease.customerJourney, // Use customerJourney field
-          customerQuote: prfaq.pressRelease.customerQuote,
-          callToAction: prfaq.pressRelease.callToAction
-        },
-        // No internalFaqs field
-        customerFaqs: prfaq.customerFaqs,
-        stakeholderFaqs: prfaq.stakeholderFaqs
-      };
-      
       const processData: Partial<WorkingBackwardsProcess> = {
         initialThoughts,
         workingBackwardsQuestions,
-        prfaq: mappedPrfaq
+        prfaq: {
+          title: prfaq.title,
+          pressRelease: {
+            introduction: prfaq.pressRelease.introduction,
+            problemStatement: prfaq.pressRelease.problemStatement,
+            solution: prfaq.pressRelease.solution,
+            stakeholderQuote: prfaq.pressRelease.stakeholderQuote,
+            customerJourney: prfaq.pressRelease.customerJourney,
+            customerQuote: prfaq.pressRelease.customerQuote,
+            callToAction: prfaq.pressRelease.callToAction
+          },
+          customerFaqs: prfaq.customerFaqs,
+          stakeholderFaqs: prfaq.stakeholderFaqs
+        }
       };
       
-      console.log('Saving process data:', {
-        processId: currentProcessId,
-        dataKeys: Object.keys(processData)
-      });
-      
       await workingBackwardsService.updateProcess(currentProcessId, processData);
-      console.log('Process saved successfully');
-      
       setLastSaved(new Date());
       setIsModified(false);
     } catch (error) {
