@@ -14,6 +14,7 @@ import {
   Save as SaveIcon,
 } from '@mui/icons-material';
 import { FAQ } from '../../../../types';
+import { useWorkingBackwards } from '../../../../contexts/WorkingBackwardsContext';
 
 // Lazy-loaded ReactQuill component
 const LazyReactQuill = lazy(() => import('react-quill'));
@@ -42,6 +43,16 @@ export const FAQItem: React.FC<FAQItemProps> = ({
   onSave,
   disabled = false,
 }) => {
+  const { saveCurrentProcess } = useWorkingBackwards();
+  
+  const handleBlur = async () => {
+    try {
+      await saveCurrentProcess();
+    } catch (error) {
+      console.error('Error saving on blur:', error);
+    }
+  };
+
   return (
     <Paper key={index} sx={{ p: 2, mb: 2 }}>
       {isEditing ? (
@@ -53,6 +64,7 @@ export const FAQItem: React.FC<FAQItemProps> = ({
             variant="outlined"
             value={faq.question}
             onChange={(e) => onUpdate(index, 'question', e.target.value)}
+            onBlur={handleBlur}
             sx={{ mb: 2 }}
             disabled={disabled}
           />
@@ -66,6 +78,7 @@ export const FAQItem: React.FC<FAQItemProps> = ({
               <LazyReactQuill
                 value={faq.answer}
                 onChange={(value) => onUpdate(index, 'answer', value)}
+                onBlur={handleBlur}
                 style={{ height: '150px', marginBottom: '50px' }}
                 modules={{
                   toolbar: [
@@ -83,7 +96,10 @@ export const FAQItem: React.FC<FAQItemProps> = ({
             <Button
               variant="contained"
               color="primary"
-              onClick={onSave}
+              onClick={() => {
+                onSave();
+                handleBlur();
+              }}
               startIcon={<SaveIcon />}
               disabled={disabled}
             >

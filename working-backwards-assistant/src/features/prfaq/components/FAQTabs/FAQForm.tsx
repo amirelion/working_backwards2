@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import { Save as SaveIcon } from '@mui/icons-material';
 import { FAQ } from '../../../../types';
+import { useWorkingBackwards } from '../../../../contexts/WorkingBackwardsContext';
 
 // Lazy-loaded ReactQuill component
 const LazyReactQuill = lazy(() => import('react-quill'));
@@ -33,6 +34,16 @@ export const FAQForm: React.FC<FAQFormProps> = ({
   disabled = false,
   title,
 }) => {
+  const { saveCurrentProcess } = useWorkingBackwards();
+  
+  const handleBlur = async () => {
+    try {
+      await saveCurrentProcess();
+    } catch (error) {
+      console.error('Error saving on blur:', error);
+    }
+  };
+
   return (
     <Box sx={{ mt: 3 }}>
       <Divider sx={{ my: 3 }} />
@@ -45,6 +56,7 @@ export const FAQForm: React.FC<FAQFormProps> = ({
         variant="outlined"
         value={newFAQ.question}
         onChange={onQuestionChange}
+        onBlur={handleBlur}
         sx={{ mb: 2 }}
         disabled={disabled}
       />
@@ -58,6 +70,7 @@ export const FAQForm: React.FC<FAQFormProps> = ({
           <LazyReactQuill
             value={newFAQ.answer}
             onChange={onAnswerChange}
+            onBlur={handleBlur}
             style={{ height: '150px', marginBottom: '50px' }}
             modules={{
               toolbar: [
@@ -75,7 +88,10 @@ export const FAQForm: React.FC<FAQFormProps> = ({
         <Button
           variant="contained"
           color="primary"
-          onClick={onSave}
+          onClick={() => {
+            onSave();
+            handleBlur();
+          }}
           startIcon={<SaveIcon />}
           disabled={disabled || !newFAQ.question.trim() || !newFAQ.answer.trim()}
         >
@@ -106,6 +122,16 @@ export const FAQGenerate: React.FC<FAQGenerateProps> = ({
   isGenerating,
   isDisabled,
 }) => {
+  const { saveCurrentProcess } = useWorkingBackwards();
+  
+  const handleBlur = async () => {
+    try {
+      await saveCurrentProcess();
+    } catch (error) {
+      console.error('Error saving on blur:', error);
+    }
+  };
+
   return (
     <Box sx={{ mb: 3 }}>
       <Typography variant="subtitle1" gutterBottom>
@@ -117,6 +143,7 @@ export const FAQGenerate: React.FC<FAQGenerateProps> = ({
         variant="outlined"
         value={comment}
         onChange={onCommentChange}
+        onBlur={handleBlur}
         placeholder="Add specific instructions for generating FAQs (e.g., 'Focus on pricing and support questions')"
         sx={{ mb: 2 }}
         disabled={isDisabled}
