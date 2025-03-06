@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { AIRequest, AIResponse, WorkingBackwardsResponses, PRFAQ, FAQ } from '../types';
-import PromptLoader from './promptLoader';
+import PromptLoader from '../services/promptLoader';
 
 // Get environment variables
 const AI_PROVIDER = process.env.REACT_APP_AI_PROVIDER || 'openai';
