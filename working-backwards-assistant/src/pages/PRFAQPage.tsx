@@ -227,6 +227,63 @@ const LazyReactQuill = ({ value, onChange, style, visible = true }: {
   );
 };
 
+// Create an independent text input component that's resistant to re-renders
+const StableTextInput = React.memo(({
+  value: initialValue,
+  onChange,
+  placeholder,
+  rows = 3,
+  label,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  rows?: number;
+  label?: string;
+}) => {
+  // Use state ref instead of state to avoid re-renders during typing
+  const valueRef = React.useRef(initialValue);
+  const inputRef = React.useRef<HTMLTextAreaElement>(null);
+  
+  // Update our ref if initialValue changes and we haven't edited
+  React.useEffect(() => {
+    // Only update if the input doesn't have focus
+    if (document.activeElement !== inputRef.current) {
+      valueRef.current = initialValue;
+      
+      // Force update the DOM directly to avoid re-renders
+      if (inputRef.current) {
+        inputRef.current.value = initialValue;
+      }
+    }
+  }, [initialValue]);
+  
+  // Handle changes locally without triggering re-renders
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    valueRef.current = e.target.value;
+  };
+  
+  // Only notify parent when focus is lost
+  const handleBlur = () => {
+    onChange(valueRef.current);
+  };
+  
+  return (
+    <TextField
+      fullWidth
+      multiline
+      label={label}
+      rows={rows}
+      variant="outlined"
+      defaultValue={valueRef.current}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      placeholder={placeholder}
+      inputRef={inputRef}
+    />
+  );
+});
+
 const PRFAQPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -1184,33 +1241,10 @@ const PRFAQPage: React.FC = () => {
     placeholder?: string;
   }) => {
     const hasContent = value && value.trim().length > 0;
-    const [localValue, setLocalValue] = React.useState(value);
-    const inputRef = React.useRef<HTMLTextAreaElement>(null);
-    const [isEditing, setIsEditing] = React.useState(false);
     
-    // Only update local value from props when component mounts or when not editing
-    React.useEffect(() => {
-      if (!isEditing) {
-        setLocalValue(value);
-      }
-    }, [value, isEditing]);
-    
-    // Handle local changes without losing focus
-    const handleLocalChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-      setLocalValue(e.target.value);
-    };
-    
-    // Update parent state only when user finishes typing (onBlur)
-    const handleBlur = () => {
-      setIsEditing(false);
-      if (localValue !== value) {
-        onChange({ target: { value: localValue } } as React.ChangeEvent<HTMLTextAreaElement>);
-      }
-    };
-    
-    // Set editing flag when user starts typing
-    const handleFocus = () => {
-      setIsEditing(true);
+    // Handle value changes from the stable input
+    const handleStableInputChange = (newValue: string) => {
+      onChange({ target: { value: newValue } } as React.ChangeEvent<HTMLTextAreaElement>);
     };
     
     return (
@@ -1219,17 +1253,11 @@ const PRFAQPage: React.FC = () => {
           {label}
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, flexDirection: 'column', width: '100%' }}>
-          <TextField
-            fullWidth
-            multiline
-            rows={rows}
-            variant="outlined"
-            value={localValue}
-            onChange={handleLocalChange}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
+          <StableTextInput 
+            value={value}
+            onChange={handleStableInputChange}
             placeholder={placeholder}
-            inputRef={inputRef}
+            rows={rows}
           />
           <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mt: 1 }}>
             <Button
