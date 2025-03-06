@@ -11,8 +11,8 @@ import { Save as SaveIcon } from '@mui/icons-material';
 import { FAQ } from '../../../../types';
 import { useWorkingBackwards } from '../../../../contexts/WorkingBackwardsContext';
 
-// Lazy-loaded ReactQuill component
-const LazyReactQuill = lazy(() => import('react-quill'));
+// Lazy load ReactQuill
+const LazyReactQuill = lazy(() => import('react-quill-new'));
 
 interface FAQFormProps {
   newFAQ: FAQ;

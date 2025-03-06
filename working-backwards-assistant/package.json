@@ -76,5 +76,10 @@
     "@types/multer": "^1.4.12",
     "concurrently": "^9.1.2",
     "ts-node": "^10.9.2"
+  },
+  "overrides": {
+    "source-map-loader": {
+      "webpack": "5.81.0"
+    }
   }
 }

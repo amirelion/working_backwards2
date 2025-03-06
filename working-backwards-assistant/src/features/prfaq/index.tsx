@@ -22,7 +22,9 @@ import {
   ArrowForward,
   ArrowBack,
 } from '@mui/icons-material';
-import 'react-quill/dist/quill.snow.css';
+// Disable source maps for this CSS import to avoid webpack warnings
+/* eslint-disable-next-line import/no-unresolved */
+import 'react-quill-new/dist/quill.snow.css';
 import { RootState } from '../../store';
 import { useWorkingBackwards } from '../../contexts/WorkingBackwardsContext';
 import { format } from 'date-fns';
@@ -31,10 +33,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { ExportFormat } from '../../types';
 
 // Custom hooks
-import useAIGeneration from './hooks/useAIGeneration';
-import useFAQs from './hooks/useFAQs';
-import usePressRelease from './hooks/usePressRelease';
-import usePRFAQAutoSave from './hooks/usePRFAQAutoSave';
+import { useAIGeneration } from './hooks/useAIGeneration';
+import { useFAQs } from './hooks/useFAQs';
+import { usePressRelease } from './hooks/usePressRelease';
+import { usePRFAQAutoSave } from './hooks/usePRFAQAutoSave';
 
 // Components
 import PressReleaseForm from './components/PressReleaseTab/PressReleaseForm';
@@ -48,7 +50,7 @@ import ExportMenuButton from './components/ExportMenuButton';
 import { handleExport as exportUtils } from './utils/exportUtils';
 
 // Lazy-loaded ReactQuill component
-const LazyReactQuill = lazy(() => import('react-quill'));
+const LazyReactQuill = lazy(() => import('react-quill-new'));
 
 // Remove unused QuillWrapper or just comment out
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -335,15 +337,17 @@ const PRFAQPage: React.FC = () => {
             disabled={prfaqIsEmpty} 
           />
           
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={isGeneratingPRFAQ ? <CircularProgress size={20} color="inherit" /> : <AutoFixHighIcon />}
-            onClick={handleGenerateFullPRFAQ}
-            disabled={isGeneratingPRFAQ || !hasWorkingBackwardsResponses}
-          >
-            {isGeneratingPRFAQ ? `Generating (Step ${generationStep}/7)` : "Generate All Sections"}
-          </Button>
+          {tabValue === 0 && (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={isGeneratingPRFAQ ? <CircularProgress size={20} color="inherit" /> : <AutoFixHighIcon />}
+              onClick={handleGenerateFullPRFAQ}
+              disabled={isGeneratingPRFAQ || !hasWorkingBackwardsResponses}
+            >
+              {isGeneratingPRFAQ ? `Generating (Step ${generationStep}/7)` : "Generate All Sections"}
+            </Button>
+          )}
         </Box>
         
         {/* Export menu */}
