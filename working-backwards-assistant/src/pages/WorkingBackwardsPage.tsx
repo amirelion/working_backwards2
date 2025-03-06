@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useRecoilState } from 'recoil';
 import { workingBackwardsQuestionsState, WorkingBackwardsQuestionsState } from '../atoms/workingBackwardsQuestionsState';
@@ -16,10 +16,8 @@ import {
   StepLabel,
   StepContent,
   Divider,
-  Tooltip,
-  IconButton,
 } from '@mui/material';
-import { ArrowForward, ArrowBack, Lightbulb, ContentPaste, Edit } from '@mui/icons-material';
+import { ArrowForward, ArrowBack, ContentPaste, Edit } from '@mui/icons-material';
 import { getAIResponse, getWorkingBackwardsPrompt } from '../services/aiService';
 import { updateWorkingBackwardsResponse } from '../store/sessionSlice';
 import { initialThoughtsState } from '../atoms/initialThoughtsState';
@@ -75,15 +73,13 @@ const questionsList: WorkingBackwardsQuestion[] = [
 
 const WorkingBackwardsPage: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const dispatch = useDispatch();
   const [questionsState, setQuestionsState] = useRecoilState(workingBackwardsQuestionsState);
-  const [initialThoughts, setInitialThoughts] = useRecoilState(initialThoughtsState);
+  const [initialThoughts] = useRecoilState(initialThoughtsState);
   
   const [currentStep, setCurrentStep] = useState(0);
   const [currentResponse, setCurrentResponse] = useState('');
   const [currentQuestion, setCurrentQuestion] = useState<WorkingBackwardsQuestion>(questionsList[0]);
-  const [isLoading, setIsLoading] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState('');
   const [isFirstLoad, setIsFirstLoad] = useState(true);
@@ -91,8 +87,6 @@ const WorkingBackwardsPage: React.FC = () => {
 
   // Get AI suggestion for the current question
   const getAISuggestion = useCallback(async () => {
-    setIsLoading(true);
-    
     try {
       // Create a context object from existing responses
       const contextObj: Record<string, string> = {};
@@ -131,8 +125,6 @@ const WorkingBackwardsPage: React.FC = () => {
     } catch (error) {
       console.error('Error getting AI suggestion:', error);
       setAiSuggestion('Sorry, I couldn\'t generate a suggestion at this time. Please try again later.');
-    } finally {
-      setIsLoading(false);
     }
   }, [currentQuestion, currentStep, initialThoughts, questionsState, setQuestionsState]);
 
