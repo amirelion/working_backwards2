@@ -1,6 +1,6 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
+import React, { useState, useEffect, lazy, Suspense, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { useRecoilValue } from 'recoil';
 import {
   Box,
@@ -49,7 +49,8 @@ import { handleExport as exportUtils } from './utils/exportUtils';
 // Lazy-loaded ReactQuill component
 const LazyReactQuill = lazy(() => import('react-quill'));
 
-// React Quill wrapper component
+// Remove unused QuillWrapper or just comment out
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const QuillWrapper = ({ value, onChange, style, visible = true }: { 
   value: string, 
   onChange: (value: string) => void, 
@@ -85,7 +86,6 @@ const QuillWrapper = ({ value, onChange, style, visible = true }: {
  */
 const PRFAQPage: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { currentUser } = useAuth();
   const { currentProcessId, saveCurrentProcess, isSaving: isContextSaving, lastSaved: contextLastSaved, isModified: contextIsModified, setIsModified } = useWorkingBackwards();
   const workingBackwardsResponses = useRecoilValue(workingBackwardsQuestionsState);
@@ -149,6 +149,25 @@ const PRFAQPage: React.FC = () => {
   // Check if PRFAQ is empty
   const isPRFAQEmpty = checkIsPRFAQEmpty(prfaq);
   
+  // Handle manual save - wrapped in useCallback to prevent recreation on every render
+  const handleManualSave = useCallback(async () => {
+    if (!currentProcessId) return;
+    
+    try {
+      await saveCurrentProcess();
+      
+      setSnackbarMessage('PRFAQ saved successfully');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error('Error saving PRFAQ:', error);
+      
+      setSnackbarMessage('Failed to save PRFAQ');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
+  }, [currentProcessId, saveCurrentProcess, setSnackbarMessage, setSnackbarSeverity, setSnackbarOpen]);
+  
   // Auto-save when PRFAQ state changes
   useEffect(() => {
     setIsModified(true);
@@ -159,7 +178,7 @@ const PRFAQPage: React.FC = () => {
     }, 5000);
     
     return () => clearTimeout(autoSaveTimeout);
-  }, [prfaq]);
+  }, [prfaq, currentProcessId, handleManualSave, setIsModified]);
   
   // Handle tab change
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -178,25 +197,6 @@ const PRFAQPage: React.FC = () => {
   const handleExport = (format: ExportFormat) => {
     handleExportMenuClose();
     exportUtils(prfaq, format);
-  };
-  
-  // Handle manual save
-  const handleManualSave = async () => {
-    if (!currentProcessId) return;
-    
-    try {
-      await saveCurrentProcess();
-      
-      setSnackbarMessage('PRFAQ saved successfully');
-      setSnackbarSeverity('success');
-      setSnackbarOpen(true);
-    } catch (error) {
-      console.error('Error saving PRFAQ:', error);
-      
-      setSnackbarMessage('Failed to save PRFAQ');
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
-    }
   };
   
   // Handle snackbar close
