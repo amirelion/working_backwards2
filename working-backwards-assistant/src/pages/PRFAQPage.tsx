@@ -1186,14 +1186,14 @@ const PRFAQPage: React.FC = () => {
     const hasContent = value && value.trim().length > 0;
     const [localValue, setLocalValue] = React.useState(value);
     const inputRef = React.useRef<HTMLTextAreaElement>(null);
+    const [isEditing, setIsEditing] = React.useState(false);
     
-    // Update local value when prop value changes (for initial load or external changes)
-    // But only if the field doesn't have focus to prevent losing focus while typing
+    // Only update local value from props when component mounts or when not editing
     React.useEffect(() => {
-      if (document.activeElement !== inputRef.current) {
+      if (!isEditing) {
         setLocalValue(value);
       }
-    }, [value]);
+    }, [value, isEditing]);
     
     // Handle local changes without losing focus
     const handleLocalChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
@@ -1202,9 +1202,15 @@ const PRFAQPage: React.FC = () => {
     
     // Update parent state only when user finishes typing (onBlur)
     const handleBlur = () => {
+      setIsEditing(false);
       if (localValue !== value) {
         onChange({ target: { value: localValue } } as React.ChangeEvent<HTMLTextAreaElement>);
       }
+    };
+    
+    // Set editing flag when user starts typing
+    const handleFocus = () => {
+      setIsEditing(true);
     };
     
     return (
@@ -1220,15 +1226,10 @@ const PRFAQPage: React.FC = () => {
             variant="outlined"
             value={localValue}
             onChange={handleLocalChange}
+            onFocus={handleFocus}
             onBlur={handleBlur}
             placeholder={placeholder}
             inputRef={inputRef}
-            InputProps={{
-              // This helps maintain focus in MUI components
-              inputProps: {
-                ref: inputRef
-              }
-            }}
           />
           <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', mt: 1 }}>
             <Button
