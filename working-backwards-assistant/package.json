@@ -48,7 +48,7 @@
     "vercel-build": "npm install && npm run build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "server": "node server.js",
+    "server": "ts-node -P tsconfig.server.json server.ts",
     "dev": "concurrently \"npm run server\" \"npm run start\""
   },
   "eslintConfig": {
@@ -70,7 +70,11 @@
     ]
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
     "@types/lodash": "^4.14.202",
-    "concurrently": "^9.1.2"
+    "@types/multer": "^1.4.12",
+    "concurrently": "^9.1.2",
+    "ts-node": "^10.9.2"
   }
 }
