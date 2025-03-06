@@ -143,23 +143,16 @@ const WorkingBackwardsPage: React.FC = () => {
         
         // Only generate suggestions if we have initial thoughts and no existing suggestions
         if (Object.keys(questionsState.aiSuggestions || {}).length === 0) {
-          console.log('Generating initial AI suggestions based on initial thoughts');
-          
           try {
             // Create a context object from existing responses
             const contextObj: Record<string, string> = {};
-            
-            // Generate suggestions for all questions at once
             const suggestions: Record<string, string> = {};
             
+            // Generate suggestions in the background without affecting UI
             for (let i = 0; i < questionsList.length; i++) {
               const question = questionsList[i];
               const questionNumber = i + 1;
               const fullQuestionKey = `${questionNumber}. ${question.label}`;
-              
-              // Set current question for the getAISuggestion function
-              setCurrentQuestion(question);
-              setCurrentStep(i);
               
               // Call the AI service
               const promptText = getWorkingBackwardsPrompt(question.aiPrompt, contextObj, initialThoughts);
@@ -172,30 +165,23 @@ const WorkingBackwardsPage: React.FC = () => {
               
               if (!response.error) {
                 suggestions[fullQuestionKey] = response.content;
-                
-                // Update context for next questions
                 contextObj[question.id] = response.content;
+                
+                // Update suggestions in state as they come in
+                setQuestionsState(prev => ({
+                  ...prev,
+                  aiSuggestions: {
+                    ...prev.aiSuggestions,
+                    [fullQuestionKey]: response.content
+                  }
+                }));
+                
+                // If this is the first question and we're still on it, show the suggestion
+                if (i === 0 && currentStep === 0) {
+                  setAiSuggestion(response.content);
+                }
               }
             }
-            
-            // Store all suggestions in the questionsState
-            setQuestionsState(prev => ({
-              ...prev,
-              aiSuggestions: {
-                ...prev.aiSuggestions,
-                ...suggestions
-              }
-            }));
-            
-            // Reset to first question
-            setCurrentQuestion(questionsList[0]);
-            setCurrentStep(0);
-            
-            // Set the current AI suggestion
-            if (suggestions[`1. ${questionsList[0].label}`]) {
-              setAiSuggestion(suggestions[`1. ${questionsList[0].label}`]);
-            }
-            
           } catch (error) {
             console.error('Error generating initial AI suggestions:', error);
           }
@@ -204,7 +190,7 @@ const WorkingBackwardsPage: React.FC = () => {
     };
     
     generateInitialSuggestions();
-  }, [isFirstLoad, initialThoughts, questionsState.aiSuggestions, setQuestionsState]);
+  }, [isFirstLoad, initialThoughts, questionsState.aiSuggestions, setQuestionsState, currentStep]);
 
   // Initialize current response from Recoil state when active step changes
   useEffect(() => {
@@ -337,67 +323,57 @@ const WorkingBackwardsPage: React.FC = () => {
                           {question.helperText}
                         </Typography>
                         
-                        <TextField
-                          fullWidth
-                          multiline
-                          rows={6}
-                          variant="outlined"
-                          placeholder={question.placeholder}
-                          value={currentResponse}
-                          onChange={handleResponseChange}
-                          sx={{ mb: 2 }}
-                        />
-                        
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
-                          {aiSuggestion && (
-                            <Paper elevation={1} sx={{ p: 2, bgcolor: 'background.default' }}>
-                              <Typography variant="subtitle2" gutterBottom>
-                                AI Suggestion:
-                              </Typography>
-                              <Typography variant="body2" paragraph>
-                                {aiSuggestion}
-                              </Typography>
+                        {index === currentStep && (
+                          <>
+                            <TextField
+                              fullWidth
+                              multiline
+                              rows={6}
+                              variant="outlined"
+                              placeholder={question.placeholder}
+                              value={currentResponse}
+                              onChange={handleResponseChange}
+                              sx={{ mb: 2 }}
+                            />
+                            
+                            {aiSuggestion && (
+                              <Box sx={{ mb: 2 }}>
+                                <Typography variant="subtitle2" gutterBottom>
+                                  AI Suggestion:
+                                </Typography>
+                                <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
+                                  <Typography variant="body2">{aiSuggestion}</Typography>
+                                </Paper>
+                                <Button
+                                  size="small"
+                                  startIcon={<ContentPaste />}
+                                  onClick={handleUseSuggestion}
+                                  sx={{ mt: 1 }}
+                                >
+                                  Use Suggestion
+                                </Button>
+                              </Box>
+                            )}
+                            
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
                               <Button
-                                variant="outlined"
-                                size="small"
-                                startIcon={<ContentPaste />}
-                                onClick={handleUseSuggestion}
+                                disabled={currentStep === 0}
+                                onClick={handleBack}
+                                startIcon={<ArrowBack />}
                               >
-                                Use suggestion
+                                Back
                               </Button>
-                            </Paper>
-                          )}
-                          
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Tooltip title="Get AI suggestion">
-                              <IconButton 
-                                onClick={getAISuggestion} 
-                                disabled={isLoading}
+                              <Button
+                                variant="contained"
                                 color="primary"
+                                onClick={handleNext}
+                                endIcon={<ArrowForward />}
                               >
-                                {isLoading ? <CircularProgress size={24} /> : <Lightbulb />}
-                              </IconButton>
-                            </Tooltip>
-                          </Box>
-                        </Box>
-                        
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-                          <Button
-                            disabled={currentStep === 0}
-                            onClick={handleBack}
-                            startIcon={<ArrowBack />}
-                          >
-                            Back
-                          </Button>
-                          <Button
-                            variant="contained"
-                            color="primary"
-                            onClick={handleNext}
-                            endIcon={<ArrowForward />}
-                          >
-                            {index === questionsList.length - 1 ? 'Finish' : 'Next'}
-                          </Button>
-                        </Box>
+                                {index === questionsList.length - 1 ? 'Finish' : 'Next'}
+                              </Button>
+                            </Box>
+                          </>
+                        )}
                       </Box>
                     </StepContent>
                   </Step>
