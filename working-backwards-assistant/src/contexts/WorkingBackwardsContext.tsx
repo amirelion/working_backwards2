@@ -382,8 +382,8 @@ export function WorkingBackwardsProvider({ children }: { children: React.ReactNo
   ]);
   
   // Debounced save function
-  const debouncedSave = useCallback(
-    debounce(async () => {
+  const debouncedSave = useCallback(() => {
+    const saveFunction = async () => {
       if (currentProcessId && currentUser) {
         try {
           setIsSaving(true);
@@ -416,19 +416,21 @@ export function WorkingBackwardsProvider({ children }: { children: React.ReactNo
           setIsSaving(false);
         }
       }
-    }, 5000),
-    [currentProcessId, currentUser, initialThoughts, workingBackwardsQuestions, prfaq]
-  );
+    };
+    
+    return debounce(saveFunction, 5000);
+  }, [currentProcessId, currentUser, initialThoughts, workingBackwardsQuestions, prfaq, setIsSaving, setLastSaved, setError]);
   
   // Auto-save when state changes
   useEffect(() => {
     if (currentProcessId && currentUser) {
-      debouncedSave();
+      const debouncedFunction = debouncedSave();
+      debouncedFunction();
+      
+      return () => {
+        debouncedFunction.cancel();
+      };
     }
-    
-    return () => {
-      debouncedSave.cancel();
-    };
   }, [currentProcessId, currentUser, initialThoughts, workingBackwardsQuestions, prfaq, debouncedSave]);
   
   // Delete a process
