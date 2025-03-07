@@ -50,6 +50,7 @@ import { backwardCompatSelectors } from '../store/compatUtils';
 
 const ExperimentsPage: React.FC = () => {
   const navigate = useNavigate();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const location = useLocation();
   const dispatch = useDispatch();
   const { experiments, assumptions, prfaq } = useSelector((state: RootState) => ({

@@ -132,8 +132,16 @@ export const sessionSlice = createSlice({
     },
     
     // Add Assumption
-    addAssumption: (state, action: PayloadAction<Assumption>) => {
-      state.currentSession.assumptions.push(action.payload);
+    addAssumption: (state, action: PayloadAction<Omit<Assumption, 'id'> | Assumption>) => {
+      // Check if the payload already has an ID
+      const payload = 'id' in action.payload 
+        ? action.payload 
+        : {
+            ...action.payload,
+            id: uuidv4(),
+          };
+          
+      state.currentSession.assumptions.push(payload);
       state.currentSession.updatedAt = new Date().toISOString();
     },
     
@@ -162,8 +170,16 @@ export const sessionSlice = createSlice({
     },
     
     // Add Experiment
-    addExperiment: (state, action: PayloadAction<Experiment>) => {
-      state.currentSession.experiments.push(action.payload);
+    addExperiment: (state, action: PayloadAction<Omit<Experiment, 'id'> | Experiment>) => {
+      // Check if the payload already has an ID
+      const payload = 'id' in action.payload 
+        ? action.payload 
+        : {
+            ...action.payload,
+            id: uuidv4(),
+          };
+          
+      state.currentSession.experiments.push(payload);
       state.currentSession.updatedAt = new Date().toISOString();
     },
     

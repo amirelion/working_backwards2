@@ -49,6 +49,7 @@ import { backwardCompatSelectors } from '../store/compatUtils';
 
 const AssumptionsPage: React.FC = () => {
   const navigate = useNavigate();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const location = useLocation();
   const dispatch = useDispatch();
   const { assumptions, prfaq } = useSelector((state: RootState) => ({
@@ -84,11 +85,8 @@ const AssumptionsPage: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'info' | 'warning' | 'error'>('info');
   
-  // Check if PRFAQ is filled
-  const hasPRFAQ = prfaq.title && 
-    (prfaq.pressRelease.summary || 
-     prfaq.pressRelease.problem || 
-     prfaq.pressRelease.solution);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const hasPRFAQ = prfaq.title.trim() !== '' || prfaq.pressRelease.summary.trim() !== '';
 
   // Reset modified flag when saving completes
   useEffect(() => {

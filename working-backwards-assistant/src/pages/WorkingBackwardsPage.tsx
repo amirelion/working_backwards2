@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { ArrowForward, ArrowBack, ContentPaste, Edit } from '@mui/icons-material';
 import { getAIResponse, getWorkingBackwardsPrompt } from '../services/aiService';
-import { updateWorkingBackwardsResponse } from '../store/sessionSlice';
+import { updateWorkingBackwardsResponse } from '../features/session/sessionSlice';
 import { initialThoughtsState } from '../atoms/initialThoughtsState';
 import { WorkingBackwardsResponses } from '../types';
 
@@ -85,7 +85,7 @@ const WorkingBackwardsPage: React.FC = () => {
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [isLoadingFirstSuggestion, setIsLoadingFirstSuggestion] = useState(false);
 
-  // Get AI suggestion for the current question
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getAISuggestion = useCallback(async () => {
     try {
       // Create a context object from existing responses

@@ -29,6 +29,7 @@ const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
 const TestPage = React.lazy(() => import('./pages/TestPage'));
 
 // Error fallback component
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ErrorFallback() {
   return (
     <Box sx={{
