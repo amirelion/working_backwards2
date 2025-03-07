@@ -1,72 +1,76 @@
-import React, { useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../lib/firebase/firebase';
-import { Box, Typography, Paper } from '@mui/material';
+import React from 'react';
+import { Container, Typography, Box, Button, Divider } from '@mui/material';
+import SessionInfo from '../features/session/SessionInfo';
+import { useAppDispatch } from '../store/hooks';
+import { 
+  updateWorkingBackwardsResponse, 
+  updatePRFAQTitle 
+} from '../features/session/sessionSlice';
 
-export default function TestPage() {
-  const [users, setUsers] = useState<any[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+function TestPage() {
+  const dispatch = useAppDispatch();
 
-  useEffect(() => {
-    async function fetchUsers() {
-      try {
-        console.log('Fetching users from Firestore...');
-        const usersCollection = collection(db, 'users');
-        const querySnapshot = await getDocs(usersCollection);
-        
-        const usersData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        
-        console.log('Found users:', usersData);
-        setUsers(usersData);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching users:', err);
-        setError('Failed to fetch users from Firestore');
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchUsers();
-  }, []);
-
-  if (loading) {
-    return (
-      <Box p={4}>
-        <Typography>Loading users...</Typography>
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box p={4}>
-        <Typography color="error">{error}</Typography>
-      </Box>
-    );
-  }
+  // Helper function to update the Working Backwards responses with dummy data
+  const populateDummyData = () => {
+    dispatch(updateWorkingBackwardsResponse({ 
+      field: 'customer', 
+      value: 'Enterprise product teams and executives' 
+    }));
+    
+    dispatch(updateWorkingBackwardsResponse({ 
+      field: 'problem', 
+      value: 'Product teams struggle to define clear product vision and validate ideas early' 
+    }));
+    
+    dispatch(updateWorkingBackwardsResponse({ 
+      field: 'benefit', 
+      value: 'Structured approach to product development with AI assistance' 
+    }));
+    
+    dispatch(updateWorkingBackwardsResponse({ 
+      field: 'validation', 
+      value: 'Improved product-market fit and reduced development waste' 
+    }));
+    
+    dispatch(updateWorkingBackwardsResponse({ 
+      field: 'experience', 
+      value: 'Guided, step-by-step process that feels like working with an expert consultant' 
+    }));
+    
+    dispatch(updatePRFAQTitle('Working Backwards Assistant - Enterprise Edition'));
+  };
 
   return (
-    <Box p={4}>
-      <Typography variant="h4" gutterBottom>
-        Firestore Users Test Page
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Typography variant="h4" component="h1" gutterBottom>
+        Test Page
       </Typography>
       
-      {users.length === 0 ? (
-        <Typography>No users found in the collection</Typography>
-      ) : (
-        users.map(user => (
-          <Paper key={user.id} sx={{ p: 2, mb: 2 }}>
-            <pre style={{ whiteSpace: 'pre-wrap' }}>
-              {JSON.stringify(user, null, 2)}
-            </pre>
-          </Paper>
-        ))
-      )}
-    </Box>
+      <Typography variant="body1" paragraph>
+        This page demonstrates the refactored session functionality using Redux Toolkit 
+        best practices and functional components.
+      </Typography>
+      
+      <Box sx={{ mb: 4 }}>
+        <Button 
+          variant="contained" 
+          color="primary" 
+          onClick={populateDummyData}
+          sx={{ mr: 2 }}
+        >
+          Populate Dummy Data
+        </Button>
+      </Box>
+      
+      <Divider sx={{ my: 4 }} />
+      
+      <Typography variant="h5" gutterBottom>
+        Session Component
+      </Typography>
+      
+      <SessionInfo />
+    </Container>
   );
-} 
+}
+
+export default TestPage; 
