@@ -45,7 +45,8 @@ import {
   Check as CheckIcon,
   Clear as ClearIcon,
 } from '@mui/icons-material';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns/formatDistanceToNow';
 import { useAuth } from '../contexts/AuthContext';
 import { useProcessList } from '../features/working-backwards/contexts/ProcessListContext';
 import { useCurrentProcess } from '../features/working-backwards/contexts/CurrentProcessContext';
@@ -463,7 +464,12 @@ const DashboardPage: React.FC = () => {
       )}
       
       {/* New Process Dialog */}
-      <Dialog open={openNewDialog} onClose={() => setOpenNewDialog(false)}>
+      <Dialog 
+        open={openNewDialog} 
+        onClose={() => setOpenNewDialog(false)}
+        disableEnforceFocus
+        disableRestoreFocus
+      >
         <DialogTitle>Create New Process</DialogTitle>
         <DialogContent>
           <DialogContentText>
@@ -498,6 +504,8 @@ const DashboardPage: React.FC = () => {
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
+        disableEnforceFocus
+        disableRestoreFocus
       >
         <DialogTitle>Delete Process</DialogTitle>
         <DialogContent>
@@ -517,6 +525,8 @@ const DashboardPage: React.FC = () => {
       <Dialog
         open={renameDialogOpen}
         onClose={() => setRenameDialogOpen(false)}
+        disableEnforceFocus
+        disableRestoreFocus
       >
         <DialogTitle>Rename Process</DialogTitle>
         <DialogContent>
