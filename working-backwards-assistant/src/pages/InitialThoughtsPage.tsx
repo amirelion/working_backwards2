@@ -20,13 +20,14 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { initialThoughtsState } from '../atoms/initialThoughtsState';
 import { workingBackwardsQuestionsState } from '../atoms/workingBackwardsQuestionsState';
+import { skipInitialThoughtsState } from '../atoms/skipInitialThoughtsState';
 import VoiceTranscriber from '../components/VoiceTranscriber';
 import CustomSnackbar from '../components/CustomSnackbar';
 import { processInitialThoughts } from '../utils/aiProcessing';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import SaveIcon from '@mui/icons-material/Save';
-import { useWorkingBackwards } from '../contexts/WorkingBackwardsContext';
+import { useCurrentProcess } from '../features/working-backwards/contexts/CurrentProcessContext';
 import ClearIcon from '@mui/icons-material/Clear';
 
 interface TabPanelProps {
@@ -56,6 +57,7 @@ function InitialThoughtsPage() {
   const location = useLocation();
   const [initialThoughts, setInitialThoughts] = useRecoilState(initialThoughtsState);
   const [workingBackwardsQuestions, setWorkingBackwardsQuestions] = useRecoilState(workingBackwardsQuestionsState);
+  const [skipInitialThoughts, setSkipInitialThoughts] = useRecoilState(skipInitialThoughtsState);
   const prfaq = useSelector((state: RootState) => state.prfaq);
   const [tabValue, setTabValue] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -77,7 +79,13 @@ function InitialThoughtsPage() {
     setCurrentProcessId, 
     loadProcess, 
     saveCurrentProcess 
-  } = useWorkingBackwards();
+  } = useCurrentProcess();
+  
+  // When loading a process from URL, we should reset the skipInitialThoughts flag
+  useEffect(() => {
+    // Always reset the skip flag when viewing initial thoughts
+    setSkipInitialThoughts(false);
+  }, [setSkipInitialThoughts]);
   
   // Load process if ID is in URL but not loaded yet
   useEffect(() => {
@@ -85,6 +93,8 @@ function InitialThoughtsPage() {
       if (processId && processId !== currentProcessId) {
         try {
           await loadProcess(processId);
+          // Reset skipInitialThoughts when loading a process
+          setSkipInitialThoughts(false);
         } catch (error) {
           console.error('Error loading process:', error);
         }
@@ -92,7 +102,7 @@ function InitialThoughtsPage() {
     };
     
     loadProcessFromUrl();
-  }, [processId, currentProcessId, loadProcess]);
+  }, [processId, currentProcessId, loadProcess, setSkipInitialThoughts]);
   
   // Set current process ID when component mounts
   useEffect(() => {
@@ -118,6 +128,9 @@ function InitialThoughtsPage() {
       return;
     }
 
+    // When processing initial thoughts, make sure to set skip flag to false
+    setSkipInitialThoughts(false);
+    
     setIsProcessing(true);
     setProcessingError(null);
 
@@ -177,6 +190,8 @@ function InitialThoughtsPage() {
   };
 
   const handleSkip = () => {
+    // Set the skipInitialThoughts flag to true when skipping
+    setSkipInitialThoughts(true);
     navigate('/working-backwards');
   };
   
