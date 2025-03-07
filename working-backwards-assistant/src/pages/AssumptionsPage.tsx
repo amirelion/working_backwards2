@@ -41,7 +41,7 @@ import {
   Save as SaveIcon,
 } from '@mui/icons-material';
 import { RootState } from '../store';
-import { addAssumption, updateAssumption, removeAssumption } from '../store/sessionSlice';
+import { addAssumption, updateAssumption, removeAssumption } from '../features/session/sessionSlice';
 import { Assumption } from '../types';
 import { useWorkingBackwards } from '../contexts/WorkingBackwardsContext';
 import { format } from 'date-fns';

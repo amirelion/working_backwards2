@@ -41,7 +41,7 @@ import {
   Save as SaveIcon,
 } from '@mui/icons-material';
 import { RootState } from '../store';
-import { addExperiment, updateExperiment, removeExperiment } from '../store/sessionSlice';
+import { addExperiment, updateExperiment, removeExperiment } from '../features/session/sessionSlice';
 import { getAIResponse, getExperimentSuggestionsPrompt } from '../services/aiService';
 import { Experiment, FAQ, Assumption } from '../types';
 import { useWorkingBackwards } from '../contexts/WorkingBackwardsContext';

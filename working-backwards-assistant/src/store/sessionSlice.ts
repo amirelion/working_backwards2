@@ -24,7 +24,7 @@ import { RootState } from './index';
 // Re-export the reducer from the feature path
 export default sessionReducer;
 
-// Re-export the action creators
+// Re-export all the action creators for backward compatibility
 export {
   resetSession,
   updateWorkingBackwardsResponse,
