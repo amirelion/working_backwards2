@@ -61,7 +61,7 @@ function InitialThoughtsPage() {
   const prfaq = useSelector((state: RootState) => state.prfaq);
   const [tabValue, setTabValue] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processingError, setProcessingError] = useState<string | null>(null);
+  const [processingError, setProcessingError] = useState<React.ReactNode | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
   
   // Add state for snackbar
@@ -144,13 +144,8 @@ function InitialThoughtsPage() {
       const processedQuestions = await processInitialThoughts(initialThoughts);
       console.log('Processed questions:', processedQuestions);
       
-      // Show success message
-      setSnackbarMessage('Initial thoughts processed successfully!');
-      setSnackbarSeverity('success');
-      setSnackbarOpen(true);
-      
       // Update the working backwards questions state with the processed data
-      setWorkingBackwardsQuestions(prev => ({
+      await setWorkingBackwardsQuestions(prev => ({
         ...prev,
         customer: processedQuestions.customer || prev.customer,
         problem: processedQuestions.problem || prev.problem,
@@ -165,20 +160,80 @@ function InitialThoughtsPage() {
       
       // Save the current process
       if (currentProcessId) {
-        await saveCurrentProcess();
+        try {
+          await saveCurrentProcess();
+        } catch (saveError) {
+          console.error('Error saving current process:', saveError);
+          // Continue with navigation even if save fails
+        }
       }
       
-      // Navigate to the working backwards page
-      navigate('/working-backwards');
+      // Show success message
+      setSnackbarMessage('Initial thoughts processed successfully!');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+      
+      // Small delay to ensure state updates are complete
+      setTimeout(() => {
+        // Navigation should happen last, after all state updates
+        try {
+          navigate('/working-backwards');
+        } catch (navError) {
+          console.error('Navigation error:', navError);
+          setProcessingError('Error navigating to Working Backwards page. Please try manually clicking "Working Backwards" in the menu.');
+        }
+      }, 100);
     } catch (error) {
       console.error('Error processing initial thoughts:', error);
       
+      const errorMessage = error instanceof Error ? error.message : 'Failed to process your initial thoughts. Please try again.';
+      
+      // Check if it's the Lambda function specific error
+      const isLambdaError = errorMessage.includes('AI service is temporarily unavailable');
+      
       // Show error message
-      setSnackbarMessage('Failed to process your initial thoughts. Please try again.');
+      setSnackbarMessage(errorMessage);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
       
-      setProcessingError('Failed to process your initial thoughts. Please try again.');
+      setProcessingError(errorMessage);
+      
+      // For Lambda invocation errors, we'll save what we have and offer to continue
+      if (isLambdaError || errorMessage.includes('Server error') || errorMessage.includes('invalid JSON')) {
+        // Still save the initial thoughts
+        if (currentProcessId) {
+          try {
+            await saveCurrentProcess();
+          } catch (saveError) {
+            console.error('Error saving current process after AI failure:', saveError);
+          }
+        }
+        
+        // Add a button to the error message that allows continuing without AI suggestions
+        setProcessingError(
+          <>
+            {errorMessage}
+            <Box sx={{ mt: 2 }}>
+              <Button 
+                variant="outlined" 
+                onClick={() => {
+                  setSkipInitialThoughts(true);
+                  navigate('/working-backwards');
+                }}
+                sx={{ mr: 1 }}
+              >
+                Continue Without AI Suggestions
+              </Button>
+              <Button 
+                variant="contained"
+                onClick={() => setProcessingError(null)}
+              >
+                Try Again
+              </Button>
+            </Box>
+          </>
+        );
+      }
     } finally {
       setIsProcessing(false);
     }

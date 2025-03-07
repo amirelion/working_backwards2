@@ -44,8 +44,15 @@ export const useFormState = () => {
       setCurrentQuestion(question);
       const questionId = question.id;
       setCurrentResponse(questionsState[questionId] || '');
+      
+      // Check if we're coming directly to the Working Backwards page 
+      // and need to load AI suggestions
+      if (isFirstLoad && !skipInitialThoughts && initialThoughts.trim()) {
+        setIsFirstLoad(false);
+        console.log('First load with initial thoughts - preparing for AI suggestions');
+      }
     }
-  }, [currentStep, questionsState, showSummary]);
+  }, [currentStep, questionsState, showSummary, isFirstLoad, skipInitialThoughts, initialThoughts, setIsFirstLoad]);
 
   /**
    * Handle moving to the next step or to the summary

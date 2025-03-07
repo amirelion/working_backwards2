@@ -95,36 +95,55 @@ app.post('/api/process-thoughts', async (req: Request, res: Response) => {
 
     console.log('Processing initial thoughts:', text.substring(0, 100) + '...');
 
-    // Load the prompt configuration
-    const promptLoader = PromptLoader.getInstance();
-    const { prompt, settings } = await promptLoader.buildPrompt('initialThoughts', 'processInitialThoughts', {
-      variables: { text }
-    });
+    try {
+      // Load the prompt configuration
+      const promptLoader = PromptLoader.getInstance();
+      const { prompt, settings } = await promptLoader.buildPrompt('initialThoughts', 'processInitialThoughts', {
+        variables: { text }
+      });
 
-    // Call OpenAI API to process the text
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: "You are an AI assistant that helps extract insights from initial product thoughts to support the Amazon Working Backwards process." },
-        { role: "user", content: prompt }
-      ],
-      response_format: { type: "json_object" }
-    });
+      // Call OpenAI API to process the text
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "You are an AI assistant that helps extract insights from initial product thoughts to support the Amazon Working Backwards process." },
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" }
+      });
 
-    const content = completion.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error('No content in OpenAI response');
+      const content = completion.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error('No content in OpenAI response');
+      }
+
+      // Parse the JSON response
+      const suggestions = JSON.parse(content);
+      console.log('AI suggestions:', suggestions);
+
+      return res.status(200).json(suggestions);
+    } catch (aiError: any) {
+      console.error('OpenAI API error details:', aiError);
+      
+      // Handle timeouts and specific API errors differently
+      if (aiError.message?.includes('timeout') || aiError.message?.includes('rate limit')) {
+        return res.status(503).json({ 
+          error: 'AI service is temporarily unavailable', 
+          details: aiError instanceof Error ? aiError.message : String(aiError),
+          retryable: true
+        });
+      }
+      
+      // For other AI errors, return a 500 but with clear message
+      return res.status(500).json({ 
+        error: 'AI processing failed', 
+        details: aiError instanceof Error ? aiError.message : String(aiError)
+      });
     }
-
-    // Parse the JSON response
-    const suggestions = JSON.parse(content);
-    console.log('AI suggestions:', suggestions);
-
-    return res.status(200).json(suggestions);
   } catch (error) {
-    console.error('OpenAI API error:', error);
+    console.error('Server error in process-thoughts endpoint:', error);
     return res.status(500).json({ 
-      error: 'Processing failed', 
+      error: 'Server error', 
       details: error instanceof Error ? error.message : String(error)
     });
   }
