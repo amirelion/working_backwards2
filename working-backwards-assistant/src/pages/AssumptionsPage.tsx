@@ -43,7 +43,7 @@ import {
 import { RootState } from '../store';
 import { addAssumption, updateAssumption, removeAssumption } from '../features/session/sessionSlice';
 import { Assumption } from '../types';
-import { useWorkingBackwards } from '../contexts/WorkingBackwardsContext';
+import { useCurrentProcess } from '../features/working-backwards/contexts/CurrentProcessContext';
 import { format } from 'date-fns';
 import { backwardCompatSelectors } from '../store/compatUtils';
 
@@ -64,7 +64,7 @@ const AssumptionsPage: React.FC = () => {
     isSaving, 
     lastSaved,
     error: processError
-  } = useWorkingBackwards();
+  } = useCurrentProcess();
   
   const [newAssumption, setNewAssumption] = useState<Omit<Assumption, 'id'>>({
     statement: '',

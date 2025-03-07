@@ -29,12 +29,12 @@ import {
   CheckCircle,
   QuestionAnswer,
 } from '@mui/icons-material';
-import { useWorkingBackwards } from '../contexts/WorkingBackwardsContext';
+import { useProcessList } from '../features/working-backwards/contexts/ProcessListContext';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { createNewProcess } = useWorkingBackwards();
+  const { createNewProcess } = useProcessList();
   const { currentUser } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [processTitle, setProcessTitle] = useState('');

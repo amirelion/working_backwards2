@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { isEqual } from 'lodash';
 import { PRFAQState } from '../../../store/prfaqSlice';
-import { useWorkingBackwards } from '../../../contexts/WorkingBackwardsContext';
+import { useCurrentProcess } from '../../working-backwards/contexts/CurrentProcessContext';
+import { useProcessSync } from '../../working-backwards/contexts/ProcessSyncContext';
 
 /**
  * Custom hook to manage auto-save functionality for the PRFAQ component
@@ -18,7 +19,8 @@ export const usePRFAQAutoSave = (
   isGenerating: boolean,
   currentProcessId: string | null
 ) => {
-  const { saveCurrentProcess, setIsModified } = useWorkingBackwards();
+  const { saveCurrentProcess } = useCurrentProcess();
+  const { setIsModified } = useProcessSync();
   const [isSaving, setIsSaving] = useState(false);
   const lastSavedState = useRef<PRFAQState | null>(null);
   const autoSaveTimeout = useRef<NodeJS.Timeout | null>(null);

@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import { Save as SaveIcon } from '@mui/icons-material';
 import { FAQ } from '../../../../types';
-import { useWorkingBackwards } from '../../../../contexts/WorkingBackwardsContext';
+import { useCurrentProcess } from '../../../working-backwards/contexts/CurrentProcessContext';
 
 // Lazy load ReactQuill
 const LazyReactQuill = lazy(() => import('react-quill-new'));
@@ -34,7 +34,7 @@ export const FAQForm: React.FC<FAQFormProps> = ({
   disabled = false,
   title,
 }) => {
-  const { saveCurrentProcess } = useWorkingBackwards();
+  const { saveCurrentProcess } = useCurrentProcess();
   
   const handleBlur = async () => {
     try {
@@ -122,7 +122,7 @@ export const FAQGenerate: React.FC<FAQGenerateProps> = ({
   isGenerating,
   isDisabled,
 }) => {
-  const { saveCurrentProcess } = useWorkingBackwards();
+  const { saveCurrentProcess } = useCurrentProcess();
   
   const handleBlur = async () => {
     try {

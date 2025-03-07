@@ -47,7 +47,8 @@ import {
 } from '@mui/icons-material';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useAuth } from '../contexts/AuthContext';
-import { useWorkingBackwards } from '../contexts/WorkingBackwardsContext';
+import { useProcessList } from '../features/working-backwards/contexts/ProcessListContext';
+import { useCurrentProcess } from '../features/working-backwards/contexts/CurrentProcessContext';
 import * as workingBackwardsService from '../services/workingBackwardsService';
 
 const DashboardPage: React.FC = () => {
@@ -55,13 +56,17 @@ const DashboardPage: React.FC = () => {
   const { currentUser, userProfile, loading: authLoading } = useAuth();
   const {
     processes,
-    loadingProcesses,
+    loading: loadingProcesses,
     createNewProcess,
-    loadProcess,
     deleteProcess,
-    error,
-    isSaving
-  } = useWorkingBackwards();
+    error: processListError
+  } = useProcessList();
+  
+  const {
+    loadProcess,
+    isSaving,
+    error: currentProcessError
+  } = useCurrentProcess();
 
   // New process dialog state
   const [openNewDialog, setOpenNewDialog] = useState(false);
@@ -344,9 +349,9 @@ const DashboardPage: React.FC = () => {
       </Paper>
       
       {/* Error Message */}
-      {error && (
+      {processListError && (
         <Box mb={3} p={2} bgcolor="error.light" borderRadius={1}>
-          <Typography color="error">{error}</Typography>
+          <Typography color="error">{processListError}</Typography>
         </Box>
       )}
       

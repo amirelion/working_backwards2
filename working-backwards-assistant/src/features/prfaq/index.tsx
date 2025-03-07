@@ -26,7 +26,7 @@ import {
 /* eslint-disable-next-line import/no-unresolved */
 import 'react-quill-new/dist/quill.snow.css';
 import { RootState } from '../../store';
-import { useWorkingBackwards } from '../../contexts/WorkingBackwardsContext';
+import { useCurrentProcess } from '../working-backwards/contexts/CurrentProcessContext';
 import { format } from 'date-fns';
 import { workingBackwardsQuestionsState } from '../../atoms/workingBackwardsQuestionsState';
 import { useAuth } from '../../contexts/AuthContext';
@@ -90,7 +90,7 @@ const QuillWrapper = ({ value, onChange, style, visible = true }: {
 const PRFAQPage: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { currentProcessId, lastSaved: contextLastSaved } = useWorkingBackwards();
+  const { currentProcessId, lastSaved: contextLastSaved } = useCurrentProcess();
   const workingBackwardsResponses = useRecoilValue(workingBackwardsQuestionsState);
   
   // Get PRFAQ state from Redux

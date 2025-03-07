@@ -44,7 +44,7 @@ import { RootState } from '../store';
 import { addExperiment, updateExperiment, removeExperiment } from '../features/session/sessionSlice';
 import { getAIResponse, getExperimentSuggestionsPrompt } from '../services/aiService';
 import { Experiment, FAQ, Assumption } from '../types';
-import { useWorkingBackwards } from '../contexts/WorkingBackwardsContext';
+import { useCurrentProcess } from '../features/working-backwards/contexts/CurrentProcessContext';
 import { format } from 'date-fns';
 import { backwardCompatSelectors } from '../store/compatUtils';
 
@@ -66,7 +66,7 @@ const ExperimentsPage: React.FC = () => {
     isSaving, 
     lastSaved,
     error: processError
-  } = useWorkingBackwards();
+  } = useCurrentProcess();
   
   const [newExperiment, setNewExperiment] = useState<Omit<Experiment, 'id'>>({
     name: '',
