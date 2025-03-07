@@ -11,6 +11,10 @@ import { Toaster } from 'react-hot-toast';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 
+// Import components
+import Layout from './components/Layout';
+import { AdminRoute } from './components/ProtectedRoute';
+
 // Import pages - using React.lazy for code splitting
 const LandingPage = React.lazy(() => import('./pages/LandingPage'));
 const DashboardPage = React.lazy(() => import('./pages/DashboardPage'));
@@ -23,10 +27,6 @@ const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 const UserProfile = React.lazy(() => import('./pages/UserProfile'));
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
 const TestPage = React.lazy(() => import('./pages/TestPage'));
-
-// Import components
-import Layout from './components/Layout';
-import { AdminRoute } from './components/ProtectedRoute';
 
 // Error fallback component
 function ErrorFallback() {

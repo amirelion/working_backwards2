@@ -43,15 +43,20 @@ import {
 import { RootState } from '../store';
 import { addExperiment, updateExperiment, removeExperiment } from '../store/sessionSlice';
 import { getAIResponse, getExperimentSuggestionsPrompt } from '../services/aiService';
-import { Experiment } from '../types';
+import { Experiment, FAQ, Assumption } from '../types';
 import { useWorkingBackwards } from '../contexts/WorkingBackwardsContext';
 import { format } from 'date-fns';
+import { backwardCompatSelectors } from '../store/compatUtils';
 
 const ExperimentsPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { experiments, assumptions, prfaq } = useSelector((state: RootState) => state.session);
+  const { experiments, assumptions, prfaq } = useSelector((state: RootState) => ({
+    experiments: backwardCompatSelectors.experiments(state),
+    assumptions: backwardCompatSelectors.assumptions(state),
+    prfaq: backwardCompatSelectors.prfaq(state)
+  }));
   
   // Working Backwards context
   const { 
@@ -274,11 +279,11 @@ Customer Testimonial: ${prfaq.pressRelease.customerQuote}
 
 Getting Started: ${prfaq.pressRelease.gettingStarted}
 
-FAQs: ${prfaq.faq.map(faq => `Q: ${faq.question}\nA: ${faq.answer}`).join('\n\n')}
+FAQs: ${prfaq.faq.map((faq: FAQ) => `Q: ${faq.question}\nA: ${faq.answer}`).join('\n\n')}
       `;
       
       // Create a list of assumption statements
-      const assumptionStatements = assumptions.map(a => 
+      const assumptionStatements = assumptions.map((a: Assumption) => 
         `${a.statement} (Impact: ${a.impact}, Confidence: ${a.confidence})`
       );
       
@@ -306,7 +311,7 @@ FAQs: ${prfaq.faq.map(faq => `Q: ${faq.question}\nA: ${faq.answer}`).join('\n\n'
 
   // Get assumption text by ID
   const getAssumptionText = (id: string) => {
-    const assumption = assumptions.find(a => a.id === id);
+    const assumption = assumptions.find((a: Assumption) => a.id === id);
     return assumption ? assumption.statement : 'Unknown assumption';
   };
 
@@ -412,7 +417,7 @@ FAQs: ${prfaq.faq.map(faq => `Q: ${faq.question}\nA: ${faq.answer}`).join('\n\n'
       {/* Experiments List */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {experiments.length > 0 ? (
-          experiments.map((experiment) => (
+          experiments.map((experiment: Experiment) => (
             <Grid item xs={12} key={experiment.id}>
               <Paper sx={{ p: 3 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -464,7 +469,7 @@ FAQs: ${prfaq.faq.map(faq => `Q: ${faq.question}\nA: ${faq.answer}`).join('\n\n'
                       Related Assumptions
                     </Typography>
                     <Box sx={{ mb: 2 }}>
-                      {experiment.relatedAssumptions.map((assumptionId) => (
+                      {experiment.relatedAssumptions.map((assumptionId: string) => (
                         <Chip
                           key={assumptionId}
                           icon={<Psychology />}
@@ -671,7 +676,7 @@ FAQs: ${prfaq.faq.map(faq => `Q: ${faq.question}\nA: ${faq.answer}`).join('\n\n'
           
           <Autocomplete
             multiple
-            options={assumptions.map(a => a.id)}
+            options={assumptions.map((a: Assumption) => a.id)}
             getOptionLabel={(option) => getAssumptionText(option)}
             value={dialogMode === 'add' ? newExperiment.relatedAssumptions : editingExperiment?.relatedAssumptions || []}
             onChange={handleRelatedAssumptionsChange}

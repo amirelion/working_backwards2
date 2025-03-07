@@ -45,12 +45,16 @@ import { addAssumption, updateAssumption, removeAssumption } from '../store/sess
 import { Assumption } from '../types';
 import { useWorkingBackwards } from '../contexts/WorkingBackwardsContext';
 import { format } from 'date-fns';
+import { backwardCompatSelectors } from '../store/compatUtils';
 
 const AssumptionsPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { assumptions, prfaq } = useSelector((state: RootState) => state.session);
+  const { assumptions, prfaq } = useSelector((state: RootState) => ({
+    assumptions: backwardCompatSelectors.assumptions(state),
+    prfaq: backwardCompatSelectors.prfaq(state)
+  }));
   
   // Working Backwards context
   const { 

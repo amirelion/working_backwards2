@@ -1,10 +1,16 @@
 import { Session } from '../types';
+import { SessionState } from '../features/session/types';
 
 const SESSION_STORAGE_KEY = 'working_backwards_session';
 
-// Save session to localStorage
-export const saveSession = (session: Session): void => {
+// Save session to localStorage - can handle both Session and SessionState
+export const saveSession = (sessionData: Session | SessionState): void => {
   try {
+    // If the input is a SessionState, extract the currentSession
+    const session = 'currentSession' in sessionData 
+      ? sessionData.currentSession 
+      : sessionData;
+    
     localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
   } catch (error) {
     console.error('Error saving session to localStorage:', error);
