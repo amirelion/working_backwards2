@@ -3,7 +3,7 @@
  * Helper functions for formatting context and prompt data
  */
 
-import { WorkingBackwardsResponses, PRFAQ, FAQ } from '../../../types';
+import { WorkingBackwardsResponses, PRFAQ } from '../../../types';
 
 /**
  * Formats context data for PRFAQ prompts

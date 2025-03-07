@@ -3,13 +3,7 @@
  * Main entry point for AI services
  */
 
-// Export the AI client
-export { getAIResponse } from './aiClient';
-
-// Export all prompt generators
-export * from './prompt-generators';
-
-// Create and export the default aiService object for backward compatibility
+// Import statements first
 import { getAIResponse } from './aiClient';
 import {
   getWorkingBackwardsPrompt,
@@ -29,6 +23,14 @@ import {
   getExperimentSuggestionsPrompt
 } from './prompt-generators';
 
+// Then exports
+// Export the AI client
+export { getAIResponse } from './aiClient';
+
+// Export all prompt generators
+export * from './prompt-generators';
+
+// Create and export the default aiService object for backward compatibility
 /**
  * Main AI service object
  * Provides a facade for all AI-related functionality
