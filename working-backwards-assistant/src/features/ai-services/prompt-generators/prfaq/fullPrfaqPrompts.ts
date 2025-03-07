@@ -8,11 +8,6 @@ import { WorkingBackwardsResponses } from '../../../../types';
 
 /**
  * Generates a prompt for a complete PRFAQ
- * This function is kept for backward compatibility
- * 
- * @param responses - Working Backwards responses for context
- * @param title - Title for the PRFAQ
- * @returns The generated prompt string
  */
 export const getPRFAQGenerationPrompt = (
   responses: WorkingBackwardsResponses,

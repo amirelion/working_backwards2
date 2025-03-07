@@ -30,7 +30,6 @@ export { getAIResponse } from './aiClient';
 // Export all prompt generators
 export * from './prompt-generators';
 
-// Create and export the default aiService object for backward compatibility
 /**
  * Main AI service object
  * Provides a facade for all AI-related functionality
