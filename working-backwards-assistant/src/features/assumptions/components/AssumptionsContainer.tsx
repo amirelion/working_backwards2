@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Box, 
@@ -91,6 +91,7 @@ const AssumptionsContainer: React.FC = () => {
     isGenerating,
     generateAssumptions,
     addGeneratedAssumption,
+    clearGeneratedAssumptions,
   } = useAIGeneration();
   
   // UI state
@@ -205,6 +206,11 @@ const AssumptionsContainer: React.FC = () => {
         // Reset form and close edit form if needed
         if (!editingAssumption) {
           setShowAddForm(false);
+          
+          // For new assumptions, switch to their category view
+          if (newAssumption.category) {
+            setSelectedCategory(newAssumption.category);
+          }
         }
       }
     } catch (error) {
@@ -214,6 +220,13 @@ const AssumptionsContainer: React.FC = () => {
       setSnackbarOpen(true);
     }
   };
+  
+  // Handle adding a generated assumption
+  const handleAddGeneratedAssumption = useCallback((statement: string, category: AssumptionCategory) => {
+    addGeneratedAssumption(statement, category);
+    // Switch to the category of the newly added assumption
+    setSelectedCategory(category);
+  }, [addGeneratedAssumption, setSelectedCategory]);
   
   return (
     <Container maxWidth="lg">
@@ -225,50 +238,21 @@ const AssumptionsContainer: React.FC = () => {
         Identify and prioritize the key assumptions in your PRFAQ. These are the things that must be true for your innovation to succeed.
       </Typography>
       
-      {/* View toggle and add button */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Box>
-          <Button
-            variant={viewMode === 'list' ? 'contained' : 'outlined'}
-            startIcon={<ViewListIcon />}
-            onClick={() => setViewMode('list')}
-            sx={{ mr: 1 }}
-          >
-            List
-          </Button>
-          <Button
-            variant={viewMode === 'matrix' ? 'contained' : 'outlined'}
-            startIcon={<GridViewIcon />}
-            onClick={() => setViewMode('matrix')}
-          >
-            Risk Matrix
-          </Button>
-        </Box>
-        
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={() => {
-            resetForm();
-            setShowAddForm(true);
-          }}
-          disabled={!!editingAssumption}
-        >
-          Add Assumption
-        </Button>
-      </Box>
-      
       {/* AI Generator */}
       <AIGenerator
-        onAddAssumption={addGeneratedAssumption}
+        onAddAssumption={handleAddGeneratedAssumption}
         onGenerateAssumptions={generateAssumptions}
         generatedAssumptions={generatedAssumptions}
         isGenerating={isGenerating}
         disabled={!!editingAssumption}
+        onClearGeneratedAssumptions={clearGeneratedAssumptions}
+        onAddNew={() => {
+          resetForm();
+          setShowAddForm(true);
+        }}
       />
       
-      {/* Add/Edit form */}
+      {/* Add/Edit form - show immediately below button when adding a new assumption */}
       {(showAddForm || editingAssumption) && (
         <AssumptionForm
           statement={editingAssumption ? editingAssumption.statement : newAssumption.statement}
@@ -289,13 +273,33 @@ const AssumptionsContainer: React.FC = () => {
               handleCancelEdit();
             } else {
               setShowAddForm(false);
-              resetForm();
             }
           }}
           loading={isSaving}
           isEdit={!!editingAssumption}
         />
       )}
+      
+      {/* VIEW TOGGLE - ADD IT HERE INSTEAD */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 4, mb: 2 }}>
+        <Box>
+          <Button
+            variant={viewMode === 'list' ? 'contained' : 'outlined'}
+            startIcon={<ViewListIcon />}
+            onClick={() => setViewMode('list')}
+            sx={{ mr: 1 }}
+          >
+            List
+          </Button>
+          <Button
+            variant={viewMode === 'matrix' ? 'contained' : 'outlined'}
+            startIcon={<GridViewIcon />}
+            onClick={() => setViewMode('matrix')}
+          >
+            Risk Matrix
+          </Button>
+        </Box>
+      </Box>
       
       {/* Category tabs */}
       <CategoryTabs
@@ -316,79 +320,9 @@ const AssumptionsContainer: React.FC = () => {
       ) : (
         <RiskMatrix
           assumptions={assumptions}
-          onAssumptionClick={(id) => {
-            handleEditAssumption(id);
-            setViewMode('list');
-          }}
+          onAssumptionClick={handleEditAssumption}
         />
       )}
-      
-      {/* Navigation buttons */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-        <Button
-          variant="outlined"
-          onClick={handleBackToPRFAQ}
-          startIcon={<ArrowBack />}
-        >
-          Back to PRFAQ
-        </Button>
-        
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          {/* Save status indicators - moved here */}
-          {isSaving && (
-            <Chip 
-              label="Saving..." 
-              color="primary" 
-              size="small" 
-              variant="outlined" 
-            />
-          )}
-          {lastSaved && !isModified && (
-            <Chip 
-              label={`Last saved: ${format(new Date(lastSaved), 'h:mm a')}`} 
-              color="success" 
-              size="small" 
-              variant="outlined" 
-            />
-          )}
-          {isModified && (
-            <Chip 
-              label="Unsaved changes" 
-              color="warning" 
-              size="small" 
-              variant="outlined" 
-            />
-          )}
-          
-          <Button
-            variant="outlined"
-            color="primary"
-            onClick={handleManualSave}
-            startIcon={<SaveIcon />}
-            disabled={isSaving || (!isModified && lastSaved !== null) || !currentProcessId}
-          >
-            {isSaving ? 'Saving...' : 'Save'}
-          </Button>
-          
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleContinueToExperiments}
-            endIcon={<ArrowForward />}
-            disabled={assumptions.length === 0}
-          >
-            Continue to Experiments
-          </Button>
-        </Box>
-      </Box>
-      
-      {/* Delete confirmation dialog */}
-      <DeleteAssumptionDialog
-        open={deleteDialogOpen}
-        onClose={closeDeleteDialog}
-        onConfirm={confirmDeleteAssumption}
-        isDeleting={isDeleting}
-      />
       
       {/* Experiment linker dialog */}
       {selectedAssumption && (
@@ -403,13 +337,58 @@ const AssumptionsContainer: React.FC = () => {
         />
       )}
       
-      {/* Success/Error snackbar */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
+      {/* Delete confirmation dialog */}
+      <DeleteAssumptionDialog
+        open={deleteDialogOpen}
+        onClose={closeDeleteDialog}
+        onConfirm={confirmDeleteAssumption}
+        isDeleting={isDeleting}
+      />
+      
+      {/* Navigation buttons */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+        <Button
+          variant="outlined"
+          onClick={handleBackToPRFAQ}
+          startIcon={<ArrowBack />}
+        >
+          Back to PRFAQ
+        </Button>
+        
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={handleManualSave}
+            startIcon={<SaveIcon />}
+            disabled={isSaving || !isModified}
+          >
+            Save
+          </Button>
+          
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleContinueToExperiments}
+            endIcon={<ArrowForward />}
+          >
+            Continue to Experiments
+          </Button>
+        </Box>
+      </Box>
+      
+      {/* Snackbar for notifications */}
+      <Snackbar 
+        open={snackbarOpen} 
+        autoHideDuration={6000} 
         onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity}>
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbarSeverity}
+          variant="filled"
+        >
           {snackbarMessage}
         </Alert>
       </Snackbar>

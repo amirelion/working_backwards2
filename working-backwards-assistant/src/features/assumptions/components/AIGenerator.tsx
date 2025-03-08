@@ -25,6 +25,7 @@ import {
   AutoFixHigh as AutoFixHighIcon,
   Add as AddIcon,
   Lightbulb as LightbulbIcon,
+  Clear as ClearIcon,
 } from '@mui/icons-material';
 import { AssumptionCategory } from '../types';
 import { getCategoryIcon, getCategoryColor } from '../utils/categoryUtils';
@@ -35,6 +36,8 @@ interface AIGeneratorProps {
   generatedAssumptions: Array<{ statement: string; category: AssumptionCategory }>;
   isGenerating: boolean;
   disabled?: boolean;
+  onClearGeneratedAssumptions?: () => void;
+  onAddNew?: () => void;
 }
 
 const AIGenerator: React.FC<AIGeneratorProps> = ({
@@ -43,6 +46,8 @@ const AIGenerator: React.FC<AIGeneratorProps> = ({
   generatedAssumptions,
   isGenerating,
   disabled = false,
+  onClearGeneratedAssumptions,
+  onAddNew,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<AssumptionCategory>('customer');
   const [customPrompt, setCustomPrompt] = useState('');
@@ -57,7 +62,7 @@ const AIGenerator: React.FC<AIGeneratorProps> = ({
           Automatically generate key assumptions based on your PRFAQ. Select a category to focus on specific aspects of your innovation.
         </Typography>
         
-        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 3 }}>
           <FormControl sx={{ minWidth: 200 }}>
             <InputLabel id="assumption-category-label">Assumption Category</InputLabel>
             <Select
@@ -96,12 +101,40 @@ const AIGenerator: React.FC<AIGeneratorProps> = ({
           sx={{ mb: 3 }}
         />
         
+        {/* Add Assumption button - separated from AI generation */}
+        {onAddNew && (
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3, borderTop: '1px solid', borderColor: 'divider', pt: 2 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<AddIcon />}
+              onClick={onAddNew}
+              disabled={disabled}
+            >
+              Add Assumption Manually
+            </Button>
+          </Box>
+        )}
+        
         {generatedAssumptions.length > 0 && (
           <>
             <Divider sx={{ my: 2 }} />
-            <Typography variant="subtitle1" gutterBottom>
-              Generated Assumptions
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <Typography variant="subtitle1">
+                Generated Assumptions
+              </Typography>
+              {onClearGeneratedAssumptions && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<ClearIcon />}
+                  onClick={onClearGeneratedAssumptions}
+                  disabled={disabled}
+                >
+                  Clear
+                </Button>
+              )}
+            </Box>
             <List>
               {generatedAssumptions.map((assumption, index) => {
                 const AssumptionCategoryIcon = getCategoryIcon(assumption.category);
