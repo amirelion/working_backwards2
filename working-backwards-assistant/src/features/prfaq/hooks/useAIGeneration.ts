@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { FAQ, WorkingBackwardsResponses, PRFAQ as BackendPRFAQ, AIRequest } from '../../../types';
+import { WorkingBackwardsResponses, PRFAQ as BackendPRFAQ, AIRequest } from '../../../types';
 import {
   getAIResponse, 
   getFirstParagraphPrompt,
@@ -15,7 +15,6 @@ import {
   getStakeholderFAQPrompt,
   getSingleCustomerFAQPrompt,
   getSingleStakeholderFAQPrompt,
-  getPRFAQGenerationPrompt,
 } from '../../../services/aiService';
 import { PRFAQState, updatePRFAQTitle, updatePRFAQPressRelease, addCustomerFAQ, addStakeholderFAQ } from '../../../store/prfaqSlice';
 

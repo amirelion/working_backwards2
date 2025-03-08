@@ -7,8 +7,6 @@ import {
   Typography,
   Button,
   Container,
-  useMediaQuery,
-  useTheme,
 } from '@mui/material';
 import {
   Home as HomeIcon,
@@ -28,8 +26,6 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const location = useLocation();
   const { userProfile, isAdmin, currentUser, loading: authLoading } = useAuth();

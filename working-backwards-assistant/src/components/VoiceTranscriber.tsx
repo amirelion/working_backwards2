@@ -1,9 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Button, Box, CircularProgress, Typography, IconButton, Paper } from '@mui/material';
+import { Button, Box, CircularProgress, Typography, IconButton } from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
 import StopIcon from '@mui/icons-material/Stop';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import DeleteIcon from '@mui/icons-material/Delete';
 
 interface VoiceTranscriberProps {
   onTranscription: (text: string) => void;
@@ -22,7 +20,6 @@ const VoiceTranscriber: React.FC<VoiceTranscriberProps> = ({
 }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [transcription, setTranscription] = useState(currentText);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
@@ -84,7 +81,6 @@ const VoiceTranscriber: React.FC<VoiceTranscriberProps> = ({
       }
       
       const data = await response.json();
-      setTranscription(data.text);
       onTranscription(data.text);
     } catch (error) {
       console.error('Error transcribing audio:', error);
@@ -92,15 +88,6 @@ const VoiceTranscriber: React.FC<VoiceTranscriberProps> = ({
     } finally {
       setIsTranscribing(false);
     }
-  };
-
-  const clearTranscription = () => {
-    setTranscription("");
-    onTranscription("");
-  };
-
-  const useTranscription = () => {
-    onTranscription(transcription);
   };
 
   if (compact) {

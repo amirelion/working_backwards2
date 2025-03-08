@@ -8,14 +8,9 @@ import {
   addDoc, 
   updateDoc, 
   deleteDoc, 
-  Timestamp, 
   serverTimestamp, 
-  orderBy,
   onSnapshot,
   writeBatch,
-  runTransaction,
-  DocumentReference,
-  Firestore
 } from 'firebase/firestore';
 import { db } from '../lib/firebase/firebase';
 import { WorkingBackwardsProcess, WorkingBackwardsProcessSummary } from '../types/workingBackwards';

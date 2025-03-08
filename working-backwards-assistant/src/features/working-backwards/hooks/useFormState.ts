@@ -23,7 +23,7 @@ export const useFormState = () => {
   const dispatch = useDispatch();
   const [questionsState, setQuestionsState] = useRecoilState(workingBackwardsQuestionsState);
   const [initialThoughts] = useRecoilState(initialThoughtsState);
-  const [skipInitialThoughts, setSkipInitialThoughts] = useRecoilState(skipInitialThoughtsState);
+  const [skipInitialThoughts] = useRecoilState(skipInitialThoughtsState);
   const [showSummary, setShowSummary] = useRecoilState(showSummaryState);
   
   const [currentStep, setCurrentStep] = useState(0);

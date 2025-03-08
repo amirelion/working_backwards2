@@ -70,4 +70,5 @@ export const prfaqMapping: PRFAQMapping = {
   },
 };
 
-export default { handleExport, prfaqMapping }; 
+const exportUtils = { handleExport, prfaqMapping };
+export default exportUtils; 
