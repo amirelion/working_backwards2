@@ -36,6 +36,9 @@ const AssumptionItem: React.FC<AssumptionItemProps> = ({
 }) => {
   const [expanded, setExpanded] = useState(false);
   const CategoryIcon = getCategoryIcon(assumption.category);
+  
+  // Safely access relatedExperiments with default empty array
+  const relatedExperiments = assumption.relatedExperiments || [];
 
   return (
     <Paper sx={{ mb: 2, p: 2 }}>
@@ -98,10 +101,10 @@ const AssumptionItem: React.FC<AssumptionItemProps> = ({
           size="small"
           variant="outlined"
         />
-        {assumption.relatedExperiments?.length > 0 && (
+        {relatedExperiments.length > 0 && (
           <Chip
             icon={<LinkIcon />}
-            label={`${assumption.relatedExperiments.length} Experiments`}
+            label={`${relatedExperiments.length} Experiments`}
             color="info"
             size="small"
             variant="outlined"
@@ -121,13 +124,13 @@ const AssumptionItem: React.FC<AssumptionItemProps> = ({
             </Typography>
           )}
           
-          {assumption.relatedExperiments?.length > 0 && (
+          {relatedExperiments.length > 0 && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="subtitle2">
                 Related Experiments:
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
-                {assumption.relatedExperiments.map(expId => (
+                {relatedExperiments.map(expId => (
                   <Chip
                     key={expId}
                     label={`Experiment ${expId}`}

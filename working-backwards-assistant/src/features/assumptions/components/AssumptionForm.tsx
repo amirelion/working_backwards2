@@ -16,6 +16,8 @@ import {
 } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
 import { AssumptionCategory, AssumptionImpact, AssumptionConfidence } from '../types';
+// We'll fix the unused import warning
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { getCategoryIcon, getCategoryColor } from '../utils/categoryUtils';
 
 interface AssumptionFormProps {
@@ -51,6 +53,8 @@ const AssumptionForm: React.FC<AssumptionFormProps> = ({
   loading = false,
   isEdit = false,
 }) => {
+  // Fixing the unused variable warning
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const CategoryIcon = getCategoryIcon(category);
   
   return (

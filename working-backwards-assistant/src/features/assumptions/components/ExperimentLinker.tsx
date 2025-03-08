@@ -76,7 +76,7 @@ const ExperimentLinker: React.FC<ExperimentLinkerProps> = ({
               return (
                 <ListItem
                   key={experiment.id}
-                  button
+                  sx={{ cursor: 'pointer' }}
                   onClick={() => handleToggle(experiment.id)}
                 >
                   <ListItemIcon>

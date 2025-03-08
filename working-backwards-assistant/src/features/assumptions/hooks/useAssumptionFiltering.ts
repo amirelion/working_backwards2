@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { AssumptionCategory, EnhancedAssumption } from '../types';
 
 export const useAssumptionFiltering = (assumptions: EnhancedAssumption[]) => {

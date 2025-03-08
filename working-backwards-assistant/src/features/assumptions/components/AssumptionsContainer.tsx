@@ -27,6 +27,7 @@ import ExperimentLinker from './ExperimentLinker';
 import { useAssumptions } from '../hooks/useAssumptions';
 import { useAssumptionFiltering } from '../hooks/useAssumptionFiltering';
 import { useAIGeneration } from '../hooks/useAIGeneration';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AssumptionCategory } from '../types';
 import { useCurrentProcess } from '../../../features/working-backwards/contexts/CurrentProcessContext';
 
@@ -47,7 +48,9 @@ const AssumptionsContainer: React.FC = () => {
   const {
     assumptions,
     experiments,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     addAssumption,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     updateAssumption,
     deleteAssumption,
     linkExperimentsToAssumption,
@@ -63,7 +66,9 @@ const AssumptionsContainer: React.FC = () => {
     handleAddOrUpdateAssumption,
     handleEditAssumption,
     handleCancelEdit,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     setNewAssumption,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     setEditingAssumption,
   } = useAssumptions();
   

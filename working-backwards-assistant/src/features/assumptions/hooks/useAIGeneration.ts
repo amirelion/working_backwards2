@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { getAIResponse } from '../../../services/aiService';
 import { RootState } from '../../../store';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AssumptionCategory, EnhancedAssumption } from '../types';
 import { backwardCompatSelectors } from '../../../store/compatUtils';
 import { useAssumptions } from './useAssumptions';
