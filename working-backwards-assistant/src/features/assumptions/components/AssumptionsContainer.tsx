@@ -5,7 +5,6 @@ import {
   Container, 
   Typography, 
   Button, 
-  Chip,
   Snackbar, 
   Alert,
 } from '@mui/material';
@@ -13,11 +12,9 @@ import {
   ArrowBack,
   ArrowForward,
   Save as SaveIcon,
-  Add as AddIcon,
   GridView as GridViewIcon,
   ViewList as ViewListIcon,
 } from '@mui/icons-material';
-import { format } from 'date-fns';
 import CategoryTabs from './CategoryTabs';
 import AssumptionsList from './AssumptionsList';
 import AssumptionForm from './AssumptionForm';
@@ -42,7 +39,6 @@ const AssumptionsContainer: React.FC = () => {
     currentProcessId, 
     saveCurrentProcess, 
     isSaving, 
-    lastSaved,
     error: processError
   } = useCurrentProcess();
   
