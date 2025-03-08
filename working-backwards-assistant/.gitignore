@@ -27,3 +27,4 @@ yarn-error.log*
 
 # cursor
 .cursor/rules/
+.vercel

@@ -45,9 +45,13 @@ export interface FAQ {
 export interface Assumption {
   id: string;
   statement: string;
+  description?: string;
+  category?: 'customer' | 'solution' | 'business' | 'market';
   impact: 'high' | 'medium' | 'low';
   confidence: 'high' | 'medium' | 'low';
   priority: number;
+  status?: 'unvalidated' | 'in_progress' | 'validated' | 'invalidated' | 'partially_validated' | 'inconclusive';
+  relatedExperiments?: string[];
 }
 
 // Experiment Types

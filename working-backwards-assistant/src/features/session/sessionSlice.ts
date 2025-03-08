@@ -78,6 +78,18 @@ export const sessionSlice = createSlice({
       state.error = null;
     },
     
+    // Reset just the assumptions array
+    resetAssumptions: (state) => {
+      state.currentSession.assumptions = [];
+      state.currentSession.updatedAt = new Date().toISOString();
+    },
+    
+    // Reset just the experiments array
+    resetExperiments: (state) => {
+      state.currentSession.experiments = [];
+      state.currentSession.updatedAt = new Date().toISOString();
+    },
+    
     // Update Working Backwards responses
     updateWorkingBackwardsResponse: (
       state,
@@ -139,7 +151,18 @@ export const sessionSlice = createSlice({
         : {
             ...action.payload,
             id: uuidv4(),
+            description: action.payload.description || '',
+            category: action.payload.category || 'customer',
+            relatedExperiments: action.payload.relatedExperiments || [],
+            status: action.payload.status || 'unvalidated'
           };
+          
+      console.log('[sessionSlice] Adding assumption:', {
+        id: payload.id,
+        statement: payload.statement.substring(0, 30) + (payload.statement.length > 30 ? '...' : ''),
+        category: payload.category,
+        status: payload.status
+      });
           
       state.currentSession.assumptions.push(payload);
       state.currentSession.updatedAt = new Date().toISOString();
@@ -153,16 +176,39 @@ export const sessionSlice = createSlice({
       const { id, updates } = action.payload;
       const index = state.currentSession.assumptions.findIndex(a => a.id === id);
       if (index !== -1) {
+        console.log('[sessionSlice] Updating assumption:', { 
+          id,
+          updates: Object.keys(updates).join(', '),
+          beforeStatus: state.currentSession.assumptions[index].status,
+          afterStatus: updates.status || state.currentSession.assumptions[index].status
+        });
+        
         state.currentSession.assumptions[index] = {
           ...state.currentSession.assumptions[index],
-          ...updates
+          ...updates,
+          // Handle new fields explicitly
+          description: updates.description !== undefined 
+            ? updates.description 
+            : state.currentSession.assumptions[index].description || '',
+          category: updates.category !== undefined
+            ? updates.category
+            : state.currentSession.assumptions[index].category || 'customer',
+          relatedExperiments: updates.relatedExperiments !== undefined
+            ? updates.relatedExperiments
+            : state.currentSession.assumptions[index].relatedExperiments || [],
+          status: updates.status !== undefined
+            ? updates.status
+            : state.currentSession.assumptions[index].status || 'unvalidated'
         };
         state.currentSession.updatedAt = new Date().toISOString();
+      } else {
+        console.warn('[sessionSlice] Attempted to update assumption that does not exist:', id);
       }
     },
     
     // Remove Assumption
     removeAssumption: (state, action: PayloadAction<string>) => {
+      console.log('[sessionSlice] Removing assumption:', action.payload);
       state.currentSession.assumptions = state.currentSession.assumptions.filter(
         a => a.id !== action.payload
       );
@@ -223,6 +269,8 @@ export const sessionSlice = createSlice({
 // Export actions
 export const {
   resetSession,
+  resetAssumptions,
+  resetExperiments,
   updateWorkingBackwardsResponse,
   updatePRFAQTitle,
   updatePRFAQPressRelease,

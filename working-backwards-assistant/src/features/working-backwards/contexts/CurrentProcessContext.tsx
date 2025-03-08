@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useAuth } from '../../../contexts/AuthContext';
 import { WorkingBackwardsProcess } from '../../../types/workingBackwards';
 import * as processService from '../services/processService';
+import * as saveService from '../../../services/saveService';
 import { useProcessSync } from './ProcessSyncContext';
 
 interface CurrentProcessContextType {
@@ -102,26 +103,60 @@ export const CurrentProcessProvider: React.FC<{
    */
   const saveCurrentProcess = useCallback(async (): Promise<void> => {
     if (!currentProcessId || !currentUser) {
-      console.error('Cannot save process - no current process or user');
+      console.error('[CurrentProcessContext] Cannot save process - no current process or user');
       throw new Error('Cannot save process - no current process or user');
     }
     
     if (!isModified) {
-      console.log('No changes to save');
+      console.log('[CurrentProcessContext] No changes to save');
       return;
     }
     
+    console.log('[CurrentProcessContext] Starting save process for ID:', currentProcessId);
     setIsSaving(true);
     setError(null);
     
     try {
       const processData = getProcessData();
       
-      await processService.updateProcess(currentProcessId, processData);
+      console.log('[CurrentProcessContext] Process data to save:', {
+        ...processData,
+        assumptions: processData.assumptions ? `${processData.assumptions.length} assumptions` : 'none',
+        experiments: processData.experiments ? `${processData.experiments.length} experiments` : 'none'
+      });
+      
+      if (processData.assumptions && processData.assumptions.length > 0) {
+        console.log('[CurrentProcessContext] Sample of assumptions being saved:', 
+          processData.assumptions.slice(0, 3).map(a => ({
+            id: a.id,
+            statement: a.statement?.substring(0, 30) + (a.statement?.length > 30 ? '...' : '') || '',
+            category: a.category || 'unknown',
+            impact: a.impact || 'unknown',
+            confidence: a.confidence || 'unknown',
+            status: a.status || 'unvalidated'
+          }))
+        );
+      } else {
+        console.warn('[CurrentProcessContext] No assumptions to save, this might be a problem if you expected some');
+      }
+      
+      // Validate the process data before saving
+      if (!saveService.validateProcessData(processData)) {
+        console.error('[CurrentProcessContext] Invalid process data structure');
+        throw new Error('Invalid process data structure');
+      }
+      
+      // Use the saveService to save the process
+      await saveService.saveProcess(currentProcessId, processData);
+      console.log('[CurrentProcessContext] Save completed successfully');
+      
       setLastSaved(new Date());
+      
+      // Explicitly set isModified to false to prevent immediate re-marking as modified
+      console.log('[CurrentProcessContext] Setting isModified to false after successful save');
       setIsModified(false);
     } catch (error) {
-      console.error('Error saving process:', error);
+      console.error('[CurrentProcessContext] Error saving process:', error);
       setError('Failed to save process');
       throw error;
     } finally {
@@ -135,11 +170,21 @@ export const CurrentProcessProvider: React.FC<{
   useEffect(() => {
     if (!currentProcessId || !isModified) return;
     
-    const saveTimer = setTimeout(() => {
-      saveCurrentProcess();
-    }, 5000); // 5 second auto-save delay
+    console.log('[CurrentProcessContext] Setting up auto-save timer - isModified:', isModified);
     
-    return () => clearTimeout(saveTimer);
+    const saveTimer = setTimeout(() => {
+      console.log('[CurrentProcessContext] Auto-save timer triggered, calling saveCurrentProcess()');
+      saveCurrentProcess().then(() => {
+        console.log('[CurrentProcessContext] Auto-save completed successfully');
+      }).catch(error => {
+        console.error('[CurrentProcessContext] Auto-save failed:', error);
+      });
+    }, 3000); // Reduced from 5 seconds to 3 seconds for testing
+    
+    return () => {
+      console.log('[CurrentProcessContext] Clearing auto-save timer');
+      clearTimeout(saveTimer);
+    };
   }, [currentProcessId, isModified, saveCurrentProcess]);
 
   const value = {

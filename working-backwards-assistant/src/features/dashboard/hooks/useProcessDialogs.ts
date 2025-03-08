@@ -3,9 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useProcessList } from '../../../features/working-backwards/contexts/ProcessListContext';
 import { useCurrentProcess } from '../../../features/working-backwards/contexts/CurrentProcessContext';
 import * as workingBackwardsService from '../../../services/workingBackwardsService';
-
-// Constants
-const MIN_DELETION_ANIMATION_TIME = 2000; // 2 seconds minimum animation time
+import * as saveService from '../../../services/saveService';
 
 /**
  * Custom hook to manage process-related dialogs and their actions
@@ -84,17 +82,11 @@ const useProcessDialogs = () => {
         // Get process title for the notification
         const processTitle = processes.find(p => p.id === processToDelete)?.title || 'Process';
         
-        // Start timing the deletion
-        const startTime = Date.now();
-        await deleteProcess(processToDelete);
+        // Use the saveService to delete the process with animation
+        await saveService.deleteProcessWithAnimation(processToDelete);
         
-        // Calculate how much time has elapsed during deletion
-        const elapsedTime = Date.now() - startTime;
-        
-        // If deletion was too fast, wait for the remaining time
-        if (elapsedTime < MIN_DELETION_ANIMATION_TIME) {
-          await new Promise(resolve => setTimeout(resolve, MIN_DELETION_ANIMATION_TIME - elapsedTime));
-        }
+        // Update the local state after successful deletion
+        deleteProcess(processToDelete);
         
         // Show success notification
         setSnackbarMessage(`"${processTitle}" has been deleted successfully`);
