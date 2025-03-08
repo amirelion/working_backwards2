@@ -1,4 +1,5 @@
 import { WorkingBackwardsQuestionsState } from '../atoms/workingBackwardsQuestionsState';
+import { Assumption } from '.';
 
 // Define structure for a saved Working Backwards process
 export interface WorkingBackwardsProcess {
@@ -29,12 +30,17 @@ export interface WorkingBackwardsProcess {
       answer: string;
     }>;
   };
-  assumptions?: {
-    // Will be implemented later
-  };
-  experiments?: {
-    // Will be implemented later
-  };
+  assumptions?: Assumption[];
+  experiments?: Array<{
+    id: string;
+    name: string;
+    hypothesis: string;
+    methodology: string;
+    successCriteria: string;
+    status: 'planned' | 'in-progress' | 'completed';
+    results?: string;
+    relatedAssumptions: string[]; // Array of assumption IDs
+  }>;
 }
 
 // Type for the list of processes shown on the dashboard

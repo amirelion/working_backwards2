@@ -18,6 +18,7 @@ import {
 import { EnhancedAssumption } from '../types';
 import { getCategoryColor, getCategoryIcon } from '../utils/categoryUtils';
 import { getImpactColor, getConfidenceColor } from '../utils/riskUtils';
+import { getStatusColor, getStatusLabel } from '../utils/statusUtils';
 
 interface AssumptionItemProps {
   assumption: EnhancedAssumption;
@@ -100,6 +101,11 @@ const AssumptionItem: React.FC<AssumptionItemProps> = ({
           color={getConfidenceColor(assumption.confidence)}
           size="small"
           variant="outlined"
+        />
+        <Chip
+          label={getStatusLabel(assumption.status)}
+          color={getStatusColor(assumption.status)}
+          size="small"
         />
         {relatedExperiments.length > 0 && (
           <Chip

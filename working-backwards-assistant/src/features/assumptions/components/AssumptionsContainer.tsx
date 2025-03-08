@@ -24,6 +24,7 @@ import AssumptionForm from './AssumptionForm';
 import RiskMatrix from './RiskMatrix';
 import AIGenerator from './AIGenerator';
 import ExperimentLinker from './ExperimentLinker';
+import { DeleteAssumptionDialog } from './AssumptionDialogs';
 import { useAssumptions } from '../hooks/useAssumptions';
 import { useAssumptionFiltering } from '../hooks/useAssumptionFiltering';
 import { useAIGeneration } from '../hooks/useAIGeneration';
@@ -63,6 +64,7 @@ const AssumptionsContainer: React.FC = () => {
     handleCategoryChange,
     handleImpactChange,
     handleConfidenceChange,
+    handleStatusChange,
     handleAddOrUpdateAssumption,
     handleEditAssumption,
     handleCancelEdit,
@@ -70,6 +72,11 @@ const AssumptionsContainer: React.FC = () => {
     setNewAssumption,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     setEditingAssumption,
+    // Delete dialog state and handlers
+    deleteDialogOpen,
+    isDeleting,
+    closeDeleteDialog,
+    confirmDeleteAssumption,
   } = useAssumptions();
   
   const {
@@ -132,21 +139,29 @@ const AssumptionsContainer: React.FC = () => {
   
   // Handle manual save
   const handleManualSave = async () => {
-    if (currentProcessId) {
-      try {
-        await saveCurrentProcess();
-        setSnackbarMessage('Assumptions saved successfully');
-        setSnackbarSeverity('success');
-        setSnackbarOpen(true);
-      } catch (error) {
-        console.error('Error saving:', error);
-        setSnackbarMessage('Failed to save assumptions');
-        setSnackbarSeverity('error');
-        setSnackbarOpen(true);
-      }
-    } else {
+    if (!currentProcessId) {
       setSnackbarMessage('No active process to save');
       setSnackbarSeverity('warning');
+      setSnackbarOpen(true);
+      return;
+    }
+    
+    if (!isModified) {
+      setSnackbarMessage('No changes to save');
+      setSnackbarSeverity('info');
+      setSnackbarOpen(true);
+      return;
+    }
+    
+    try {
+      await saveCurrentProcess();
+      setSnackbarMessage('Assumptions saved successfully');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error('Error saving:', error);
+      setSnackbarMessage('Failed to save assumptions');
+      setSnackbarSeverity('error');
       setSnackbarOpen(true);
     }
   };
@@ -171,39 +186,40 @@ const AssumptionsContainer: React.FC = () => {
     }
   }, [processError]);
   
+  // Handle adding or updating an assumption
+  const handleSaveAssumption = async () => {
+    try {
+      // First, update the assumption in Redux
+      const success = await handleAddOrUpdateAssumption();
+      
+      if (success && currentProcessId) {
+        // If update was successful, immediately save to Firebase
+        console.log('[AssumptionsContainer] Saving updated assumption to Firebase');
+        await saveCurrentProcess();
+        
+        // Explicitly force update the lastSaved value
+        setSnackbarMessage(editingAssumption ? 'Assumption updated and saved' : 'Assumption added and saved');
+        setSnackbarSeverity('success');
+        setSnackbarOpen(true);
+        
+        // Reset form and close edit form if needed
+        if (!editingAssumption) {
+          setShowAddForm(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving assumption:', error);
+      setSnackbarMessage('Failed to save assumption');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
+  };
+  
   return (
     <Container maxWidth="lg">
       <Typography variant="h4" component="h1" gutterBottom>
         Key Assumptions
       </Typography>
-      
-      {/* Save status indicators */}
-      <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-        {isSaving && (
-          <Chip 
-            label="Saving..." 
-            color="primary" 
-            size="small" 
-            variant="outlined" 
-          />
-        )}
-        {lastSaved && !isModified && (
-          <Chip 
-            label={`Last saved: ${format(new Date(lastSaved), 'h:mm a')}`} 
-            color="success" 
-            size="small" 
-            variant="outlined" 
-          />
-        )}
-        {isModified && (
-          <Chip 
-            label="Unsaved changes" 
-            color="warning" 
-            size="small" 
-            variant="outlined" 
-          />
-        )}
-      </Box>
       
       <Typography variant="body1" paragraph>
         Identify and prioritize the key assumptions in your PRFAQ. These are the things that must be true for your innovation to succeed.
@@ -260,12 +276,14 @@ const AssumptionsContainer: React.FC = () => {
           category={editingAssumption ? editingAssumption.category : newAssumption.category}
           impact={editingAssumption ? editingAssumption.impact : newAssumption.impact}
           confidence={editingAssumption ? editingAssumption.confidence : newAssumption.confidence}
+          status={editingAssumption ? editingAssumption.status : 'unvalidated'}
           onStatementChange={handleStatementChange}
           onDescriptionChange={handleDescriptionChange}
           onCategoryChange={handleCategoryChange}
           onImpactChange={handleImpactChange}
           onConfidenceChange={handleConfidenceChange}
-          onSave={handleAddOrUpdateAssumption}
+          onStatusChange={handleStatusChange}
+          onSave={handleSaveAssumption}
           onCancel={() => {
             if (editingAssumption) {
               handleCancelEdit();
@@ -305,19 +323,6 @@ const AssumptionsContainer: React.FC = () => {
         />
       )}
       
-      {/* Experiment linker dialog */}
-      {selectedAssumption && (
-        <ExperimentLinker
-          open={linkDialogOpen}
-          onClose={() => setLinkDialogOpen(false)}
-          assumptionId={selectedAssumption.id}
-          assumptionStatement={selectedAssumption.statement}
-          experiments={experiments}
-          linkedExperimentIds={selectedAssumption.relatedExperiments || []}
-          onLinkExperiments={linkExperimentsToAssumption}
-        />
-      )}
-      
       {/* Navigation buttons */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
         <Button
@@ -328,15 +333,41 @@ const AssumptionsContainer: React.FC = () => {
           Back to PRFAQ
         </Button>
         
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {/* Save status indicators - moved here */}
+          {isSaving && (
+            <Chip 
+              label="Saving..." 
+              color="primary" 
+              size="small" 
+              variant="outlined" 
+            />
+          )}
+          {lastSaved && !isModified && (
+            <Chip 
+              label={`Last saved: ${format(new Date(lastSaved), 'h:mm a')}`} 
+              color="success" 
+              size="small" 
+              variant="outlined" 
+            />
+          )}
+          {isModified && (
+            <Chip 
+              label="Unsaved changes" 
+              color="warning" 
+              size="small" 
+              variant="outlined" 
+            />
+          )}
+          
           <Button
             variant="outlined"
             color="primary"
             onClick={handleManualSave}
             startIcon={<SaveIcon />}
-            disabled={isSaving || !isModified || !currentProcessId}
+            disabled={isSaving || (!isModified && lastSaved !== null) || !currentProcessId}
           >
-            Save
+            {isSaving ? 'Saving...' : 'Save'}
           </Button>
           
           <Button
@@ -351,18 +382,34 @@ const AssumptionsContainer: React.FC = () => {
         </Box>
       </Box>
       
-      {/* Snackbar for notifications */}
-      <Snackbar 
-        open={snackbarOpen} 
-        autoHideDuration={6000} 
+      {/* Delete confirmation dialog */}
+      <DeleteAssumptionDialog
+        open={deleteDialogOpen}
+        onClose={closeDeleteDialog}
+        onConfirm={confirmDeleteAssumption}
+        isDeleting={isDeleting}
+      />
+      
+      {/* Experiment linker dialog */}
+      {selectedAssumption && (
+        <ExperimentLinker
+          open={linkDialogOpen}
+          onClose={() => setLinkDialogOpen(false)}
+          assumptionId={selectedAssumption.id}
+          assumptionStatement={selectedAssumption.statement}
+          experiments={experiments}
+          linkedExperimentIds={selectedAssumption.relatedExperiments || []}
+          onLinkExperiments={linkExperimentsToAssumption}
+        />
+      )}
+      
+      {/* Success/Error snackbar */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbarSeverity}
-          variant="filled"
-        >
+        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity}>
           {snackbarMessage}
         </Alert>
       </Snackbar>

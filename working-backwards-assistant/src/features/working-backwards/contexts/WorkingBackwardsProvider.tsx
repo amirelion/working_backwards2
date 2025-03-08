@@ -9,6 +9,7 @@ import { initialThoughtsState } from '../../../atoms/initialThoughtsState';
 import { workingBackwardsQuestionsState } from '../../../atoms/workingBackwardsQuestionsState';
 import { updatePRFAQTitle, updatePRFAQPressRelease, setFAQs, setCustomerFAQs, setStakeholderFAQs } from '../../../store/prfaqSlice';
 import { RootState } from '../../../store';
+import { backwardCompatSelectors } from '../../../store/compatUtils';
 
 /**
  * Combined provider that wraps all working backwards contexts
@@ -18,9 +19,26 @@ export const WorkingBackwardsProvider: React.FC<{ children: React.ReactNode }> =
   const [initialThoughts, setInitialThoughts] = useRecoilState(initialThoughtsState);
   const [workingBackwardsQuestions, setWorkingBackwardsQuestions] = useRecoilState(workingBackwardsQuestionsState);
   const prfaq = useSelector((state: RootState) => state.prfaq);
+  const assumptions = useSelector((state: RootState) => backwardCompatSelectors.assumptions(state));
+  const experiments = useSelector((state: RootState) => backwardCompatSelectors.experiments(state));
   
   // Define the process data getter function
   const getProcessData = useCallback((): Partial<WorkingBackwardsProcess> => {
+    console.log("[WorkingBackwardsProvider] getProcessData called - collecting data for save");
+    console.log("[WorkingBackwardsProvider] Current assumptions in Redux:", 
+      assumptions.length > 0 ? `${assumptions.length} assumptions` : "none");
+    
+    // Log sample of assumptions for debugging
+    if (assumptions.length > 0) {
+      console.log("[WorkingBackwardsProvider] Sample assumptions:", 
+        assumptions.slice(0, 2).map(a => ({
+          id: a.id, 
+          statement: a.statement?.substring(0, 30) || '',
+          status: a.status || 'unvalidated'
+        }))
+      );
+    }
+    
     return {
       initialThoughts,
       workingBackwardsQuestions,
@@ -37,9 +55,11 @@ export const WorkingBackwardsProvider: React.FC<{ children: React.ReactNode }> =
         },
         customerFaqs: prfaq.customerFaqs,
         stakeholderFaqs: prfaq.stakeholderFaqs
-      }
+      },
+      assumptions: assumptions,
+      experiments: experiments
     };
-  }, [initialThoughts, workingBackwardsQuestions, prfaq]);
+  }, [initialThoughts, workingBackwardsQuestions, prfaq, assumptions, experiments]);
 
   // Define the process load handler
   const handleProcessLoad = useCallback((process: WorkingBackwardsProcess): void => {
@@ -96,6 +116,37 @@ export const WorkingBackwardsProvider: React.FC<{ children: React.ReactNode }> =
       dispatch(setFAQs([]));
       dispatch(setCustomerFAQs(process.prfaq.customerFaqs || []));
       dispatch(setStakeholderFAQs(process.prfaq.stakeholderFaqs || []));
+    }
+    
+    // Load assumptions into Redux if present
+    if (process.assumptions) {
+      // Clear existing assumptions and replace with loaded ones
+      dispatch({ type: 'session/resetAssumptions' });
+      process.assumptions.forEach(assumption => {
+        dispatch({ 
+          type: 'session/addAssumption', 
+          payload: {
+            ...assumption,
+            // Ensure all required fields are present
+            description: assumption.description || '',
+            category: assumption.category || 'customer',
+            status: assumption.status || 'unvalidated',
+            relatedExperiments: assumption.relatedExperiments || []
+          }
+        });
+      });
+    }
+    
+    // Load experiments into Redux if present
+    if (process.experiments) {
+      // Clear existing experiments and replace with loaded ones
+      dispatch({ type: 'session/resetExperiments' });
+      process.experiments.forEach(experiment => {
+        dispatch({ 
+          type: 'session/addExperiment', 
+          payload: experiment 
+        });
+      });
     }
   }, [dispatch, setInitialThoughts, setWorkingBackwardsQuestions]);
   

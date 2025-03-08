@@ -50,6 +50,7 @@ export interface Assumption {
   impact: 'high' | 'medium' | 'low';
   confidence: 'high' | 'medium' | 'low';
   priority: number;
+  status?: 'unvalidated' | 'in_progress' | 'validated' | 'invalidated' | 'partially_validated' | 'inconclusive';
   relatedExperiments?: string[];
 }
 

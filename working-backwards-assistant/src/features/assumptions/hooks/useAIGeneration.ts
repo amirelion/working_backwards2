@@ -109,6 +109,7 @@ Each assumption should be concise, testable, and specific. Do not include any ex
       impact: 'medium',
       confidence: 'medium',
       priority: 0,
+      status: 'unvalidated',
       relatedExperiments: []
     });
     

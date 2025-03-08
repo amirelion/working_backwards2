@@ -1,6 +1,7 @@
 export type AssumptionCategory = 'customer' | 'solution' | 'business' | 'market';
 export type AssumptionImpact = 'high' | 'medium' | 'low';
 export type AssumptionConfidence = 'high' | 'medium' | 'low';
+export type AssumptionStatus = 'unvalidated' | 'in_progress' | 'validated' | 'invalidated' | 'partially_validated' | 'inconclusive';
 
 // Enhanced Assumption type that extends the basic Assumption type
 export interface EnhancedAssumption {
@@ -11,6 +12,7 @@ export interface EnhancedAssumption {
   impact: AssumptionImpact;
   confidence: AssumptionConfidence;
   priority: number;
+  status: AssumptionStatus;
   relatedExperiments?: string[];
 }
 
