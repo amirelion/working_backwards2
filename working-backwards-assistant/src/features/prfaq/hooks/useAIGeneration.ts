@@ -1,7 +1,4 @@
-import { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { WorkingBackwardsResponses, PRFAQ as BackendPRFAQ, AIRequest } from '../../../types';
-import {
+import { 
   getAIResponse, 
   getHeadlinePrompt,
   getFirstParagraphPrompt,
@@ -14,16 +11,38 @@ import {
   getCustomerFAQPrompt,
   getStakeholderFAQPrompt,
   getSingleCustomerFAQPrompt,
-  getSingleStakeholderFAQPrompt,
-  getExperimentSuggestionsPrompt
+  getSingleStakeholderFAQPrompt
 } from '../../../services/aiService';
 import { PRFAQState, updatePRFAQTitle, updatePRFAQPressRelease, addCustomerFAQ, addStakeholderFAQ } from '../../../store/prfaqSlice';
-import { formatPRFAQContext } from '../../../features/ai-services/utils/formatters';
+import { PRFAQ, WorkingBackwardsResponses } from '../../../types';
 import { store } from '../../../store';
+import { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { v4 as uuidv4 } from 'uuid';
 
 // Get environment variables for AI model/provider
 const AI_PROVIDER = process.env.REACT_APP_AI_PROVIDER || 'openai';
 const AI_MODEL = process.env.REACT_APP_AI_MODEL || 'gpt-4o-mini';
+
+// Define a util function to convert PRFAQState to Partial<PRFAQ>
+const convertPRFAQStateToPartialPRFAQ = (state: PRFAQState): Partial<PRFAQ> => {
+  return {
+    title: state.title,
+    date: state.pressRelease.date,
+    pressRelease: {
+      summary: state.pressRelease.introduction,
+      problem: state.pressRelease.problemStatement,
+      solution: state.pressRelease.solution,
+      executiveQuote: state.pressRelease.stakeholderQuote,
+      customerJourney: state.pressRelease.customerJourney,
+      customerQuote: state.pressRelease.customerQuote,
+      gettingStarted: state.pressRelease.callToAction
+    },
+    faq: state.faqs,
+    customerFaqs: state.customerFaqs,
+    stakeholderFaqs: state.stakeholderFaqs
+  };
+};
 
 /**
  * Convert PRFAQState to backend PRFAQ format for prompts
@@ -401,11 +420,11 @@ export const useAIGeneration = (
       
       // Get updated state after title generation
       const updatedPRFAQ = store.getState().prfaq;
+      const updatedPartialPRFAQ = convertPRFAQStateToPartialPRFAQ(updatedPRFAQ);
       
       // Generate introduction using title as context
       setGenerationStep('Generating introduction (2/8)...');
-      const introContext = formatPRFAQContext(workingBackwardsResponses!, updatedPRFAQ);
-      const introPrompt = getFirstParagraphPrompt(workingBackwardsResponses!, updatedPRFAQ);
+      const introPrompt = getFirstParagraphPrompt(workingBackwardsResponses!, updatedPartialPRFAQ);
       
       try {
         const introResponse = await getAIResponse(createAIRequest(introPrompt));
@@ -421,10 +440,11 @@ export const useAIGeneration = (
       
       // Get updated state again
       const updatedWithIntro = store.getState().prfaq;
+      const updatedWithIntroPartial = convertPRFAQStateToPartialPRFAQ(updatedWithIntro);
       
       // Generate problem statement using title and intro as context
       setGenerationStep('Generating problem statement (3/8)...');
-      const problemPrompt = getSecondParagraphPrompt(workingBackwardsResponses!, updatedWithIntro);
+      const problemPrompt = getSecondParagraphPrompt(workingBackwardsResponses!, updatedWithIntroPartial);
       
       try {
         const problemResponse = await getAIResponse(createAIRequest(problemPrompt));
@@ -440,10 +460,11 @@ export const useAIGeneration = (
       
       // Get updated state again
       const updatedWithProblem = store.getState().prfaq;
+      const updatedWithProblemPartial = convertPRFAQStateToPartialPRFAQ(updatedWithProblem);
       
       // Generate solution using title, intro, and problem as context
       setGenerationStep('Generating solution (4/8)...');
-      const solutionPrompt = getThirdParagraphPrompt(workingBackwardsResponses!, updatedWithProblem);
+      const solutionPrompt = getThirdParagraphPrompt(workingBackwardsResponses!, updatedWithProblemPartial);
       
       try {
         const solutionResponse = await getAIResponse(createAIRequest(solutionPrompt));
@@ -459,10 +480,11 @@ export const useAIGeneration = (
       
       // Get updated state again
       const updatedWithSolution = store.getState().prfaq;
+      const updatedWithSolutionPartial = convertPRFAQStateToPartialPRFAQ(updatedWithSolution);
       
       // Generate stakeholder quote
       setGenerationStep('Generating executive quote (5/8)...');
-      const quotePrompt = getFourthParagraphPrompt(workingBackwardsResponses!, updatedWithSolution);
+      const quotePrompt = getFourthParagraphPrompt(workingBackwardsResponses!, updatedWithSolutionPartial);
       
       try {
         const quoteResponse = await getAIResponse(createAIRequest(quotePrompt));
@@ -478,10 +500,11 @@ export const useAIGeneration = (
       
       // Get updated state again
       const updatedWithQuote = store.getState().prfaq;
+      const updatedWithQuotePartial = convertPRFAQStateToPartialPRFAQ(updatedWithQuote);
       
       // Generate customer journey
       setGenerationStep('Generating customer journey (6/8)...');
-      const journeyPrompt = getFifthParagraphPrompt(workingBackwardsResponses!, updatedWithQuote);
+      const journeyPrompt = getFifthParagraphPrompt(workingBackwardsResponses!, updatedWithQuotePartial);
       
       try {
         const journeyResponse = await getAIResponse(createAIRequest(journeyPrompt));
@@ -497,10 +520,11 @@ export const useAIGeneration = (
       
       // Get updated state again
       const updatedWithJourney = store.getState().prfaq;
+      const updatedWithJourneyPartial = convertPRFAQStateToPartialPRFAQ(updatedWithJourney);
       
       // Generate customer quote
       setGenerationStep('Generating customer quote (7/8)...');
-      const customerQuotePrompt = getSixthParagraphPrompt(workingBackwardsResponses!, updatedWithJourney);
+      const customerQuotePrompt = getSixthParagraphPrompt(workingBackwardsResponses!, updatedWithJourneyPartial);
       
       try {
         const customerResponse = await getAIResponse(createAIRequest(customerQuotePrompt));
@@ -516,10 +540,11 @@ export const useAIGeneration = (
       
       // Get updated state again
       const updatedWithCustomerQuote = store.getState().prfaq;
+      const updatedWithCustomerQuotePartial = convertPRFAQStateToPartialPRFAQ(updatedWithCustomerQuote);
       
       // Generate call to action
       setGenerationStep('Generating call to action (8/8)...');
-      const ctaPrompt = getCallToActionPrompt(workingBackwardsResponses!, updatedWithCustomerQuote);
+      const ctaPrompt = getCallToActionPrompt(workingBackwardsResponses!, updatedWithCustomerQuotePartial);
       
       try {
         const ctaResponse = await getAIResponse(createAIRequest(ctaPrompt));
@@ -547,6 +572,7 @@ export const useAIGeneration = (
     isGeneratingCustomerFAQ,
     isGeneratingStakeholderFAQ,
     generationStep,
+    hasWorkingBackwardsResponses,
     generateSection,
     generateFullPRFAQ,
     generateSequentialPRFAQ,

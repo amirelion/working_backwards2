@@ -1,26 +1,26 @@
 import React, { useState, lazy, Suspense, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { useRecoilValue } from 'recoil';
 import {
-  Box,
-  Button,
   Container,
   Paper,
+  Box,
   Tabs,
   Tab,
+  IconButton,
   Typography,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Button,
   CircularProgress,
   Chip,
   Snackbar,
   Alert,
   Tooltip,
-  LinearProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle
+  LinearProgress
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -143,8 +143,7 @@ const PRFAQPage: React.FC = () => {
     generateCustomerFAQs,
     generateSingleCustomerFAQ,
     generateStakeholderFAQs,
-    generateSingleStakeholderFAQ,
-    generateExperimentSuggestions
+    generateSingleStakeholderFAQ
   } = useAIGeneration(prfaq, workingBackwardsResponses);
   
   const {
