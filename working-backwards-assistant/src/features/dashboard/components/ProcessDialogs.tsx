@@ -25,6 +25,7 @@ const ProcessDialogs: React.FC<DialogsProps> = ({
   deleteDialogOpen,
   setDeleteDialogOpen,
   handleConfirmDelete,
+  isDeleting = false,
   
   renameDialogOpen,
   setRenameDialogOpen,
@@ -74,7 +75,7 @@ const ProcessDialogs: React.FC<DialogsProps> = ({
       {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
+        onClose={() => !isDeleting && setDeleteDialogOpen(false)}
         disableEnforceFocus
         disableRestoreFocus
       >
@@ -85,9 +86,19 @@ const ProcessDialogs: React.FC<DialogsProps> = ({
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleConfirmDelete} color="error">
-            Delete
+          <Button 
+            onClick={() => setDeleteDialogOpen(false)} 
+            disabled={isDeleting}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleConfirmDelete} 
+            color="error"
+            disabled={isDeleting}
+            startIcon={isDeleting ? <CircularProgress size={20} color="error" /> : null}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
           </Button>
         </DialogActions>
       </Dialog>

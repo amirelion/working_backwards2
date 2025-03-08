@@ -1,6 +1,5 @@
 import React from 'react';
-import { Box, CircularProgress, Grid, Typography, Button } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Box, CircularProgress, Grid, Typography } from '@mui/material';
 import ProcessCard from './ProcessCard';
 import { ProcessGridProps } from '../types';
 
@@ -12,7 +11,8 @@ const ProcessGrid: React.FC<ProcessGridProps> = ({
   loading,
   onOpenProcess,
   onMenuOpen,
-  searchQuery
+  searchQuery,
+  processDeletingId
 }) => {
   if (loading) {
     return (
@@ -43,6 +43,7 @@ const ProcessGrid: React.FC<ProcessGridProps> = ({
             process={process}
             onOpenProcess={onOpenProcess}
             onMenuOpen={onMenuOpen}
+            isBeingDeleted={processDeletingId === process.id}
           />
         </Grid>
       ))}

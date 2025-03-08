@@ -25,24 +25,45 @@ import { ProcessCardProps } from '../types';
 const ProcessCard: React.FC<ProcessCardProps> = ({ 
   process, 
   onOpenProcess, 
-  onMenuOpen 
+  onMenuOpen,
+  isBeingDeleted = false 
 }) => {
+  // Check if user prefers reduced motion
+  const prefersReducedMotion = 
+    typeof window !== 'undefined' 
+    && window.matchMedia 
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  
+  // Define animation durations based on user preferences
+  const transitionDuration = prefersReducedMotion ? '0.2s' : '0.8s';
+  const opacityDuration = prefersReducedMotion ? '0.3s' : '1.2s';
+  
   return (
     <Card
       sx={{ 
         height: '100%', 
         display: 'flex', 
         flexDirection: 'column',
-        transition: 'transform 0.2s, box-shadow 0.2s',
+        transition: `transform ${transitionDuration}, box-shadow ${transitionDuration}, opacity ${opacityDuration}, background-color ${transitionDuration}`,
         '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-        }
+          transform: isBeingDeleted ? 'none' : 'translateY(-4px)',
+          boxShadow: isBeingDeleted ? undefined : '0 4px 20px rgba(0,0,0,0.1)',
+        },
+        opacity: isBeingDeleted ? 0 : 1,
+        transform: isBeingDeleted ? 'scale(0.95)' : 'scale(1)',
+        pointerEvents: isBeingDeleted ? 'none' : 'auto',
+        backgroundColor: isBeingDeleted ? 'rgba(255, 200, 200, 0.8)' : 'inherit',
+        borderColor: isBeingDeleted ? '#ff6b6b' : 'inherit',
+        borderWidth: isBeingDeleted ? 1 : 0,
+        borderStyle: isBeingDeleted ? 'solid' : 'none'
       }}
+      role="article"
+      aria-label={`Process: ${process.title}`}
+      aria-busy={isBeingDeleted}
     >
       <CardContent 
-        sx={{ flexGrow: 1, cursor: 'pointer' }} 
-        onClick={() => onOpenProcess(process.id)}
+        sx={{ flexGrow: 1, cursor: isBeingDeleted ? 'default' : 'pointer' }} 
+        onClick={() => !isBeingDeleted && onOpenProcess(process.id)}
       >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
           <Typography variant="h6" component="h2" noWrap sx={{ maxWidth: '80%' }}>
@@ -50,8 +71,9 @@ const ProcessCard: React.FC<ProcessCardProps> = ({
           </Typography>
           <IconButton 
             size="small" 
-            onClick={(e) => onMenuOpen(e, process.id)}
+            onClick={(e) => !isBeingDeleted && onMenuOpen(e, process.id)}
             aria-label="process options"
+            disabled={isBeingDeleted}
           >
             <MoreVertIcon />
           </IconButton>
@@ -80,7 +102,8 @@ const ProcessCard: React.FC<ProcessCardProps> = ({
         <Button
           size="small"
           startIcon={<LaunchIcon />}
-          onClick={() => onOpenProcess(process.id)}
+          onClick={() => !isBeingDeleted && onOpenProcess(process.id)}
+          disabled={isBeingDeleted}
         >
           Open
         </Button>

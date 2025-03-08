@@ -18,6 +18,7 @@ export interface ProcessCardProps {
   process: WorkingBackwardsProcessSummary;
   onOpenProcess: (processId: string) => Promise<void>;
   onMenuOpen: (event: React.MouseEvent<HTMLElement>, processId: string) => void;
+  isBeingDeleted?: boolean;
 }
 
 /**
@@ -29,6 +30,7 @@ export interface ProcessGridProps {
   onOpenProcess: (processId: string) => Promise<void>;
   onMenuOpen: (event: React.MouseEvent<HTMLElement>, processId: string) => void;
   searchQuery: string;
+  processDeletingId: string | null;
 }
 
 /**
@@ -59,6 +61,7 @@ export interface DialogsProps {
   deleteDialogOpen: boolean;
   setDeleteDialogOpen: (open: boolean) => void;
   handleConfirmDelete: () => Promise<void>;
+  isDeleting?: boolean;
   
   renameDialogOpen: boolean;
   setRenameDialogOpen: (open: boolean) => void;

@@ -4,6 +4,9 @@ import { useProcessList } from '../../../features/working-backwards/contexts/Pro
 import { useCurrentProcess } from '../../../features/working-backwards/contexts/CurrentProcessContext';
 import * as workingBackwardsService from '../../../services/workingBackwardsService';
 
+// Constants
+const MIN_DELETION_ANIMATION_TIME = 2000; // 2 seconds minimum animation time
+
 /**
  * Custom hook to manage process-related dialogs and their actions
  */
@@ -20,6 +23,12 @@ const useProcessDialogs = () => {
   // Delete confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [processToDelete, setProcessToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false); // Track deletion in progress
+  
+  // Snackbar notification state
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
 
   // Rename dialog state
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
@@ -70,12 +79,40 @@ const useProcessDialogs = () => {
    */
   const handleConfirmDelete = async () => {
     if (processToDelete) {
+      setIsDeleting(true);
       try {
+        // Get process title for the notification
+        const processTitle = processes.find(p => p.id === processToDelete)?.title || 'Process';
+        
+        // Start timing the deletion
+        const startTime = Date.now();
         await deleteProcess(processToDelete);
+        
+        // Calculate how much time has elapsed during deletion
+        const elapsedTime = Date.now() - startTime;
+        
+        // If deletion was too fast, wait for the remaining time
+        if (elapsedTime < MIN_DELETION_ANIMATION_TIME) {
+          await new Promise(resolve => setTimeout(resolve, MIN_DELETION_ANIMATION_TIME - elapsedTime));
+        }
+        
+        // Show success notification
+        setSnackbarMessage(`"${processTitle}" has been deleted successfully`);
+        setSnackbarSeverity('success');
+        setSnackbarOpen(true);
+        
+        // Close the dialog
         setDeleteDialogOpen(false);
         setProcessToDelete(null);
       } catch (error) {
         console.error('Error deleting process:', error);
+        
+        // Show error notification
+        setSnackbarMessage(`Failed to delete process: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+      } finally {
+        setIsDeleting(false);
       }
     }
   };
@@ -140,6 +177,13 @@ const useProcessDialogs = () => {
     handleMenuClose();
   };
 
+  /**
+   * Handle closing the snackbar
+   */
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
+
   return {
     // Dialog states
     openNewDialog,
@@ -151,12 +195,20 @@ const useProcessDialogs = () => {
     setDeleteDialogOpen,
     processToDelete,
     setProcessToDelete,
+    isDeleting,
     renameDialogOpen,
     setRenameDialogOpen,
     newName,
     setNewName,
     processToRename,
     setProcessToRename,
+    
+    // Snackbar states
+    snackbarOpen,
+    setSnackbarOpen,
+    snackbarMessage,
+    snackbarSeverity,
+    handleCloseSnackbar,
     
     // Menu states
     menuAnchorEl,

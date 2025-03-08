@@ -10,6 +10,7 @@ import ProcessDialogs from './ProcessDialogs';
 import ProcessMenu from './ProcessMenu';
 import useProcessFiltering from '../hooks/useProcessFiltering';
 import useProcessDialogs from '../hooks/useProcessDialogs';
+import CustomSnackbar from '../../../components/CustomSnackbar';
 
 /**
  * Main container component for the dashboard page
@@ -38,11 +39,17 @@ const DashboardContainer: React.FC = () => {
     isCreating,
     deleteDialogOpen,
     setDeleteDialogOpen,
+    processToDelete,
+    isDeleting,
     renameDialogOpen,
     setRenameDialogOpen,
     newName,
     setNewName,
     menuAnchorEl,
+    snackbarOpen,
+    snackbarMessage,
+    snackbarSeverity,
+    handleCloseSnackbar,
     handleCreateProcess,
     handleOpenProcess,
     handleConfirmDelete,
@@ -94,6 +101,15 @@ const DashboardContainer: React.FC = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      {/* Success/Error Snackbar */}
+      <CustomSnackbar
+        open={snackbarOpen}
+        message={snackbarMessage}
+        severity={snackbarSeverity}
+        onClose={handleCloseSnackbar}
+        autoHideDuration={snackbarSeverity === 'success' ? 3000 : null}
+      />
+      
       <Box mb={4}>
         <Typography variant="h4" component="h1" gutterBottom>
           Your Working Backwards Processes
@@ -147,6 +163,7 @@ const DashboardContainer: React.FC = () => {
         onOpenProcess={handleOpenProcess}
         onMenuOpen={handleMenuOpen}
         searchQuery={searchQuery}
+        processDeletingId={isDeleting ? processToDelete : null}
       />
       
       {/* Dialogs */}
@@ -160,6 +177,7 @@ const DashboardContainer: React.FC = () => {
         deleteDialogOpen={deleteDialogOpen}
         setDeleteDialogOpen={setDeleteDialogOpen}
         handleConfirmDelete={handleConfirmDelete}
+        isDeleting={isDeleting}
         renameDialogOpen={renameDialogOpen}
         setRenameDialogOpen={setRenameDialogOpen}
         newName={newName}
