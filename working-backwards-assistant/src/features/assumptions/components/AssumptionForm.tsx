@@ -15,10 +15,11 @@ import {
   Paper,
 } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
-import { AssumptionCategory, AssumptionImpact, AssumptionConfidence } from '../types';
+import { AssumptionCategory, AssumptionImpact, AssumptionConfidence, AssumptionStatus } from '../types';
 // We'll fix the unused import warning
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { getCategoryIcon, getCategoryColor } from '../utils/categoryUtils';
+import { getStatusLabel, getStatusDescription } from '../utils/statusUtils';
 
 interface AssumptionFormProps {
   statement: string;
@@ -26,11 +27,13 @@ interface AssumptionFormProps {
   category: AssumptionCategory;
   impact: AssumptionImpact;
   confidence: AssumptionConfidence;
+  status: AssumptionStatus;
   onStatementChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
   onCategoryChange: (value: AssumptionCategory) => void;
   onImpactChange: (value: AssumptionImpact) => void;
   onConfidenceChange: (value: AssumptionConfidence) => void;
+  onStatusChange: (value: AssumptionStatus) => void;
   onSave: () => void;
   onCancel: () => void;
   loading?: boolean;
@@ -43,11 +46,13 @@ const AssumptionForm: React.FC<AssumptionFormProps> = ({
   category,
   impact,
   confidence,
+  status,
   onStatementChange,
   onDescriptionChange,
   onCategoryChange,
   onImpactChange,
   onConfidenceChange,
+  onStatusChange,
   onSave,
   onCancel,
   loading = false,
@@ -76,7 +81,7 @@ const AssumptionForm: React.FC<AssumptionFormProps> = ({
           />
         </Grid>
         
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={3}>
           <FormControl fullWidth>
             <InputLabel id="category-label">Category</InputLabel>
             <Select
@@ -139,6 +144,32 @@ const AssumptionForm: React.FC<AssumptionFormProps> = ({
                 <InfoIcon fontSize="small" sx={{ mr: 0.5 }} />
               </Tooltip>
               How certain are you that this is true?
+            </FormHelperText>
+          </FormControl>
+        </Grid>
+        
+        <Grid item xs={12} md={3}>
+          <FormControl fullWidth>
+            <InputLabel id="status-label">Validation Status</InputLabel>
+            <Select
+              labelId="status-label"
+              value={status}
+              label="Validation Status"
+              onChange={(e) => onStatusChange(e.target.value as AssumptionStatus)}
+              disabled={loading}
+            >
+              <MenuItem value="unvalidated">{getStatusLabel('unvalidated')}</MenuItem>
+              <MenuItem value="in_progress">{getStatusLabel('in_progress')}</MenuItem>
+              <MenuItem value="validated">{getStatusLabel('validated')}</MenuItem>
+              <MenuItem value="invalidated">{getStatusLabel('invalidated')}</MenuItem>
+              <MenuItem value="partially_validated">{getStatusLabel('partially_validated')}</MenuItem>
+              <MenuItem value="inconclusive">{getStatusLabel('inconclusive')}</MenuItem>
+            </Select>
+            <FormHelperText sx={{ display: 'flex', alignItems: 'center' }}>
+              <Tooltip title={getStatusDescription(status)}>
+                <InfoIcon fontSize="small" sx={{ mr: 0.5 }} />
+              </Tooltip>
+              Current validation status of this assumption
             </FormHelperText>
           </FormControl>
         </Grid>
