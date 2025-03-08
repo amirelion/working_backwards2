@@ -6,6 +6,7 @@ import { AssumptionCategory } from '../types';
 import { backwardCompatSelectors } from '../../../store/compatUtils';
 import { useAssumptions } from './useAssumptions';
 import { getGenerateAssumptionsPrompt } from '../../../features/ai-services/prompt-generators/assumptions/assumptionPrompts';
+import { FAQ } from '../../../types';
 
 interface UseAIGenerationReturn {
   generatedAssumptions: Array<{ statement: string; category: AssumptionCategory }>;
@@ -21,6 +22,13 @@ export const useAIGeneration = (): UseAIGenerationReturn => {
   const workingBackwardsResponses = useSelector((state: RootState) => 
     backwardCompatSelectors.workingBackwardsResponses(state)
   );
+  
+  // Extract FAQs from the PRFAQ object
+  const allFaqs: FAQ[] = [
+    ...(prfaq.faq || []),
+    ...(prfaq.customerFaqs || []),
+    ...(prfaq.stakeholderFaqs || [])
+  ];
   
   // State for generated assumptions
   const [generatedAssumptions, setGeneratedAssumptions] = useState<Array<{
@@ -41,6 +49,7 @@ export const useAIGeneration = (): UseAIGenerationReturn => {
       const prompt = getGenerateAssumptionsPrompt({
         prfaq,
         workingBackwards: workingBackwardsResponses,
+        faqs: allFaqs,
         category,
         customInstructions: customPrompt
       });
@@ -76,7 +85,7 @@ export const useAIGeneration = (): UseAIGenerationReturn => {
     } finally {
       setIsGenerating(false);
     }
-  }, [prfaq, workingBackwardsResponses]);
+  }, [prfaq, workingBackwardsResponses, allFaqs]);
   
   // Add a generated assumption
   const addGeneratedAssumption = useCallback((statement: string, category: AssumptionCategory) => {
