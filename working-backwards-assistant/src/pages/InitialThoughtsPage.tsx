@@ -9,11 +9,9 @@ import {
   Typography, 
   Tab, 
   Tabs, 
-  Divider,
   Alert,
   CircularProgress,
   Snackbar,
-  ClickAwayListener
 } from '@mui/material';
 import { useRecoilState } from 'recoil';
 import { useSelector } from 'react-redux';
@@ -26,7 +24,6 @@ import CustomSnackbar from '../components/CustomSnackbar';
 import { processInitialThoughts } from '../utils/aiProcessing';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
-import SaveIcon from '@mui/icons-material/Save';
 import { useCurrentProcess } from '../features/working-backwards/contexts/CurrentProcessContext';
 import ClearIcon from '@mui/icons-material/Clear';
 
@@ -56,8 +53,8 @@ function InitialThoughtsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [initialThoughts, setInitialThoughts] = useRecoilState(initialThoughtsState);
-  const [workingBackwardsQuestions, setWorkingBackwardsQuestions] = useRecoilState(workingBackwardsQuestionsState);
-  const [skipInitialThoughts, setSkipInitialThoughts] = useRecoilState(skipInitialThoughtsState);
+  const [, setWorkingBackwardsQuestions] = useRecoilState(workingBackwardsQuestionsState);
+  const [, setSkipInitialThoughts] = useRecoilState(skipInitialThoughtsState);
   const prfaq = useSelector((state: RootState) => state.prfaq);
   const [tabValue, setTabValue] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);

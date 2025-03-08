@@ -25,6 +25,9 @@ This application helps users innovate like Amazon using the Working Backwards me
    ```
 3. Create a `.env` file in the root directory with your AI API keys:
    ```
+   # Suppress source map warnings (optional)
+   GENERATE_SOURCEMAP=false
+   
    REACT_APP_AI_PROVIDER=openai
    REACT_APP_AI_MODEL=gpt-4o-mini
    REACT_APP_AI_API_KEY=your_api_key_here

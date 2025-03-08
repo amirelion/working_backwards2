@@ -10,7 +10,7 @@ import {
   Button,
   Alert
 } from '@mui/material';
-import { Edit, AutoFixHigh } from '@mui/icons-material';
+import { Edit } from '@mui/icons-material';
 import { useRecoilValue } from 'recoil';
 import { skipInitialThoughtsState } from '../../../atoms/skipInitialThoughtsState';
 import { initialThoughtsState } from '../../../atoms/initialThoughtsState';

@@ -10,8 +10,7 @@ import {
   Select,
   MenuItem,
   Button,
-  Tooltip,
-  SelectChangeEvent
+  Tooltip
 } from '@mui/material';
 import {
   Add as AddIcon,
