@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 import { WorkingBackwardsResponses, PRFAQ as BackendPRFAQ, AIRequest } from '../../../types';
 import {
   getAIResponse, 
+  getHeadlinePrompt,
   getFirstParagraphPrompt,
   getSecondParagraphPrompt,
   getThirdParagraphPrompt,
@@ -10,13 +11,15 @@ import {
   getFifthParagraphPrompt,
   getSixthParagraphPrompt,
   getCallToActionPrompt,
-  getHeadlinePrompt,
   getCustomerFAQPrompt,
   getStakeholderFAQPrompt,
   getSingleCustomerFAQPrompt,
   getSingleStakeholderFAQPrompt,
+  getExperimentSuggestionsPrompt
 } from '../../../services/aiService';
 import { PRFAQState, updatePRFAQTitle, updatePRFAQPressRelease, addCustomerFAQ, addStakeholderFAQ } from '../../../store/prfaqSlice';
+import { formatPRFAQContext } from '../../../features/ai-services/utils/formatters';
+import { store } from '../../../store';
 
 // Get environment variables for AI model/provider
 const AI_PROVIDER = process.env.REACT_APP_AI_PROVIDER || 'openai';
@@ -382,15 +385,171 @@ export const useAIGeneration = (
     }
   };
 
+  /**
+   * Generate the complete PRFAQ sequentially, passing context between sections
+   * This approach ensures each section builds on the previous ones
+   */
+  const generateSequentialPRFAQ = async () => {
+    if (!hasWorkingBackwardsResponses) return;
+    
+    setIsGeneratingPRFAQ(true);
+    
+    try {
+      // Generate title
+      setGenerationStep('Generating title (1/8)...');
+      await generateSection('title');
+      
+      // Get updated state after title generation
+      const updatedPRFAQ = store.getState().prfaq;
+      
+      // Generate introduction using title as context
+      setGenerationStep('Generating introduction (2/8)...');
+      const introContext = formatPRFAQContext(workingBackwardsResponses!, updatedPRFAQ);
+      const introPrompt = getFirstParagraphPrompt(workingBackwardsResponses!, updatedPRFAQ);
+      
+      try {
+        const introResponse = await getAIResponse(createAIRequest(introPrompt));
+        if (introResponse.content) {
+          dispatch(updatePRFAQPressRelease({ 
+            field: 'introduction', 
+            value: introResponse.content.trim()
+          }));
+        }
+      } catch (error) {
+        console.error('Error generating introduction:', error);
+      }
+      
+      // Get updated state again
+      const updatedWithIntro = store.getState().prfaq;
+      
+      // Generate problem statement using title and intro as context
+      setGenerationStep('Generating problem statement (3/8)...');
+      const problemPrompt = getSecondParagraphPrompt(workingBackwardsResponses!, updatedWithIntro);
+      
+      try {
+        const problemResponse = await getAIResponse(createAIRequest(problemPrompt));
+        if (problemResponse.content) {
+          dispatch(updatePRFAQPressRelease({ 
+            field: 'problemStatement', 
+            value: problemResponse.content.trim()
+          }));
+        }
+      } catch (error) {
+        console.error('Error generating problem statement:', error);
+      }
+      
+      // Get updated state again
+      const updatedWithProblem = store.getState().prfaq;
+      
+      // Generate solution using title, intro, and problem as context
+      setGenerationStep('Generating solution (4/8)...');
+      const solutionPrompt = getThirdParagraphPrompt(workingBackwardsResponses!, updatedWithProblem);
+      
+      try {
+        const solutionResponse = await getAIResponse(createAIRequest(solutionPrompt));
+        if (solutionResponse.content) {
+          dispatch(updatePRFAQPressRelease({ 
+            field: 'solution', 
+            value: solutionResponse.content.trim()
+          }));
+        }
+      } catch (error) {
+        console.error('Error generating solution:', error);
+      }
+      
+      // Get updated state again
+      const updatedWithSolution = store.getState().prfaq;
+      
+      // Generate stakeholder quote
+      setGenerationStep('Generating executive quote (5/8)...');
+      const quotePrompt = getFourthParagraphPrompt(workingBackwardsResponses!, updatedWithSolution);
+      
+      try {
+        const quoteResponse = await getAIResponse(createAIRequest(quotePrompt));
+        if (quoteResponse.content) {
+          dispatch(updatePRFAQPressRelease({ 
+            field: 'stakeholderQuote', 
+            value: quoteResponse.content.trim()
+          }));
+        }
+      } catch (error) {
+        console.error('Error generating executive quote:', error);
+      }
+      
+      // Get updated state again
+      const updatedWithQuote = store.getState().prfaq;
+      
+      // Generate customer journey
+      setGenerationStep('Generating customer journey (6/8)...');
+      const journeyPrompt = getFifthParagraphPrompt(workingBackwardsResponses!, updatedWithQuote);
+      
+      try {
+        const journeyResponse = await getAIResponse(createAIRequest(journeyPrompt));
+        if (journeyResponse.content) {
+          dispatch(updatePRFAQPressRelease({ 
+            field: 'customerJourney', 
+            value: journeyResponse.content.trim()
+          }));
+        }
+      } catch (error) {
+        console.error('Error generating customer journey:', error);
+      }
+      
+      // Get updated state again
+      const updatedWithJourney = store.getState().prfaq;
+      
+      // Generate customer quote
+      setGenerationStep('Generating customer quote (7/8)...');
+      const customerQuotePrompt = getSixthParagraphPrompt(workingBackwardsResponses!, updatedWithJourney);
+      
+      try {
+        const customerResponse = await getAIResponse(createAIRequest(customerQuotePrompt));
+        if (customerResponse.content) {
+          dispatch(updatePRFAQPressRelease({ 
+            field: 'customerQuote', 
+            value: customerResponse.content.trim()
+          }));
+        }
+      } catch (error) {
+        console.error('Error generating customer quote:', error);
+      }
+      
+      // Get updated state again
+      const updatedWithCustomerQuote = store.getState().prfaq;
+      
+      // Generate call to action
+      setGenerationStep('Generating call to action (8/8)...');
+      const ctaPrompt = getCallToActionPrompt(workingBackwardsResponses!, updatedWithCustomerQuote);
+      
+      try {
+        const ctaResponse = await getAIResponse(createAIRequest(ctaPrompt));
+        if (ctaResponse.content) {
+          dispatch(updatePRFAQPressRelease({ 
+            field: 'callToAction', 
+            value: ctaResponse.content.trim()
+          }));
+        }
+      } catch (error) {
+        console.error('Error generating call to action:', error);
+      }
+      
+      setGenerationStep('Complete!');
+    } catch (error) {
+      console.error('Error generating sequential PRFAQ:', error);
+    } finally {
+      setIsGeneratingPRFAQ(false);
+      setGenerationStep('');
+    }
+  };
+
   return {
     isGeneratingPRFAQ,
     isGeneratingCustomerFAQ,
     isGeneratingStakeholderFAQ,
-    generatingSection,
     generationStep,
-    hasWorkingBackwardsResponses,
     generateSection,
     generateFullPRFAQ,
+    generateSequentialPRFAQ,
     generateCustomerFAQs,
     generateSingleCustomerFAQ,
     generateStakeholderFAQs,
