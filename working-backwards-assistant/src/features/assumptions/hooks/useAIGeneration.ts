@@ -7,7 +7,15 @@ import { AssumptionCategory, EnhancedAssumption } from '../types';
 import { backwardCompatSelectors } from '../../../store/compatUtils';
 import { useAssumptions } from './useAssumptions';
 
-export const useAIGeneration = () => {
+interface UseAIGenerationReturn {
+  generatedAssumptions: Array<{ statement: string; category: AssumptionCategory }>;
+  isGenerating: boolean;
+  generateAssumptions: (category: AssumptionCategory, customPrompt?: string) => Promise<void>;
+  addGeneratedAssumption: (statement: string, category: AssumptionCategory) => void;
+  clearGeneratedAssumptions: () => void;
+}
+
+export const useAIGeneration = (): UseAIGenerationReturn => {
   const { addAssumption } = useAssumptions();
   const prfaq = useSelector((state: RootState) => backwardCompatSelectors.prfaq(state));
   const workingBackwardsResponses = useSelector((state: RootState) => 
@@ -117,6 +125,11 @@ Each assumption should be concise, testable, and specific. Do not include any ex
     setGeneratedAssumptions(prev => prev.filter(a => a.statement !== statement));
   }, [addAssumption]);
   
+  // Clear all generated assumptions
+  const clearGeneratedAssumptions = useCallback(() => {
+    setGeneratedAssumptions([]);
+  }, []);
+  
   // Helper function to get category-specific prompt guidance
   const getCategoryPromptGuidance = (category: AssumptionCategory): string => {
     switch (category) {
@@ -157,6 +170,7 @@ Each assumption should be concise, testable, and specific. Do not include any ex
     generatedAssumptions,
     isGenerating,
     generateAssumptions,
-    addGeneratedAssumption
+    addGeneratedAssumption,
+    clearGeneratedAssumptions
   };
 }; 
