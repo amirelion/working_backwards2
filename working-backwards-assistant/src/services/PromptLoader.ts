@@ -30,7 +30,8 @@ class PromptLoader {
       workingBackwards: require('../config/prompts/workingBackwards.json'),
       pressRelease: require('../config/prompts/pressRelease.json'),
       faqs: require('../config/prompts/faqs.json'),
-      experiments: require('../config/prompts/experiments.json')
+      experiments: require('../config/prompts/experiments.json'),
+      assumptions: require('../config/prompts/assumptions.json')
     };
   }
 
@@ -116,6 +117,17 @@ class PromptLoader {
     };
 
     return { prompt, settings };
+  }
+
+  /**
+   * Get raw prompt data for a category without processing
+   * Used for accessing nested configurations like categoryGuidance
+   * 
+   * @param category - The prompt category
+   * @returns The raw prompt category data
+   */
+  public getRawPromptData(category: string): any {
+    return this.promptConfigs[category] || null;
   }
 }
 

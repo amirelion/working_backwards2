@@ -2,10 +2,11 @@ import { useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { getAIResponse } from '../../../services/aiService';
 import { RootState } from '../../../store';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { AssumptionCategory, EnhancedAssumption } from '../types';
+import { AssumptionCategory } from '../types';
 import { backwardCompatSelectors } from '../../../store/compatUtils';
 import { useAssumptions } from './useAssumptions';
+import { getGenerateAssumptionsPrompt } from '../../../features/ai-services/prompt-generators/assumptions/assumptionPrompts';
+import { FAQ } from '../../../types';
 
 interface UseAIGenerationReturn {
   generatedAssumptions: Array<{ statement: string; category: AssumptionCategory }>;
@@ -22,6 +23,13 @@ export const useAIGeneration = (): UseAIGenerationReturn => {
     backwardCompatSelectors.workingBackwardsResponses(state)
   );
   
+  // Extract FAQs from the PRFAQ object
+  const allFaqs: FAQ[] = [
+    ...(prfaq.faq || []),
+    ...(prfaq.customerFaqs || []),
+    ...(prfaq.stakeholderFaqs || [])
+  ];
+  
   // State for generated assumptions
   const [generatedAssumptions, setGeneratedAssumptions] = useState<Array<{
     statement: string;
@@ -37,47 +45,18 @@ export const useAIGeneration = (): UseAIGenerationReturn => {
     setIsGenerating(true);
     
     try {
-      // Create prompt context
-      const contextData = {
-        prfaq: {
-          title: prfaq.title,
-          pressRelease: {
-            summary: prfaq.pressRelease.summary,
-            problem: prfaq.pressRelease.problem,
-            solution: prfaq.pressRelease.solution,
-            executiveQuote: prfaq.pressRelease.executiveQuote,
-            customerJourney: prfaq.pressRelease.customerJourney,
-            customerQuote: prfaq.pressRelease.customerQuote,
-          }
-        },
+      // Get the prompt from the prompt generator
+      const prompt = getGenerateAssumptionsPrompt({
+        prfaq,
         workingBackwards: workingBackwardsResponses,
+        faqs: allFaqs,
         category,
-        customInstructions: customPrompt || ''
-      };
+        customInstructions: customPrompt
+      });
       
-      // Call AI service with appropriate prompt
-      const promptTemplate = `You are an expert in product innovation and assumption identification for the Amazon Working Backwards process.
-
-Based on the following information about a product or service, generate 5 key ${category} assumptions that should be validated.
-
-Context:
-${JSON.stringify(contextData, null, 2)}
-
-${customPrompt ? `Additional instructions: ${customPrompt}` : ''}
-
-For ${category} assumptions, focus on:
-${getCategoryPromptGuidance(category)}
-
-Format your response as follows:
-1. [Assumption statement 1]
-2. [Assumption statement 2]
-3. [Assumption statement 3]
-...and so on.
-
-Each assumption should be concise, testable, and specific. Do not include any explanations, just the assumption statements.`;
-      
+      // Call AI service with the generated prompt
       const response = await getAIResponse({
-        prompt: promptTemplate,
+        prompt,
         model: process.env.REACT_APP_AI_MODEL || 'gpt-4o',
         provider: process.env.REACT_APP_AI_PROVIDER || 'openai'
       });
@@ -106,7 +85,7 @@ Each assumption should be concise, testable, and specific. Do not include any ex
     } finally {
       setIsGenerating(false);
     }
-  }, [prfaq, workingBackwardsResponses]);
+  }, [prfaq, workingBackwardsResponses, allFaqs]);
   
   // Add a generated assumption
   const addGeneratedAssumption = useCallback((statement: string, category: AssumptionCategory) => {
@@ -129,42 +108,6 @@ Each assumption should be concise, testable, and specific. Do not include any ex
   const clearGeneratedAssumptions = useCallback(() => {
     setGeneratedAssumptions([]);
   }, []);
-  
-  // Helper function to get category-specific prompt guidance
-  const getCategoryPromptGuidance = (category: AssumptionCategory): string => {
-    switch (category) {
-      case 'customer':
-        return `• Who are the customers?
-- What problem do they have?
-- How important is this problem to them?
-- Would they pay for a solution?
-- What are their key needs and pain points?`;
-      
-      case 'solution':
-        return `• Does our solution solve the problem?
-- Is it better than alternatives?
-- Can we build it with our resources?
-- Will customers understand how to use it?
-- What technical challenges might we face?`;
-      
-      case 'business':
-        return `• Will customers pay our price?
-- Is our cost structure sustainable?
-- Can we reach customers efficiently?
-- Is the market large enough?
-- Is our revenue model viable?`;
-      
-      case 'market':
-        return `• Is the timing right for this innovation?
-- How will competitors respond?
-- Are there regulatory concerns?
-- Are there technological dependencies?
-- What market trends might impact success?`;
-      
-      default:
-        return '';
-    }
-  };
   
   return {
     generatedAssumptions,
