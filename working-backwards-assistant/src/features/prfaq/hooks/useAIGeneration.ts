@@ -14,11 +14,10 @@ import {
   getSingleStakeholderFAQPrompt
 } from '../../../services/aiService';
 import { PRFAQState, updatePRFAQTitle, updatePRFAQPressRelease, addCustomerFAQ, addStakeholderFAQ } from '../../../store/prfaqSlice';
-import { PRFAQ, WorkingBackwardsResponses } from '../../../types';
+import { PRFAQ, WorkingBackwardsResponses, AIRequest } from '../../../types';
 import { store } from '../../../store';
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { v4 as uuidv4 } from 'uuid';
 
 // Get environment variables for AI model/provider
 const AI_PROVIDER = process.env.REACT_APP_AI_PROVIDER || 'openai';
@@ -47,7 +46,7 @@ const convertPRFAQStateToPartialPRFAQ = (state: PRFAQState): Partial<PRFAQ> => {
 /**
  * Convert PRFAQState to backend PRFAQ format for prompts
  */
-const convertPRFAQStateToBackendPRFAQ = (prfaq: PRFAQState): Partial<BackendPRFAQ> => {
+const convertPRFAQStateToBackendPRFAQ = (prfaq: PRFAQState): Partial<PRFAQ> => {
   return {
     title: prfaq.title,
     date: new Date().toISOString(),
@@ -58,11 +57,11 @@ const convertPRFAQStateToBackendPRFAQ = (prfaq: PRFAQState): Partial<BackendPRFA
       executiveQuote: prfaq.pressRelease.stakeholderQuote,
       customerJourney: prfaq.pressRelease.customerJourney,
       customerQuote: prfaq.pressRelease.customerQuote,
-      gettingStarted: prfaq.pressRelease.callToAction,
+      gettingStarted: prfaq.pressRelease.callToAction
     },
-    faq: [],
+    faq: prfaq.faqs,
     customerFaqs: prfaq.customerFaqs,
-    stakeholderFaqs: prfaq.stakeholderFaqs,
+    stakeholderFaqs: prfaq.stakeholderFaqs
   };
 };
 
@@ -85,10 +84,9 @@ export const useAIGeneration = (
   workingBackwardsResponses: WorkingBackwardsResponses | null
 ) => {
   const dispatch = useDispatch();
-  const [isGeneratingPRFAQ, setIsGeneratingPRFAQ] = useState(false);
-  const [isGeneratingCustomerFAQ, setIsGeneratingCustomerFAQ] = useState(false);
-  const [isGeneratingStakeholderFAQ, setIsGeneratingStakeholderFAQ] = useState(false);
-  const [generatingSection, setGeneratingSection] = useState<string>('');
+  const [isGeneratingPRFAQ, setIsGeneratingPRFAQ] = useState<boolean>(false);
+  const [isGeneratingCustomerFAQ, setIsGeneratingCustomerFAQ] = useState<boolean>(false);
+  const [isGeneratingStakeholderFAQ, setIsGeneratingStakeholderFAQ] = useState<boolean>(false);
   const [generationStep, setGenerationStep] = useState<string>('');
   
   // Helper to check if working backwards responses are available
@@ -105,7 +103,6 @@ export const useAIGeneration = (
     if (!hasWorkingBackwardsResponses) return;
     
     setIsGeneratingPRFAQ(true);
-    setGeneratingSection(section);
     let prompt;
     let promptResponse;
 
@@ -204,7 +201,6 @@ export const useAIGeneration = (
       console.error(`Error generating ${section}:`, error);
     } finally {
       setIsGeneratingPRFAQ(false);
-      setGeneratingSection('');
     }
   };
 
