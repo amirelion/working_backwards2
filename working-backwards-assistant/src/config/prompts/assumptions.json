@@ -1,0 +1,22 @@
+{
+  "generateAssumptions": {
+    "id": "generateAssumptions",
+    "description": "Generates assumptions based on the PRFAQ and Working Backwards responses",
+    "defaults": {
+      "provider": "openai",
+      "model": "gpt-4o",
+      "temperature": 0.7
+    },
+    "template": "You are an expert in product innovation and assumption identification for the Amazon Working Backwards process.\n\nBased on the following information about a product or service, generate 5 key {{category}} assumptions that should be validated.\n\nContext:\n{{context}}\n\n{{#if customInstructions}}Additional instructions: {{customInstructions}}{{/if}}\n\nFor {{category}} assumptions, focus on:\n{{categoryGuidance}}\n\nFormat your response as follows:\n1. [Assumption statement 1]\n2. [Assumption statement 2]\n3. [Assumption statement 3]\n...and so on.\n\nEach assumption should be concise, testable, and specific. Do not include any explanations, just the assumption statements.",
+    "contextVariables": ["context", "category", "categoryGuidance", "customInstructions"]
+  },
+  "categoryGuidance": {
+    "customer": "• Who are the customers?\n- What problem do they have?\n- How important is this problem to them?\n- Would they pay for a solution?\n- What are their key needs and pain points?",
+    
+    "solution": "• Does our solution solve the problem?\n- Is it better than alternatives?\n- Can we build it with our resources?\n- Will customers understand how to use it?\n- What technical challenges might we face?",
+    
+    "business": "• Will customers pay our price?\n- Is our cost structure sustainable?\n- Can we reach customers efficiently?\n- Is the market large enough?\n- Is our revenue model viable?",
+    
+    "market": "• Is the timing right for this innovation?\n- How will competitors respond?\n- Are there regulatory concerns?\n- Are there technological dependencies?\n- What market trends might impact success?"
+  }
+} 
