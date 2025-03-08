@@ -1,20 +1,21 @@
-import React, { useState, lazy, Suspense, useCallback } from 'react';
+import React, { useState, lazy, Suspense, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useRecoilValue } from 'recoil';
 import {
-  Box,
-  Button,
   Container,
   Paper,
+  Box,
   Tabs,
   Tab,
   Typography,
+  Button,
   CircularProgress,
   Chip,
   Snackbar,
   Alert,
   Tooltip,
+  LinearProgress
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -133,10 +134,11 @@ const PRFAQPage: React.FC = () => {
     hasWorkingBackwardsResponses,
     generateSection,
     generateFullPRFAQ,
+    generateSequentialPRFAQ,
     generateCustomerFAQs,
     generateSingleCustomerFAQ,
     generateStakeholderFAQs,
-    generateSingleStakeholderFAQ,
+    generateSingleStakeholderFAQ
   } = useAIGeneration(prfaq, workingBackwardsResponses);
   
   const {
@@ -250,6 +252,37 @@ const PRFAQPage: React.FC = () => {
     }
   };
 
+  const handleGenerateSequentialPRFAQ = async () => {
+    setIsGenerating(true);
+    setGeneratingSection('sequentialPRFAQ');
+    
+    try {
+      await generateSequentialPRFAQ();
+    } catch (error) {
+      console.error('Error generating sequential PRFAQ:', error);
+      setSnackbarMessage('Failed to generate sequential PRFAQ');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    } finally {
+      setIsGenerating(false);
+      setGeneratingSection('');
+    }
+  };
+
+  const [sequentialProgress, setSequentialProgress] = useState(0);
+
+  useEffect(() => {
+    if (generatingSection === 'sequentialPRFAQ' && generationStep) {
+      const stepMatch = generationStep.match(/\((\d+)\/8\)/);
+      if (stepMatch && stepMatch[1]) {
+        const step = parseInt(stepMatch[1]);
+        setSequentialProgress((step / 8) * 100);
+      }
+    } else {
+      setSequentialProgress(0);
+    }
+  }, [generatingSection, generationStep]);
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Snackbar 
@@ -338,15 +371,27 @@ const PRFAQPage: React.FC = () => {
           />
           
           {tabValue === 0 && (
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={isGeneratingPRFAQ ? <CircularProgress size={20} color="inherit" /> : <AutoFixHighIcon />}
-              onClick={handleGenerateFullPRFAQ}
-              disabled={isGeneratingPRFAQ || !hasWorkingBackwardsResponses}
-            >
-              {isGeneratingPRFAQ ? `Generating (Step ${generationStep}/7)` : "Generate All Sections"}
-            </Button>
+            <>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={isGeneratingPRFAQ && generatingSection === 'fullPRFAQ' ? <CircularProgress size={20} color="inherit" /> : <AutoFixHighIcon />}
+                onClick={handleGenerateFullPRFAQ}
+                disabled={isGeneratingPRFAQ || !hasWorkingBackwardsResponses}
+                sx={{ mr: 1 }}
+              >
+                {isGeneratingPRFAQ && generatingSection === 'fullPRFAQ' ? `Generating...` : "Generate All (Basic)"}
+              </Button>
+              <Button
+                variant="contained"
+                color="secondary"
+                startIcon={isGeneratingPRFAQ && generatingSection === 'sequentialPRFAQ' ? <CircularProgress size={20} color="inherit" /> : <AutoFixHighIcon />}
+                onClick={handleGenerateSequentialPRFAQ}
+                disabled={isGeneratingPRFAQ || !hasWorkingBackwardsResponses}
+              >
+                {isGeneratingPRFAQ && generatingSection === 'sequentialPRFAQ' ? `${generationStep}` : "Generate Sequentially"}
+              </Button>
+            </>
           )}
         </Box>
         
@@ -453,6 +498,15 @@ const PRFAQPage: React.FC = () => {
             Continue to Assumptions
           </Button>
         </Box>
+
+        {isGeneratingPRFAQ && generatingSection === 'sequentialPRFAQ' && (
+          <Box sx={{ width: '100%', mt: 2 }}>
+            <LinearProgress variant="determinate" value={sequentialProgress} />
+            <Typography variant="caption" display="block" textAlign="center" sx={{ mt: 1 }}>
+              {generationStep}
+            </Typography>
+          </Box>
+        )}
       </Paper>
     </Container>
   );
