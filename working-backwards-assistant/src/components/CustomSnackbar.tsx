@@ -5,6 +5,7 @@ interface CustomSnackbarProps extends Omit<AlertProps, 'children'> {
   open: boolean;
   message: string;
   onClose: () => void;
+  autoHideDuration?: number | null;
 }
 
 export default function CustomSnackbar({ 
@@ -12,6 +13,7 @@ export default function CustomSnackbar({
   message, 
   onClose,
   severity = 'info',
+  autoHideDuration = null,
   ...props 
 }: CustomSnackbarProps) {
   if (!open) return null;
@@ -20,6 +22,7 @@ export default function CustomSnackbar({
     <Snackbar
       open={open}
       onClose={onClose}
+      autoHideDuration={autoHideDuration}
       TransitionComponent={Slide}
       TransitionProps={{ direction: "down" } as SlideProps}
       anchorOrigin={{ vertical: 'top', horizontal: 'center' }}

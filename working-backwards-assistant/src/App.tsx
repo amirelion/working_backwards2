@@ -17,7 +17,7 @@ import { AdminRoute } from './components/ProtectedRoute';
 
 // Import pages - using React.lazy for code splitting
 const LandingPage = React.lazy(() => import('./pages/LandingPage'));
-const DashboardPage = React.lazy(() => import('./pages/DashboardPage'));
+const DashboardPage = React.lazy(() => import('./features/dashboard'));
 const InitialThoughtsPage = React.lazy(() => import('./pages/InitialThoughtsPage'));
 const WorkingBackwardsPage = React.lazy(() => import('./pages/WorkingBackwardsPage'));
 const PRFAQPage = React.lazy(() => import('./features/prfaq'));
