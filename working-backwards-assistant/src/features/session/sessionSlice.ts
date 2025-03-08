@@ -139,6 +139,9 @@ export const sessionSlice = createSlice({
         : {
             ...action.payload,
             id: uuidv4(),
+            description: action.payload.description || '',
+            category: action.payload.category || 'customer',
+            relatedExperiments: action.payload.relatedExperiments || []
           };
           
       state.currentSession.assumptions.push(payload);
@@ -155,7 +158,17 @@ export const sessionSlice = createSlice({
       if (index !== -1) {
         state.currentSession.assumptions[index] = {
           ...state.currentSession.assumptions[index],
-          ...updates
+          ...updates,
+          // Handle new fields explicitly
+          description: updates.description !== undefined 
+            ? updates.description 
+            : state.currentSession.assumptions[index].description || '',
+          category: updates.category !== undefined
+            ? updates.category
+            : state.currentSession.assumptions[index].category || 'customer',
+          relatedExperiments: updates.relatedExperiments !== undefined
+            ? updates.relatedExperiments
+            : state.currentSession.assumptions[index].relatedExperiments || []
         };
         state.currentSession.updatedAt = new Date().toISOString();
       }

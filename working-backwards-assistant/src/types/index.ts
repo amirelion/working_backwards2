@@ -45,9 +45,12 @@ export interface FAQ {
 export interface Assumption {
   id: string;
   statement: string;
+  description?: string;
+  category?: 'customer' | 'solution' | 'business' | 'market';
   impact: 'high' | 'medium' | 'low';
   confidence: 'high' | 'medium' | 'low';
   priority: number;
+  relatedExperiments?: string[];
 }
 
 // Experiment Types
