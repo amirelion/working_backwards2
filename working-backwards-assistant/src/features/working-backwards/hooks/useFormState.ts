@@ -140,10 +140,14 @@ export const useFormState = () => {
         
         // Also update the Redux working backwards slice
         if (key !== 'aiSuggestions') {
-          appDispatch(updateQuestionField({
-            field: key as keyof Omit<typeof questions, 'aiSuggestions'>,
-            value: value
-          }));
+          // Only use allowed field keys
+          if (key === 'customer' || key === 'problem' || key === 'benefit' || 
+              key === 'validation' || key === 'experience') {
+            appDispatch(updateQuestionField({
+              field: key,
+              value: value
+            }));
+          }
         }
       }
     });

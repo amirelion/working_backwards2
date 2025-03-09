@@ -31,7 +31,7 @@ import {
   clearInitialThoughts
 } from '../store/initialThoughtsSlice';
 import {
-  setWorkingBackwardsQuestion,
+  updateQuestionField,
   setAISuggestions
 } from '../store/workingBackwardsSlice';
 
@@ -141,19 +141,19 @@ function InitialThoughtsPage() {
       
       // Update the working backwards questions state with the processed data using Redux
       if (processedQuestions.customer) {
-        dispatch(setWorkingBackwardsQuestion({ field: 'customer', value: processedQuestions.customer }));
+        dispatch(updateQuestionField({ field: 'customer', value: processedQuestions.customer }));
       }
       if (processedQuestions.problem) {
-        dispatch(setWorkingBackwardsQuestion({ field: 'problem', value: processedQuestions.problem }));
+        dispatch(updateQuestionField({ field: 'problem', value: processedQuestions.problem }));
       }
       if (processedQuestions.benefit) {
-        dispatch(setWorkingBackwardsQuestion({ field: 'benefit', value: processedQuestions.benefit }));
+        dispatch(updateQuestionField({ field: 'benefit', value: processedQuestions.benefit }));
       }
       if (processedQuestions.validation) {
-        dispatch(setWorkingBackwardsQuestion({ field: 'validation', value: processedQuestions.validation }));
+        dispatch(updateQuestionField({ field: 'validation', value: processedQuestions.validation }));
       }
       if (processedQuestions.experience) {
-        dispatch(setWorkingBackwardsQuestion({ field: 'experience', value: processedQuestions.experience }));
+        dispatch(updateQuestionField({ field: 'experience', value: processedQuestions.experience }));
       }
       
       // Update AI suggestions using Redux
