@@ -2,6 +2,15 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { WorkingBackwardsProcessSummary } from '../../../types/workingBackwards';
 import * as processService from '../services/processService';
+import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import { 
+  selectProcesses, 
+  selectLoadingProcesses, 
+  selectProcessListError,
+  setProcesses,
+  setLoadingProcesses,
+  setProcessListError
+} from '../../../store/processManagementSlice';
 
 interface ProcessListContextType {
   processes: WorkingBackwardsProcessSummary[];
@@ -30,22 +39,35 @@ export const useProcessList = (): ProcessListContextType => {
  */
 export const ProcessListProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser } = useAuth();
-  const [processes, setProcesses] = useState<WorkingBackwardsProcessSummary[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const appDispatch = useAppDispatch();
+  
+  // Keep using local state during transition
+  const [processes, setProcessesState] = useState<WorkingBackwardsProcessSummary[]>([]);
+  const [loading, setLoadingState] = useState<boolean>(true);
+  const [error, setErrorState] = useState<string | null>(null);
+  
+  // Get state from Redux
+  // These variables will be used after the migration is complete
+  const reduxProcesses = useAppSelector(selectProcesses);
+  const reduxLoading = useAppSelector(selectLoadingProcesses);
+  const reduxError = useAppSelector(selectProcessListError);
 
   /**
    * Refresh the list of processes
    */
   const refreshProcesses = () => {
     if (!currentUser) {
-      setProcesses([]);
-      setLoading(false);
+      setProcessesState([]);
+      setLoadingState(false);
+      appDispatch(setProcesses([]));
+      appDispatch(setLoadingProcesses(false));
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    setLoadingState(true);
+    setErrorState(null);
+    appDispatch(setLoadingProcesses(true));
+    appDispatch(setProcessListError(null));
   };
 
   /**
@@ -57,7 +79,8 @@ export const ProcessListProvider: React.FC<{ children: React.ReactNode }> = ({ c
       // No need to update state as the subscription will handle it
     } catch (error) {
       console.error('Error deleting process:', error);
-      setError('Failed to delete process');
+      setErrorState('Failed to delete process');
+      appDispatch(setProcessListError('Failed to delete process'));
       throw error;
     }
   };
@@ -81,7 +104,8 @@ export const ProcessListProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return processId;
     } catch (error) {
       console.error('Error creating process:', error);
-      setError('Failed to create new process');
+      setErrorState('Failed to create new process');
+      appDispatch(setProcessListError('Failed to create new process'));
       throw error;
     }
   };
@@ -93,22 +117,34 @@ export const ProcessListProvider: React.FC<{ children: React.ReactNode }> = ({ c
     let unsubscribe: (() => void) | undefined;
     
     if (currentUser) {
-      setLoading(true);
+      setLoadingState(true);
+      appDispatch(setLoadingProcesses(true));
+      
       unsubscribe = processService.subscribeToUserProcesses(
         currentUser.uid,
         (updatedProcesses) => {
-          setProcesses(updatedProcesses);
-          setLoading(false);
+          setProcessesState(updatedProcesses);
+          setLoadingState(false);
+          // Also update Redux state
+          appDispatch(setProcesses(updatedProcesses));
+          appDispatch(setLoadingProcesses(false));
         },
         (error) => {
           console.error('Error in processes subscription:', error);
-          setError('Failed to load your Working Backwards processes');
-          setLoading(false);
+          const errorMessage = 'Failed to load your Working Backwards processes';
+          setErrorState(errorMessage);
+          setLoadingState(false);
+          // Also update Redux state
+          appDispatch(setProcessListError(errorMessage));
+          appDispatch(setLoadingProcesses(false));
         }
       );
     } else {
-      setProcesses([]);
-      setLoading(false);
+      setProcessesState([]);
+      setLoadingState(false);
+      // Also update Redux state
+      appDispatch(setProcesses([]));
+      appDispatch(setLoadingProcesses(false));
     }
     
     return () => {
@@ -116,7 +152,7 @@ export const ProcessListProvider: React.FC<{ children: React.ReactNode }> = ({ c
         unsubscribe();
       }
     };
-  }, [currentUser]);
+  }, [currentUser, appDispatch]);
 
   const value = {
     processes,

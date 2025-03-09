@@ -3,6 +3,7 @@ import prfaqReducer from './prfaqSlice';
 import sessionReducer from '../features/session/sessionSlice';
 import initialThoughtsReducer from './initialThoughtsSlice';
 import workingBackwardsReducer from './workingBackwardsSlice';
+import processManagementReducer from './processManagementSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     prfaq: prfaqReducer,
     initialThoughts: initialThoughtsReducer,
     workingBackwards: workingBackwardsReducer,
+    processManagement: processManagementReducer,
     // We'll add more reducers incrementally
   },
   middleware: (getDefaultMiddleware) => 

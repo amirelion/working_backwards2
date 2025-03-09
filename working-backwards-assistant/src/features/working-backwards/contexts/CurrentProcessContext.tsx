@@ -4,6 +4,19 @@ import { WorkingBackwardsProcess } from '../../../types/workingBackwards';
 import * as processService from '../services/processService';
 import * as saveService from '../../../services/saveService';
 import { useProcessSync } from './ProcessSyncContext';
+import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import {
+  selectCurrentProcessId,
+  selectIsSaving,
+  selectLastSaved,
+  selectCurrentProcessError,
+  setCurrentProcessId,
+  setCurrentProcess,
+  setIsSaving,
+  setLastSaved,
+  setCurrentProcessError,
+  setIsModified
+} from '../../../store/processManagementSlice';
 
 interface CurrentProcessContextType {
   currentProcessId: string | null;
@@ -48,12 +61,35 @@ export const CurrentProcessProvider: React.FC<{
   onProcessLoad: (process: WorkingBackwardsProcess) => void;
 }> = ({ children, getProcessData, onProcessLoad }) => {
   const { currentUser } = useAuth();
-  const { isModified, setIsModified } = useProcessSync();
+  const { isModified, setIsModified: setProcessSyncModified } = useProcessSync();
+  const appDispatch = useAppDispatch();
   
-  const [currentProcessId, setCurrentProcessId] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // Keep using local state during transition
+  const [currentProcessId, setCurrentProcessIdState] = useState<string | null>(null);
+  const [isSaving, setIsSavingState] = useState<boolean>(false);
+  const [lastSaved, setLastSavedState] = useState<Date | null>(null);
+  const [error, setErrorState] = useState<string | null>(null);
+  
+  // Get state from Redux (not fully used yet)
+  const reduxCurrentProcessId = useAppSelector(selectCurrentProcessId);
+  const reduxIsSaving = useAppSelector(selectIsSaving);
+  const reduxLastSaved = useAppSelector(selectLastSaved);
+  const reduxError = useAppSelector(selectCurrentProcessError);
+
+  /**
+   * Sync local state to Redux when currentProcessId changes
+   */
+  useEffect(() => {
+    appDispatch(setCurrentProcessId(currentProcessId));
+  }, [currentProcessId, appDispatch]);
+
+  /**
+   * Setter for currentProcessId that updates both local state and Redux
+   */
+  const setCurrentProcessIdBoth = useCallback((id: string | null) => {
+    setCurrentProcessIdState(id);
+    appDispatch(setCurrentProcessId(id));
+  }, [appDispatch]);
 
   /**
    * Load a process by ID
@@ -64,39 +100,53 @@ export const CurrentProcessProvider: React.FC<{
       throw new Error('Cannot load process - no current user');
     }
     
-    setIsSaving(true);
-    setError(null);
+    setIsSavingState(true);
+    setErrorState(null);
+    appDispatch(setIsSaving(true));
+    appDispatch(setCurrentProcessError(null));
     
     try {
       const process = await processService.getProcessById(processId);
       
       if (!process) {
         console.error('Process not found:', processId);
-        setError('Process not found');
-        throw new Error('Process not found');
+        const errorMsg = 'Process not found';
+        setErrorState(errorMsg);
+        appDispatch(setCurrentProcessError(errorMsg));
+        throw new Error(errorMsg);
       }
       
       if (process.userId !== currentUser.uid) {
         console.error('Process belongs to another user');
-        setError('You do not have permission to access this process');
+        const errorMsg = 'You do not have permission to access this process';
+        setErrorState(errorMsg);
+        appDispatch(setCurrentProcessError(errorMsg));
         throw new Error('Process belongs to another user');
       }
       
       // Set the current process ID
-      setCurrentProcessId(processId);
+      setCurrentProcessIdState(processId);
+      appDispatch(setCurrentProcessId(processId));
+      
+      // Store the full process in Redux
+      appDispatch(setCurrentProcess(process));
       
       // Call the callback to update app state
       onProcessLoad(process);
       
-      setLastSaved(new Date(process.updatedAt));
-      setIsModified(false);
+      setLastSavedState(new Date(process.updatedAt));
+      appDispatch(setLastSaved(new Date(process.updatedAt)));
+      
+      setProcessSyncModified(false);
+      appDispatch(setIsModified(false));
     } catch (error) {
       console.error('Error loading process:', error);
       throw error;
     } finally {
-      setIsSaving(false);
+      setIsSavingState(false);
+      appDispatch(setIsSaving(false));
     }
-  }, [currentUser, onProcessLoad, setIsModified]);
+  }, [currentUser, onProcessLoad, setProcessSyncModified, appDispatch]);
 
   /**
    * Save the current process
@@ -113,8 +163,10 @@ export const CurrentProcessProvider: React.FC<{
     }
     
     console.log('[CurrentProcessContext] Starting save process for ID:', currentProcessId);
-    setIsSaving(true);
-    setError(null);
+    setIsSavingState(true);
+    setErrorState(null);
+    appDispatch(setIsSaving(true));
+    appDispatch(setCurrentProcessError(null));
     
     try {
       const processData = getProcessData();
@@ -150,19 +202,25 @@ export const CurrentProcessProvider: React.FC<{
       await saveService.saveProcess(currentProcessId, processData);
       console.log('[CurrentProcessContext] Save completed successfully');
       
-      setLastSaved(new Date());
+      const now = new Date();
+      setLastSavedState(now);
+      appDispatch(setLastSaved(now));
       
       // Explicitly set isModified to false to prevent immediate re-marking as modified
       console.log('[CurrentProcessContext] Setting isModified to false after successful save');
-      setIsModified(false);
+      setProcessSyncModified(false);
+      appDispatch(setIsModified(false));
     } catch (error) {
       console.error('[CurrentProcessContext] Error saving process:', error);
-      setError('Failed to save process');
+      const errorMsg = 'Failed to save process';
+      setErrorState(errorMsg);
+      appDispatch(setCurrentProcessError(errorMsg));
       throw error;
     } finally {
-      setIsSaving(false);
+      setIsSavingState(false);
+      appDispatch(setIsSaving(false));
     }
-  }, [currentProcessId, currentUser, getProcessData, isModified, setIsModified]);
+  }, [currentProcessId, currentUser, getProcessData, isModified, setProcessSyncModified, appDispatch]);
 
   /**
    * Set up auto-save with debounce when state changes
@@ -189,7 +247,7 @@ export const CurrentProcessProvider: React.FC<{
 
   const value = {
     currentProcessId,
-    setCurrentProcessId,
+    setCurrentProcessId: setCurrentProcessIdBoth,
     isSaving,
     lastSaved,
     error,

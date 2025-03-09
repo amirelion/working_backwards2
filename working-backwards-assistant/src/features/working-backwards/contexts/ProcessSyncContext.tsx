@@ -4,8 +4,9 @@ import { useRecoilState } from 'recoil';
 import { workingBackwardsQuestionsState } from '../../../atoms/workingBackwardsQuestionsState';
 import { RootState } from '../../../store';
 import { backwardCompatSelectors } from '../../../store/compatUtils';
-import { useAppSelector } from '../../../store/hooks';
+import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { selectInitialThoughts } from '../../../store/initialThoughtsSlice';
+import { selectIsModified, setIsModified as setReduxIsModified } from '../../../store/processManagementSlice';
 
 interface ProcessSyncContextType {
   initialThoughts: string;
@@ -41,7 +42,11 @@ export const ProcessSyncProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const prfaq = useSelector((state: RootState) => state.prfaq);
   const assumptions = useSelector((state: RootState) => backwardCompatSelectors.assumptions(state));
   const experiments = useSelector((state: RootState) => backwardCompatSelectors.experiments(state));
-  const [isModified, setIsModified] = useState(false);
+  const [isModified, setIsModifiedState] = useState(false);
+  const appDispatch = useAppDispatch();
+  
+  // Get state from Redux for future use
+  const reduxIsModified = useAppSelector(selectIsModified);
   
   // Keep previous values to compare for changes
   const prevAssumptionsRef = useRef<any[]>([]);
@@ -50,18 +55,20 @@ export const ProcessSyncProvider: React.FC<{ children: React.ReactNode }> = ({ c
   // Track changes to data automatically
   const setModifiedCallback = useCallback(() => {
     console.log('[ProcessSyncContext] Setting isModified to true');
-    setIsModified(true);
-  }, []);
+    setIsModifiedState(true);
+    appDispatch(setReduxIsModified(true));
+  }, [appDispatch]);
   
   // Explicitly mark as not modified (after saving)
   const markAsNotModified = useCallback(() => {
     console.log('[ProcessSyncContext] Setting isModified to false after save');
-    setIsModified(false);
+    setIsModifiedState(false);
+    appDispatch(setReduxIsModified(false));
     
     // Update refs to current values to prevent immediate re-marking as modified
     prevAssumptionsRef.current = [...assumptions];
     prevExperimentsRef.current = [...experiments];
-  }, [assumptions, experiments]);
+  }, [assumptions, experiments, appDispatch]);
 
   // Check if assumptions have changed
   useEffect(() => {
@@ -151,9 +158,10 @@ export const ProcessSyncProvider: React.FC<{ children: React.ReactNode }> = ({ c
       if (!value) {
         markAsNotModified();
       } else {
-        setIsModified(true);
+        setIsModifiedState(true);
+        appDispatch(setReduxIsModified(true));
       }
-    }, [markAsNotModified])
+    }, [markAsNotModified, appDispatch])
   };
 
   return (
