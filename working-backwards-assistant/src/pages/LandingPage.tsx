@@ -53,12 +53,33 @@ export default function LandingPage() {
 
   const handleStartNow = () => {
     if (currentUser) {
-      // If user is logged in, show the dialog to create a process
-      setDialogOpen(true);
+      createProcessWithDefaultName();
     } else {
-      // If not logged in, reset all process-related state and navigate to initial thoughts
       resetProcessState(dispatch);
       navigate('/initial-thoughts');
+    }
+  };
+
+  const createProcessWithDefaultName = async () => {
+    setIsCreating(true);
+    try {
+      resetProcessState(dispatch);
+      
+      const defaultTitle = "New Working Backwards";
+      const processId = await createNewProcess(defaultTitle);
+      
+      if (!processId) {
+        throw new Error("Failed to create process - no process ID returned");
+      }
+      
+      navigate(`/initial-thoughts?process=${processId}`);
+    } catch (error) {
+      console.error('Error creating process:', error);
+      setSnackbarMessage('Failed to create process. Please try again.');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -72,15 +93,12 @@ export default function LandingPage() {
 
     setIsCreating(true);
     try {
-      // Reset all process-related state
       resetProcessState(dispatch);
       
-      // Create a new process
       const processId = await createNewProcess(processTitle);
       setDialogOpen(false);
       setProcessTitle('');
       
-      // Navigate to the initial thoughts page with the new process ID
       navigate(`/initial-thoughts?process=${processId}`);
     } catch (error) {
       console.error('Error creating process:', error);
