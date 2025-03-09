@@ -47,12 +47,12 @@ export const useAISuggestions = () => {
           }
         });
       
-      // Generate the prompt with the correct object parameter format
-      const prompt = getWorkingBackwardsPrompt({
-        question: question.aiPrompt,
-        previousResponses: contextObj,
-        initialThoughts: initialThoughtsInput
-      });
+      // Generate the prompt - call with the correct separate parameters
+      const prompt = getWorkingBackwardsPrompt(
+        question.aiPrompt,
+        contextObj,
+        initialThoughtsInput
+      );
       
       // Get response from AI service with correct parameters
       const response = await getAIResponse({
@@ -136,12 +136,12 @@ export const useAISuggestions = () => {
       for (const question of unansweredQuestions) {
         const fullQuestionKey = question.id;
         
-        // Generate the prompt with the correct object parameter format
-        const prompt = getWorkingBackwardsPrompt({
-          question: question.aiPrompt,
-          previousResponses: contextObj,
-          initialThoughts: initialThoughtsInput
-        });
+        // Generate the prompt - call with the correct separate parameters
+        const prompt = getWorkingBackwardsPrompt(
+          question.aiPrompt,
+          contextObj,
+          initialThoughtsInput
+        );
         
         // Get response from AI service with correct parameters
         const response = await getAIResponse({
