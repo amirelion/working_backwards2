@@ -11,6 +11,7 @@ import { RootState } from '../../../store';
 import { backwardCompatSelectors } from '../../../store/compatUtils';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { selectInitialThoughts, setInitialThoughts } from '../../../store/initialThoughtsSlice';
+import { store } from '../../../store/rootStore';
 
 /**
  * Combined provider that wraps all working backwards contexts
@@ -23,13 +24,13 @@ export const WorkingBackwardsProvider: React.FC<{ children: React.ReactNode }> =
   const assumptions = useSelector((state: RootState) => backwardCompatSelectors.assumptions(state));
   const experiments = useSelector((state: RootState) => backwardCompatSelectors.experiments(state));
   
-  // Replace Recoil with Redux
-  // const [initialThoughts, setInitialThoughts] = useRecoilState(initialThoughtsState);
-  const initialThoughts = useAppSelector(selectInitialThoughts);
-  
   // Define the process data getter function
   const getProcessData = useCallback((): Partial<WorkingBackwardsProcess> => {
     console.log("[WorkingBackwardsProvider] getProcessData called - collecting data for save");
+    
+    // Get the latest initialThoughts directly from the store
+    const latestInitialThoughts = selectInitialThoughts(store.getState());
+    
     console.log("[WorkingBackwardsProvider] Current assumptions in Redux:", 
       assumptions.length > 0 ? `${assumptions.length} assumptions` : "none");
     
@@ -45,8 +46,8 @@ export const WorkingBackwardsProvider: React.FC<{ children: React.ReactNode }> =
     }
     
     return {
-      initialThoughts,
-      workingBackwardsQuestions,
+      initialThoughts: latestInitialThoughts,
+      workingBackwardsQuestions: workingBackwardsQuestions,
       prfaq: {
         title: prfaq.title,
         pressRelease: {
@@ -64,7 +65,7 @@ export const WorkingBackwardsProvider: React.FC<{ children: React.ReactNode }> =
       assumptions: assumptions,
       experiments: experiments
     };
-  }, [initialThoughts, workingBackwardsQuestions, prfaq, assumptions, experiments]);
+  }, [workingBackwardsQuestions, prfaq, assumptions, experiments]);
 
   // Define the process load handler
   const handleProcessLoad = useCallback((process: WorkingBackwardsProcess): void => {
