@@ -11,7 +11,8 @@ import {
   setIsSaving,
   setLastSaved,
   setCurrentProcessError,
-  setIsModified
+  setIsModified,
+  setCurrentProcess
 } from '../store/processManagementSlice';
 import * as processService from '../services/workingBackwardsService';
 import { useAuth } from './useAuth';
@@ -59,27 +60,35 @@ export const useCurrentProcess = () => {
         // Update Redux state with loaded process
         dispatch(setCurrentProcessId(process.id));
         
-        // Convert date objects to strings for Redux
+        // Create a properly serialized process with string dates
         const serializedProcess = {
           ...process,
-          createdAt: process.createdAt instanceof Date ? process.createdAt.toISOString() : process.createdAt,
-          updatedAt: process.updatedAt instanceof Date ? process.updatedAt.toISOString() : process.updatedAt,
+          createdAt: process.createdAt instanceof Date 
+            ? process.createdAt.toISOString() 
+            : typeof process.createdAt === 'string'
+              ? process.createdAt
+              : new Date().toISOString(),
+          updatedAt: process.updatedAt instanceof Date 
+            ? process.updatedAt.toISOString() 
+            : typeof process.updatedAt === 'string'
+              ? process.updatedAt
+              : new Date().toISOString()
         };
         
-        // Update lastSaved timestamp
-        let lastSavedString: string;
-        if (process.updatedAt instanceof Date) {
-          lastSavedString = process.updatedAt.toISOString();
-        } else if (typeof process.updatedAt === 'string') {
-          lastSavedString = process.updatedAt;
-        } else {
-          lastSavedString = new Date().toISOString();
-        }
+        // Set current process in Redux
+        dispatch(setCurrentProcess(serializedProcess));
         
-        dispatch(setLastSaved(lastSavedString));
+        // Update lastSaved timestamp
+        const updatedAt = process.updatedAt instanceof Date
+          ? process.updatedAt.toISOString()
+          : typeof process.updatedAt === 'string'
+            ? process.updatedAt
+            : new Date().toISOString();
+        
+        dispatch(setLastSaved(updatedAt));
         dispatch(setIsModified(false));
       } else {
-        dispatch(setCurrentProcessError(`Process with ID ${processId} not found`));
+        dispatch(setCurrentProcessError('Process not found'));
       }
     } catch (error) {
       console.error('Error loading process:', error);
@@ -93,9 +102,28 @@ export const useCurrentProcess = () => {
    * Save the current process
    */
   const saveCurrentProcess = useCallback(async () => {
-    if (!currentUser || !currentProcessId || !currentProcess) {
-      console.error('Cannot save process - no current process or user');
+    if (!currentUser) {
+      console.error('Cannot save process - no current user');
       return false;
+    }
+    
+    if (!currentProcessId) {
+      console.error('Cannot save process - no current process ID');
+      return false;
+    }
+    
+    if (!currentProcess) {
+      console.error('Cannot save process - no current process data');
+      
+      // Try to reload the process
+      try {
+        await loadProcess(currentProcessId);
+        // Return false to indicate save was not completed
+        return false;
+      } catch (error) {
+        console.error('Failed to reload process:', error);
+        return false;
+      }
     }
     
     if (!isModified) {
@@ -132,7 +160,7 @@ export const useCurrentProcess = () => {
     } finally {
       dispatch(setIsSaving(false));
     }
-  }, [currentUser, currentProcessId, currentProcess, isModified, dispatch]);
+  }, [currentUser, currentProcessId, currentProcess, isModified, dispatch, loadProcess]);
 
   return {
     currentProcessId,

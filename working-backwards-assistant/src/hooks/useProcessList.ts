@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import {
   selectProcesses,
@@ -27,16 +27,83 @@ export const useProcessList = () => {
   /**
    * Refresh the list of processes
    */
-  const refreshProcesses = useCallback(() => {
+  const refreshProcesses = useCallback(async () => {
     if (!currentUser) {
       dispatch(setProcesses([]));
       dispatch(setLoadingProcesses(false));
       return;
     }
 
-    dispatch(setLoadingProcesses(true));
-    dispatch(setProcessListError(null));
+    try {
+      dispatch(setLoadingProcesses(true));
+      dispatch(setProcessListError(null));
+      
+      // Fetch processes from Firestore
+      const fetchedProcesses = await processService.getUserProcesses(currentUser.uid);
+      
+      // Convert to serializable format (ensure dates are strings)
+      const serializableProcesses = fetchedProcesses.map(process => ({
+        id: process.id,
+        title: process.title,
+        createdAt: process.createdAt instanceof Date 
+          ? process.createdAt.toISOString() 
+          : typeof process.createdAt === 'string' 
+            ? process.createdAt 
+            : new Date().toISOString(),
+        updatedAt: process.updatedAt instanceof Date 
+          ? process.updatedAt.toISOString() 
+          : typeof process.updatedAt === 'string' 
+            ? process.updatedAt 
+            : new Date().toISOString()
+      }));
+      
+      dispatch(setProcesses(serializableProcesses));
+    } catch (error) {
+      console.error('Error fetching processes:', error);
+      dispatch(setProcessListError('Failed to fetch processes'));
+    } finally {
+      dispatch(setLoadingProcesses(false));
+    }
   }, [currentUser, dispatch]);
+  
+  // Load processes when component mounts or currentUser changes
+  useEffect(() => {
+    refreshProcesses();
+    
+    // Set up real-time listener for changes
+    if (currentUser) {
+      const unsubscribe = processService.subscribeToUserProcesses(
+        currentUser.uid,
+        (fetchedProcesses) => {
+          // Convert to serializable format (ensure dates are strings)
+          const serializableProcesses = fetchedProcesses.map(process => ({
+            id: process.id,
+            title: process.title,
+            createdAt: process.createdAt instanceof Date 
+              ? process.createdAt.toISOString() 
+              : typeof process.createdAt === 'string' 
+                ? process.createdAt 
+                : new Date().toISOString(),
+            updatedAt: process.updatedAt instanceof Date 
+              ? process.updatedAt.toISOString() 
+              : typeof process.updatedAt === 'string' 
+                ? process.updatedAt 
+                : new Date().toISOString()
+          }));
+          
+          dispatch(setProcesses(serializableProcesses));
+          dispatch(setLoadingProcesses(false));
+        },
+        (error) => {
+          console.error('Error with real-time updates:', error);
+          dispatch(setProcessListError('Failed to get real-time updates'));
+          dispatch(setLoadingProcesses(false));
+        }
+      );
+      
+      return () => unsubscribe();
+    }
+  }, [currentUser, dispatch, refreshProcesses]);
 
   /**
    * Delete a process by ID
