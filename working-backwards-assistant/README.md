@@ -1,59 +1,40 @@
-# Working Backwards Innovation Assistant
+# Working Backwards Assistant
 
-This application helps users innovate like Amazon using the Working Backwards methodology through guided AI conversations and document generation.
-
-## Features
-
-- **Working Backwards Journey Engine**: Guided conversational flows for the full Working Backwards process
-- **PRFAQ Generator & Editor**: AI-assisted drafting and editing of Press Release and FAQ documents
-- **Documents & Knowledge Hub**: Templates and examples from various industries
-- **Testing & Validation Platform**: Tools for testing key assumptions and tracking experiment outcomes
+This application helps users implement Amazon's "Working Backwards" methodology.
 
 ## Getting Started
 
-### Prerequisites
-
-- Node.js (v14 or higher)
-- npm (v6 or higher)
-
-### Installation
-
 1. Clone the repository
-2. Install dependencies:
+2. Install dependencies: `npm install`
+3. Create a `.env` file with your OpenAI API key:
    ```
-   npm install
+   REACT_APP_OPENAI_API_KEY=your_api_key_here
    ```
-3. Create a `.env` file in the root directory with your AI API keys:
-   ```
-   # Suppress source map warnings (optional)
-   GENERATE_SOURCEMAP=false
-   
-   REACT_APP_AI_PROVIDER=openai
-   REACT_APP_AI_MODEL=gpt-4o-mini
-   REACT_APP_AI_API_KEY=your_api_key_here
-   ```
-4. Start the development server:
-   ```
-   npm start
-   ```
+4. Start the development server: `npm start`
 
-## Project Structure
+## Transcription Service
 
-- `/src/components`: Reusable UI components
-- `/src/pages`: Main application pages
-- `/src/services`: API and service integrations
-- `/src/store`: Redux state management
-- `/src/types`: TypeScript type definitions
-- `/src/utils`: Utility functions and helpers
+For voice transcription to work, you need to run the transcription service:
 
-## Usage
+1. Navigate to the `transcription-service` directory: `cd transcription-service`
+2. Install dependencies: `npm install`
+3. Start the transcription service: `npm start`
 
-1. Start on the landing page to learn about the Working Backwards methodology
-2. Begin the guided process by answering key questions about your innovation
-3. Generate and refine your PRFAQ document
-4. Design experiments to test your key assumptions
-5. Export your documents in various formats
+The service runs on port 3001 and acts as a proxy to OpenAI's Whisper API.
 
-## License
+## Features
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+- Initial thoughts capture
+- Working Backwards questions
+- Press Release and FAQ generation
+- Assumptions tracking
+- Experiment planning
+- AI assistance throughout the process
+
+## Technologies
+
+- React
+- TypeScript
+- Redux for state management
+- Material UI for components
+- OpenAI API for AI assistance

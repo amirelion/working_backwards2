@@ -8,6 +8,7 @@ import {
   updateQuestionField 
 } from '../../../store/workingBackwardsSlice';
 import { WorkingBackwardsQuestionsState } from '../../../types/WorkingBackwardsQuestionsState';
+import { selectInitialThoughts, selectSkipInitialThoughts } from '../../../store/initialThoughtsSlice';
 
 /**
  * Custom hook for getting AI suggestions for working backwards questions
@@ -15,59 +16,71 @@ import { WorkingBackwardsQuestionsState } from '../../../types/WorkingBackwardsQ
 export const useAISuggestions = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [aiSuggestion, setAiSuggestion] = useState<string>('');
+  const [isLoadingFirstSuggestion, setIsLoadingFirstSuggestion] = useState<boolean>(false);
+  const [isGeneratingSuggestion, setIsGeneratingSuggestion] = useState<boolean>(false);
   
   // Use Redux instead of Recoil
   const questionsState = useAppSelector(selectQuestions);
+  const initialThoughts = useAppSelector(selectInitialThoughts);
+  const skipInitialThoughts = useAppSelector(selectSkipInitialThoughts);
   const dispatch = useAppDispatch();
 
   /**
    * Get a suggestion for a single question
    */
-  const getSuggestion = useCallback(async (question: WorkingBackwardsQuestion, initialThoughts: string) => {
+  const getSuggestion = useCallback(async (question: WorkingBackwardsQuestion, initialThoughtsInput: string) => {
     if (!question) return;
     
     setLoading(true);
+    setIsGeneratingSuggestion(true);
     setError(null);
     
     try {
       // Set up context from existing answers
-      const context: Record<string, string> = {};
-      for (const q of Object.values(question.context || [])) {
-        if (questionsState[q] && questionsState[q].trim()) {
-          context[q] = questionsState[q];
-        }
-      }
+      const contextObj: Record<string, string> = {};
+      Object.entries(questionsState)
+        .filter(([key]) => key !== 'aiSuggestions' && key !== question.id)
+        .forEach(([key, value]) => {
+          if (typeof value === 'string') {
+            contextObj[key] = value;
+          }
+        });
       
-      // Generate the prompt
+      // Generate the prompt with the correct object parameter format
       const prompt = getWorkingBackwardsPrompt({
-        question: question.prompt,
-        initialThoughts,
-        context
+        question: question.aiPrompt,
+        previousResponses: contextObj,
+        initialThoughts: initialThoughtsInput
       });
       
-      // Get response from AI service
+      // Get response from AI service with correct parameters
       const response = await getAIResponse({
         prompt,
-        temperature: 0.7,
-        maxTokens: 300
+        model: process.env.REACT_APP_AI_MODEL || 'gpt-4o-mini',
+        provider: process.env.REACT_APP_AI_PROVIDER || 'openai'
       });
       
       if (!response.error) {
-        // Store the AI suggestion in Redux
+        // Store the AI suggestion in Redux and local state
         const updatedSuggestions = {
           ...questionsState.aiSuggestions,
           [question.id]: response.content
         };
         
+        setAiSuggestion(response.content);
         dispatch(setAISuggestions(updatedSuggestions));
       } else {
         setError(response.error);
+        setAiSuggestion('Sorry, I couldn\'t generate a suggestion at this time. Please try again later.');
       }
     } catch (err) {
       console.error('Error getting suggestion:', err);
       setError('Failed to get AI suggestion. Please try again.');
+      setAiSuggestion('Sorry, I couldn\'t generate a suggestion at this time. Please try again later.');
     } finally {
       setLoading(false);
+      setIsGeneratingSuggestion(false);
     }
   }, [questionsState, dispatch]);
 
@@ -89,10 +102,11 @@ export const useAISuggestions = () => {
   /**
    * Generate suggestions for all questions that don't have answers yet
    */
-  const generateAllSuggestions = useCallback(async (initialThoughts: string, questions: WorkingBackwardsQuestion[]) => {
-    if (!initialThoughts.trim() || !questions.length) return;
+  const generateAllSuggestions = useCallback(async (initialThoughtsInput: string, questions: WorkingBackwardsQuestion[]) => {
+    if (!initialThoughtsInput.trim() || !questions.length || skipInitialThoughts) return;
     
     setLoading(true);
+    setIsLoadingFirstSuggestion(true);
     setError(null);
     
     try {
@@ -103,6 +117,7 @@ export const useAISuggestions = () => {
       
       if (!unansweredQuestions.length) {
         setLoading(false);
+        setIsLoadingFirstSuggestion(false);
         return;
       }
       
@@ -114,34 +129,29 @@ export const useAISuggestions = () => {
         }
       }
       
-      // Create a local copy of suggestions
-      const suggestions = { ...questionsState.aiSuggestions };
+      // Create a fresh empty object for suggestions to avoid the "not extensible" error
+      const suggestions: Record<string, string> = {};
       
       // Process each unanswered question
       for (const question of unansweredQuestions) {
         const fullQuestionKey = question.id;
         
-        // Generate the prompt
+        // Generate the prompt with the correct object parameter format
         const prompt = getWorkingBackwardsPrompt({
-          question: question.prompt,
-          initialThoughts,
-          context: contextObj
+          question: question.aiPrompt,
+          previousResponses: contextObj,
+          initialThoughts: initialThoughtsInput
         });
         
-        // Get response from AI service
+        // Get response from AI service with correct parameters
         const response = await getAIResponse({
           prompt,
-          temperature: 0.7,
-          maxTokens: 300
+          model: process.env.REACT_APP_AI_MODEL || 'gpt-4o-mini',
+          provider: process.env.REACT_APP_AI_PROVIDER || 'openai'
         });
         
         if (!response.error) {
           suggestions[fullQuestionKey] = response.content;
-          // Use string for indexing since it's a record
-          if (typeof question.id === 'string') {
-            contextObj[question.id] = response.content;
-          }
-          
           // Update suggestions in Redux state
           dispatch(setAISuggestions(suggestions));
         } else {
@@ -154,14 +164,49 @@ export const useAISuggestions = () => {
       setError('Failed to generate AI suggestions. Please try again.');
     } finally {
       setLoading(false);
+      setIsLoadingFirstSuggestion(false);
     }
-  }, [questionsState, dispatch]);
+  }, [questionsState, dispatch, skipInitialThoughts]);
+
+  /**
+   * Generate initial suggestions for all questions
+   */
+  const generateInitialSuggestions = useCallback(async (questionsList: WorkingBackwardsQuestion[], currentStep: number) => {
+    // Don't generate suggestions if the user skipped initial thoughts or if there are no initial thoughts
+    if (skipInitialThoughts || !initialThoughts.trim()) {
+      return;
+    }
+    
+    setIsLoadingFirstSuggestion(true);
+    
+    try {
+      await generateAllSuggestions(initialThoughts, questionsList);
+    } finally {
+      setIsLoadingFirstSuggestion(false);
+    }
+  }, [skipInitialThoughts, initialThoughts, generateAllSuggestions]);
+
+  /**
+   * Load a suggestion for a specific question
+   */
+  const loadSuggestionForQuestion = useCallback((currentQuestion: WorkingBackwardsQuestion, currentStep: number) => {
+    if (skipInitialThoughts || !initialThoughts.trim()) {
+      return;
+    }
+    
+    getSuggestion(currentQuestion, initialThoughts);
+  }, [skipInitialThoughts, initialThoughts, getSuggestion]);
 
   return {
     loading,
     error,
+    aiSuggestion,
+    isLoadingFirstSuggestion,
+    isGeneratingSuggestion,
     getSuggestion,
     useSuggestion,
-    generateAllSuggestions
+    generateAllSuggestions,
+    generateInitialSuggestions,
+    loadSuggestionForQuestion
   };
 }; 
