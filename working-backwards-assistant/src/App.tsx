@@ -4,7 +4,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Provider } from 'react-redux';
 import { RecoilRoot } from 'recoil';
-import { store } from './store';
+import { store } from './store/rootStore';
 import { AuthProvider } from './contexts/AuthContext';
 import { WorkingBackwardsProvider } from './features/working-backwards/contexts/WorkingBackwardsProvider';
 import { Toaster } from 'react-hot-toast';

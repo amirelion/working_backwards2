@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { useRecoilState } from 'recoil';
-import { initialThoughtsState } from '../../../atoms/initialThoughtsState';
 import { workingBackwardsQuestionsState } from '../../../atoms/workingBackwardsQuestionsState';
 import { RootState } from '../../../store';
 import { backwardCompatSelectors } from '../../../store/compatUtils';
+import { useAppSelector } from '../../../store/hooks';
+import { selectInitialThoughts } from '../../../store/initialThoughtsSlice';
 
 interface ProcessSyncContextType {
   initialThoughts: string;
@@ -36,7 +37,6 @@ export const useProcessSync = (): ProcessSyncContextType => {
  */
 export const ProcessSyncProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // State from Recoil and Redux
-  const [initialThoughts] = useRecoilState(initialThoughtsState);
   const [workingBackwardsQuestions] = useRecoilState(workingBackwardsQuestionsState);
   const prfaq = useSelector((state: RootState) => state.prfaq);
   const assumptions = useSelector((state: RootState) => backwardCompatSelectors.assumptions(state));
@@ -135,7 +135,10 @@ export const ProcessSyncProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setModifiedCallback();
     // We only want to run this when the data changes, not when setModifiedCallback changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialThoughts, workingBackwardsQuestions, prfaq]);
+  }, [workingBackwardsQuestions, prfaq]);
+
+  // Replace Recoil with Redux
+  const initialThoughts = useAppSelector(selectInitialThoughts);
 
   const value = {
     initialThoughts,
