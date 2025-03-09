@@ -1,6 +1,6 @@
 import { clearInitialThoughts } from './initialThoughtsSlice';
 import { resetWorkingBackwards } from './workingBackwardsSlice';
-import { resetPrfaq } from './prfaqSlice';
+import { resetPRFAQ } from './prfaqSlice';
 import { clearCurrentProcess } from './processManagementSlice';
 import { AppDispatch } from './rootStore';
 
@@ -13,6 +13,8 @@ import { AppDispatch } from './rootStore';
 export const resetProcessState = (dispatch: AppDispatch) => {
   dispatch(clearInitialThoughts());
   dispatch(resetWorkingBackwards());
-  dispatch(resetPrfaq());
+  dispatch(resetPRFAQ());
   dispatch(clearCurrentProcess());
+  dispatch({ type: 'session/resetAssumptions' });
+  dispatch({ type: 'session/resetExperiments' });
 }; 

@@ -16,6 +16,7 @@ import {
 } from '../store/processManagementSlice';
 import * as processService from '../services/workingBackwardsService';
 import { useAuth } from './useAuth';
+import { distributeProcessData } from '../utils/processDataDistribution';
 
 /**
  * Custom hook providing current process state and operations from Redux
@@ -77,6 +78,9 @@ export const useCurrentProcess = () => {
         
         // Set current process in Redux
         dispatch(setCurrentProcess(serializedProcess));
+        
+        // Distribute process data to all Redux slices
+        distributeProcessData(process, dispatch);
         
         // Update lastSaved timestamp
         const updatedAt = process.updatedAt instanceof Date

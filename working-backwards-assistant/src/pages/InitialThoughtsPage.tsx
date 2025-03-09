@@ -20,7 +20,7 @@ import CustomSnackbar from '../components/CustomSnackbar';
 import { processInitialThoughts } from '../utils/aiProcessing';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
-import { useCurrentProcess } from '../hooks/useCurrentProcess';
+import { useCurrentProcess } from '../features/working-backwards/contexts/CurrentProcessContext';
 import ClearIcon from '@mui/icons-material/Clear';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { 
@@ -34,7 +34,6 @@ import {
   updateQuestionField,
   setAISuggestions
 } from '../store/workingBackwardsSlice';
-import { resetProcessState } from '../store/resetState';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -93,8 +92,6 @@ function InitialThoughtsPage() {
     const loadProcessFromUrl = async () => {
       if (processId && processId !== currentProcessId) {
         try {
-          // Reset all process-related state before loading the process
-          resetProcessState(dispatch);
           await loadProcess(processId);
         } catch (error) {
           console.error('Error loading process:', error);
@@ -103,7 +100,7 @@ function InitialThoughtsPage() {
     };
     
     loadProcessFromUrl();
-  }, [processId, currentProcessId, loadProcess, dispatch]);
+  }, [processId, currentProcessId, loadProcess]);
   
   // Set current process ID when component mounts
   useEffect(() => {
