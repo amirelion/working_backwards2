@@ -1,18 +1,21 @@
 import { useState, useCallback } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useRecoilState } from 'recoil';
 import { workingBackwardsQuestionsState } from '../../../atoms/workingBackwardsQuestionsState';
-import { initialThoughtsState } from '../../../atoms/initialThoughtsState';
-import { skipInitialThoughtsState } from '../../../atoms/skipInitialThoughtsState';
 import { getAIResponse, getWorkingBackwardsPrompt } from '../../../services/aiService';
 import { WorkingBackwardsQuestion } from '../constants/questions';
+import { useAppSelector } from '../../../store/hooks';
+import { 
+  selectInitialThoughts, 
+  selectSkipInitialThoughts
+} from '../../../store/initialThoughtsSlice';
 
 /**
  * Custom hook for managing AI suggestions in the Working Backwards process
  */
 export const useAISuggestions = () => {
   const [questionsState, setQuestionsState] = useRecoilState(workingBackwardsQuestionsState);
-  const [initialThoughts] = useRecoilState(initialThoughtsState);
-  const skipInitialThoughts = useRecoilValue(skipInitialThoughtsState);
+  const initialThoughts = useAppSelector(selectInitialThoughts);
+  const skipInitialThoughts = useAppSelector(selectSkipInitialThoughts);
   const [aiSuggestion, setAiSuggestion] = useState('');
   const [isLoadingFirstSuggestion, setIsLoadingFirstSuggestion] = useState(false);
   const [isGeneratingSuggestion, setIsGeneratingSuggestion] = useState(false);

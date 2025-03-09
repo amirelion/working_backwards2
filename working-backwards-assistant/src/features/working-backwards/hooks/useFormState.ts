@@ -3,11 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useRecoilState, atom } from 'recoil';
 import { workingBackwardsQuestionsState } from '../../../atoms/workingBackwardsQuestionsState';
-import { initialThoughtsState } from '../../../atoms/initialThoughtsState';
-import { skipInitialThoughtsState } from '../../../atoms/skipInitialThoughtsState';
 import { updateWorkingBackwardsResponse } from '../../../features/session/sessionSlice';
 import { WorkingBackwardsResponses } from '../../../types';
 import { WorkingBackwardsQuestion, questionsList } from '../constants/questions';
+import { useAppSelector } from '../../../store/hooks';
+import { 
+  selectInitialThoughts, 
+  selectSkipInitialThoughts
+} from '../../../store/initialThoughtsSlice';
 
 // Creating a shared Recoil atom for the showSummary state
 export const showSummaryState = atom({
@@ -22,8 +25,8 @@ export const useFormState = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [questionsState, setQuestionsState] = useRecoilState(workingBackwardsQuestionsState);
-  const [initialThoughts] = useRecoilState(initialThoughtsState);
-  const [skipInitialThoughts] = useRecoilState(skipInitialThoughtsState);
+  const initialThoughts = useAppSelector(selectInitialThoughts);
+  const skipInitialThoughts = useAppSelector(selectSkipInitialThoughts);
   const [showSummary, setShowSummary] = useRecoilState(showSummaryState);
   
   const [currentStep, setCurrentStep] = useState(0);

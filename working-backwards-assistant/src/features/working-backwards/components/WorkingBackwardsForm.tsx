@@ -11,9 +11,11 @@ import {
   Alert
 } from '@mui/material';
 import { Edit } from '@mui/icons-material';
-import { useRecoilValue } from 'recoil';
-import { skipInitialThoughtsState } from '../../../atoms/skipInitialThoughtsState';
-import { initialThoughtsState } from '../../../atoms/initialThoughtsState';
+import { useAppSelector } from '../../../store/hooks';
+import { 
+  selectInitialThoughts, 
+  selectSkipInitialThoughts
+} from '../../../store/initialThoughtsSlice';
 import { questionsList } from '../constants/questions';
 import QuestionStep from './QuestionStep';
 import useFormState from '../hooks/useFormState';
@@ -44,8 +46,8 @@ const WorkingBackwardsForm: React.FC = () => {
     loadSuggestionForQuestion
   } = useAISuggestions();
 
-  const skipInitialThoughts = useRecoilValue(skipInitialThoughtsState);
-  const initialThoughts = useRecoilValue(initialThoughtsState);
+  const skipInitialThoughts = useAppSelector(selectSkipInitialThoughts);
+  const initialThoughts = useAppSelector(selectInitialThoughts);
 
   // Effect to run once on first load to generate AI suggestions if none exist
   useEffect(() => {

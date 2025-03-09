@@ -16,9 +16,7 @@ import {
 import { useRecoilState } from 'recoil';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { initialThoughtsState } from '../atoms/initialThoughtsState';
 import { workingBackwardsQuestionsState } from '../atoms/workingBackwardsQuestionsState';
-import { skipInitialThoughtsState } from '../atoms/skipInitialThoughtsState';
 import VoiceTranscriber from '../components/VoiceTranscriber';
 import CustomSnackbar from '../components/CustomSnackbar';
 import { processInitialThoughts } from '../utils/aiProcessing';
@@ -26,6 +24,14 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
 import { useCurrentProcess } from '../features/working-backwards/contexts/CurrentProcessContext';
 import ClearIcon from '@mui/icons-material/Clear';
+import { useAppSelector, useAppDispatch } from '../store/hooks';
+import { 
+  selectInitialThoughts,
+  setInitialThoughts,
+  appendToInitialThoughts,
+  setSkipInitialThoughts,
+  clearInitialThoughts
+} from '../store/initialThoughtsSlice';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -52,9 +58,11 @@ function TabPanel(props: TabPanelProps) {
 function InitialThoughtsPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [initialThoughts, setInitialThoughts] = useRecoilState(initialThoughtsState);
   const [, setWorkingBackwardsQuestions] = useRecoilState(workingBackwardsQuestionsState);
-  const [, setSkipInitialThoughts] = useRecoilState(skipInitialThoughtsState);
+  
+  const initialThoughts = useAppSelector(selectInitialThoughts);
+  const dispatch = useAppDispatch();
+  
   const prfaq = useSelector((state: RootState) => state.prfaq);
   const [tabValue, setTabValue] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -78,20 +86,12 @@ function InitialThoughtsPage() {
     saveCurrentProcess 
   } = useCurrentProcess();
   
-  // When loading a process from URL, we should reset the skipInitialThoughts flag
-  useEffect(() => {
-    // Always reset the skip flag when viewing initial thoughts
-    setSkipInitialThoughts(false);
-  }, [setSkipInitialThoughts]);
-  
   // Load process if ID is in URL but not loaded yet
   useEffect(() => {
     const loadProcessFromUrl = async () => {
       if (processId && processId !== currentProcessId) {
         try {
           await loadProcess(processId);
-          // Reset skipInitialThoughts when loading a process
-          setSkipInitialThoughts(false);
         } catch (error) {
           console.error('Error loading process:', error);
         }
@@ -99,7 +99,7 @@ function InitialThoughtsPage() {
     };
     
     loadProcessFromUrl();
-  }, [processId, currentProcessId, loadProcess, setSkipInitialThoughts]);
+  }, [processId, currentProcessId, loadProcess]);
   
   // Set current process ID when component mounts
   useEffect(() => {
@@ -113,11 +113,11 @@ function InitialThoughtsPage() {
   };
 
   const handleInitialThoughtsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setInitialThoughts(event.target.value);
+    dispatch(setInitialThoughts(event.target.value));
   };
 
   const handleVoiceInput = (transcription: string) => {
-    setInitialThoughts(prev => prev + ' ' + transcription);
+    dispatch(appendToInitialThoughts(transcription));
   };
 
   const handleProcessInitialThoughts = async () => {
@@ -125,9 +125,6 @@ function InitialThoughtsPage() {
       return;
     }
 
-    // When processing initial thoughts, make sure to set skip flag to false
-    setSkipInitialThoughts(false);
-    
     setIsProcessing(true);
     setProcessingError(null);
 
@@ -214,7 +211,7 @@ function InitialThoughtsPage() {
               <Button 
                 variant="outlined" 
                 onClick={() => {
-                  setSkipInitialThoughts(true);
+                  dispatch(setSkipInitialThoughts(true));
                   navigate('/working-backwards');
                 }}
                 sx={{ mr: 1 }}
@@ -243,12 +240,12 @@ function InitialThoughtsPage() {
 
   const handleSkip = () => {
     // Set the skipInitialThoughts flag to true when skipping
-    setSkipInitialThoughts(true);
+    dispatch(setSkipInitialThoughts(true));
     navigate('/working-backwards');
   };
   
   const handleClear = () => {
-    setInitialThoughts('');
+    dispatch(clearInitialThoughts());
     setSnackbarMessage('Initial thoughts cleared');
     setSnackbarSeverity('info');
     setSnackbarOpen(true);

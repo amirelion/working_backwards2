@@ -5,22 +5,27 @@ import { ProcessListProvider } from './ProcessListContext';
 import { CurrentProcessProvider } from './CurrentProcessContext';
 import { ProcessSyncProvider } from './ProcessSyncContext';
 import { WorkingBackwardsProcess } from '../../../types/workingBackwards';
-import { initialThoughtsState } from '../../../atoms/initialThoughtsState';
 import { workingBackwardsQuestionsState } from '../../../atoms/workingBackwardsQuestionsState';
 import { updatePRFAQTitle, updatePRFAQPressRelease, setFAQs, setCustomerFAQs, setStakeholderFAQs } from '../../../store/prfaqSlice';
 import { RootState } from '../../../store';
 import { backwardCompatSelectors } from '../../../store/compatUtils';
+import { useAppSelector, useAppDispatch } from '../../../store/hooks';
+import { selectInitialThoughts, setInitialThoughts } from '../../../store/initialThoughtsSlice';
 
 /**
  * Combined provider that wraps all working backwards contexts
  */
 export const WorkingBackwardsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const dispatch = useDispatch();
-  const [initialThoughts, setInitialThoughts] = useRecoilState(initialThoughtsState);
+  const appDispatch = useAppDispatch();
   const [workingBackwardsQuestions, setWorkingBackwardsQuestions] = useRecoilState(workingBackwardsQuestionsState);
   const prfaq = useSelector((state: RootState) => state.prfaq);
   const assumptions = useSelector((state: RootState) => backwardCompatSelectors.assumptions(state));
   const experiments = useSelector((state: RootState) => backwardCompatSelectors.experiments(state));
+  
+  // Replace Recoil with Redux
+  // const [initialThoughts, setInitialThoughts] = useRecoilState(initialThoughtsState);
+  const initialThoughts = useAppSelector(selectInitialThoughts);
   
   // Define the process data getter function
   const getProcessData = useCallback((): Partial<WorkingBackwardsProcess> => {
@@ -63,8 +68,8 @@ export const WorkingBackwardsProvider: React.FC<{ children: React.ReactNode }> =
 
   // Define the process load handler
   const handleProcessLoad = useCallback((process: WorkingBackwardsProcess): void => {
-    // Update initial thoughts
-    setInitialThoughts(process.initialThoughts || '');
+    // Update initial thoughts using Redux
+    appDispatch(setInitialThoughts(process.initialThoughts || ''));
     
     // Update working backwards questions
     setWorkingBackwardsQuestions(process.workingBackwardsQuestions || {
@@ -148,7 +153,7 @@ export const WorkingBackwardsProvider: React.FC<{ children: React.ReactNode }> =
         });
       });
     }
-  }, [dispatch, setInitialThoughts, setWorkingBackwardsQuestions]);
+  }, [dispatch, appDispatch, setWorkingBackwardsQuestions]);
   
   return (
     <ProcessListProvider>
