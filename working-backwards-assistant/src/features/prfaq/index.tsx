@@ -1,7 +1,6 @@
 import React, { useState, lazy, Suspense, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { useRecoilValue } from 'recoil';
 import {
   Container,
   Paper,
@@ -29,9 +28,10 @@ import 'react-quill-new/dist/quill.snow.css';
 import { RootState } from '../../store';
 import { useCurrentProcess } from '../working-backwards/contexts/CurrentProcessContext';
 import { format } from 'date-fns';
-import { workingBackwardsQuestionsState } from '../../atoms/workingBackwardsQuestionsState';
 import { useAuth } from '../../contexts/AuthContext';
 import { ExportFormat } from '../../types';
+import { useAppSelector } from '../../store/hooks';
+import { selectQuestions } from '../../store/workingBackwardsSlice';
 
 // Custom hooks
 import { useAIGeneration } from './hooks/useAIGeneration';
@@ -92,7 +92,9 @@ const PRFAQPage: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { currentProcessId, lastSaved: contextLastSaved } = useCurrentProcess();
-  const workingBackwardsResponses = useRecoilValue(workingBackwardsQuestionsState);
+  
+  // Get working backwards questions from Redux instead of Recoil
+  const workingBackwardsResponses = useAppSelector(selectQuestions);
   
   // Get PRFAQ state from Redux
   const prfaq = useSelector((state: RootState) => state.prfaq);
