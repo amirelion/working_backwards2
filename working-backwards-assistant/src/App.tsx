@@ -10,6 +10,7 @@ import { WorkingBackwardsProvider } from './features/working-backwards/contexts/
 import { Toaster } from 'react-hot-toast';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
+import AuthListener from './components/AuthListener';
 
 // Import components
 import Layout from './components/Layout';
@@ -153,6 +154,8 @@ function App() {
   return (
     <RecoilRoot>
       <Provider store={store}>
+        {/* AuthListener doesn't render anything visible, but sets up auth state in Redux */}
+        <AuthListener />
         <AuthProvider>
           <Router>
             <WorkingBackwardsProvider>
