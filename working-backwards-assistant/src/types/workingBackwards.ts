@@ -6,8 +6,8 @@ export interface WorkingBackwardsProcess {
   id: string;
   userId: string;
   title: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Date | string;
+  updatedAt: Date | string;
   initialThoughts: string;
   workingBackwardsQuestions: WorkingBackwardsQuestionsState;
   prfaq?: {
@@ -47,6 +47,6 @@ export interface WorkingBackwardsProcess {
 export interface WorkingBackwardsProcessSummary {
   id: string;
   title: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Date | string;
+  updatedAt: Date | string;
 } 

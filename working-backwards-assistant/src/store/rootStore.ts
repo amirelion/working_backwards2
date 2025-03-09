@@ -17,8 +17,18 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) => 
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: [],
-        ignoredPaths: [],
+        // Ignore certain action types that might have non-serializable payloads
+        ignoredActions: [
+          'processManagement/setProcesses', 
+          'processManagement/setCurrentProcess',
+          'processManagement/setLastSaved'
+        ],
+        // Ignore these paths in the state
+        ignoredPaths: [
+          'processManagement.processes',
+          'processManagement.currentProcess',
+          'processManagement.lastSaved'
+        ],
       },
     }),
   devTools: process.env.NODE_ENV !== 'production',

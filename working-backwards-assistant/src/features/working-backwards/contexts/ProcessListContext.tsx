@@ -125,8 +125,13 @@ export const ProcessListProvider: React.FC<{ children: React.ReactNode }> = ({ c
         (updatedProcesses) => {
           setProcessesState(updatedProcesses);
           setLoadingState(false);
-          // Also update Redux state
-          appDispatch(setProcesses(updatedProcesses));
+          // Also update Redux state - convert Date objects to ISO strings for serialization
+          const serializedProcesses = updatedProcesses.map(process => ({
+            ...process,
+            createdAt: process.createdAt instanceof Date ? process.createdAt.toISOString() : process.createdAt,
+            updatedAt: process.updatedAt instanceof Date ? process.updatedAt.toISOString() : process.updatedAt
+          }));
+          appDispatch(setProcesses(serializedProcesses));
           appDispatch(setLoadingProcesses(false));
         },
         (error) => {

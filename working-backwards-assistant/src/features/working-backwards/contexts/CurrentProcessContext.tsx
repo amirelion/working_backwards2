@@ -128,14 +128,34 @@ export const CurrentProcessProvider: React.FC<{
       setCurrentProcessIdState(processId);
       appDispatch(setCurrentProcessId(processId));
       
-      // Store the full process in Redux
-      appDispatch(setCurrentProcess(process));
+      // Store the full process in Redux with serialized dates
+      const serializedProcess = {
+        ...process,
+        createdAt: process.createdAt instanceof Date ? process.createdAt.toISOString() : process.createdAt,
+        updatedAt: process.updatedAt instanceof Date ? process.updatedAt.toISOString() : process.updatedAt
+      };
+      appDispatch(setCurrentProcess(serializedProcess));
       
       // Call the callback to update app state
       onProcessLoad(process);
       
-      setLastSavedState(new Date(process.updatedAt));
-      appDispatch(setLastSaved(new Date(process.updatedAt)));
+      // Update last saved timestamps
+      const lastSavedDate = typeof process.updatedAt === 'string' ? new Date(process.updatedAt) : process.updatedAt instanceof Date ? process.updatedAt : new Date();
+      setLastSavedState(lastSavedDate);
+      
+      // Safe conversion to string - handles all possible types
+      let lastSavedString: string;
+      if (process.updatedAt instanceof Date) {
+        lastSavedString = process.updatedAt.toISOString();
+      } else if (typeof process.updatedAt === 'string') {
+        lastSavedString = process.updatedAt;
+      } else if (process.updatedAt) {
+        lastSavedString = String(process.updatedAt);
+      } else {
+        lastSavedString = new Date().toISOString(); // Fallback to current time
+      }
+      
+      appDispatch(setLastSaved(lastSavedString));
       
       setProcessSyncModified(false);
       appDispatch(setIsModified(false));
@@ -204,7 +224,7 @@ export const CurrentProcessProvider: React.FC<{
       
       const now = new Date();
       setLastSavedState(now);
-      appDispatch(setLastSaved(now));
+      appDispatch(setLastSaved(now.toISOString()));
       
       // Explicitly set isModified to false to prevent immediate re-marking as modified
       console.log('[CurrentProcessContext] Setting isModified to false after successful save');

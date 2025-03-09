@@ -1,16 +1,30 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { WorkingBackwardsProcess, WorkingBackwardsProcessSummary } from '../types/workingBackwards';
 
+// Define serializable versions of the types with string dates
+interface SerializableProcessSummary {
+  id: string;
+  title: string;
+  createdAt: string; // ISO string
+  updatedAt: string; // ISO string
+}
+
+// Omit the Date properties from WorkingBackwardsProcess and add them back as strings
+type SerializableProcess = Omit<WorkingBackwardsProcess, 'createdAt' | 'updatedAt'> & {
+  createdAt: string; // ISO string
+  updatedAt: string; // ISO string
+};
+
 // Define the state structure for process management
 interface ProcessManagementState {
   // Process List State
-  processes: WorkingBackwardsProcessSummary[];
+  processes: SerializableProcessSummary[];
   loadingProcesses: boolean;
   processListError: string | null;
   
   // Current Process State
   currentProcessId: string | null;
-  currentProcess: WorkingBackwardsProcess | null;
+  currentProcess: SerializableProcess | null;
   isSaving: boolean;
   lastSaved: string | null; // ISO string for serialization
   currentProcessError: string | null;
@@ -39,7 +53,7 @@ export const processManagementSlice = createSlice({
   initialState,
   reducers: {
     // Process List Actions
-    setProcesses: (state, action: PayloadAction<WorkingBackwardsProcessSummary[]>) => {
+    setProcesses: (state, action: PayloadAction<SerializableProcessSummary[]>) => {
       state.processes = action.payload;
       state.loadingProcesses = false;
     },
@@ -59,19 +73,19 @@ export const processManagementSlice = createSlice({
         state.currentProcess = null;
       }
     },
-    setCurrentProcess: (state, action: PayloadAction<WorkingBackwardsProcess | null>) => {
+    setCurrentProcess: (state, action: PayloadAction<SerializableProcess | null>) => {
       state.currentProcess = action.payload;
       if (action.payload) {
         state.currentProcessId = action.payload.id;
-        state.lastSaved = action.payload.updatedAt.toISOString();
+        state.lastSaved = action.payload.updatedAt;
         state.isModified = false;
       }
     },
     setIsSaving: (state, action: PayloadAction<boolean>) => {
       state.isSaving = action.payload;
     },
-    setLastSaved: (state, action: PayloadAction<Date>) => {
-      state.lastSaved = action.payload.toISOString();
+    setLastSaved: (state, action: PayloadAction<string>) => {
+      state.lastSaved = action.payload;
     },
     setCurrentProcessError: (state, action: PayloadAction<string | null>) => {
       state.currentProcessError = action.payload;
@@ -100,19 +114,43 @@ export const {
 } = processManagementSlice.actions;
 
 // Export selectors
-export const selectProcesses = (state: any) => state.processManagement.processes;
-export const selectLoadingProcesses = (state: any) => state.processManagement.loadingProcesses;
-export const selectProcessListError = (state: any) => state.processManagement.processListError;
+export const selectProcesses = (state: { processManagement: ProcessManagementState }) => {
+  // Convert ISO date strings back to Date objects when retrieving from the store
+  return state.processManagement.processes.map((process: SerializableProcessSummary) => ({
+    ...process,
+    createdAt: process.createdAt ? new Date(process.createdAt) : null,
+    updatedAt: process.updatedAt ? new Date(process.updatedAt) : null
+  }));
+};
+export const selectLoadingProcesses = (state: { processManagement: ProcessManagementState }) => 
+  state.processManagement.loadingProcesses;
+export const selectProcessListError = (state: { processManagement: ProcessManagementState }) => 
+  state.processManagement.processListError;
 
-export const selectCurrentProcessId = (state: any) => state.processManagement.currentProcessId;
-export const selectCurrentProcess = (state: any) => state.processManagement.currentProcess;
-export const selectIsSaving = (state: any) => state.processManagement.isSaving;
-export const selectLastSaved = (state: any) => {
+export const selectCurrentProcessId = (state: { processManagement: ProcessManagementState }) => 
+  state.processManagement.currentProcessId;
+export const selectCurrentProcess = (state: { processManagement: ProcessManagementState }) => {
+  const process = state.processManagement.currentProcess;
+  // Convert ISO date strings back to Date objects when retrieving from the store
+  if (process) {
+    return {
+      ...process,
+      createdAt: process.createdAt ? new Date(process.createdAt) : null,
+      updatedAt: process.updatedAt ? new Date(process.updatedAt) : null
+    };
+  }
+  return null;
+};
+export const selectIsSaving = (state: { processManagement: ProcessManagementState }) => 
+  state.processManagement.isSaving;
+export const selectLastSaved = (state: { processManagement: ProcessManagementState }) => {
   const lastSavedString = state.processManagement.lastSaved;
   return lastSavedString ? new Date(lastSavedString) : null;
 };
-export const selectCurrentProcessError = (state: any) => state.processManagement.currentProcessError;
-export const selectIsModified = (state: any) => state.processManagement.isModified;
+export const selectCurrentProcessError = (state: { processManagement: ProcessManagementState }) => 
+  state.processManagement.currentProcessError;
+export const selectIsModified = (state: { processManagement: ProcessManagementState }) => 
+  state.processManagement.isModified;
 
 // Export the reducer
 export default processManagementSlice.reducer; 
