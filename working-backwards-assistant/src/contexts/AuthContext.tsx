@@ -135,7 +135,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const serializedProfile = {
             ...newUser,
             createdAt: newUser.createdAt.toISOString(),
-            lastLoginAt: newUser.lastLoginAt.toISOString()
+            lastLoginAt: newUser.lastLoginAt.toISOString(),
+            trialStartDate: newUser.trialStartDate?.toISOString(),
+            trialEndDate: newUser.trialEndDate?.toISOString()
           };
           
           dispatch(setUserProfile(serializedProfile));

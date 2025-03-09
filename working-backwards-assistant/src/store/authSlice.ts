@@ -70,18 +70,20 @@ export const {
   setError
 } = authSlice.actions;
 
-// Selectors
-export const selectCurrentUser = (state: RootState) => state.auth.currentUser;
-export const selectUserProfile = (state: RootState) => state.auth.userProfile;
-export const selectLoading = (state: RootState) => state.auth.loading;
-export const selectError = (state: RootState) => state.auth.error;
+// Selectors - using a more generic type that includes the auth property
+type StateWithAuth = { auth: AuthState };
+
+export const selectCurrentUser = (state: StateWithAuth) => state.auth.currentUser;
+export const selectUserProfile = (state: StateWithAuth) => state.auth.userProfile;
+export const selectLoading = (state: StateWithAuth) => state.auth.loading;
+export const selectError = (state: StateWithAuth) => state.auth.error;
 
 // Derived selectors
-export const selectUserRole = (state: RootState) => state.auth.userProfile?.role || 'free';
-export const selectIsAdmin = (state: RootState) => state.auth.userProfile?.role === 'admin';
-export const selectIsPremium = (state: RootState) => state.auth.userProfile?.role === 'premium';
-export const selectIsTrial = (state: RootState) => state.auth.userProfile?.role === 'trial';
-export const selectIsTrialExpired = (state: RootState) => {
+export const selectUserRole = (state: StateWithAuth) => state.auth.userProfile?.role || 'free';
+export const selectIsAdmin = (state: StateWithAuth) => state.auth.userProfile?.role === 'admin';
+export const selectIsPremium = (state: StateWithAuth) => state.auth.userProfile?.role === 'premium';
+export const selectIsTrial = (state: StateWithAuth) => state.auth.userProfile?.role === 'trial';
+export const selectIsTrialExpired = (state: StateWithAuth) => {
   const profile = state.auth.userProfile;
   if (!profile || profile.role !== 'trial' || !profile.trialEndDate) return false;
   return new Date(profile.trialEndDate) < new Date();
