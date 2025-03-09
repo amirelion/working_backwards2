@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '../lib/firebase/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { UserProfile, UserRole } from '../types/auth';
@@ -19,7 +19,7 @@ const AuthListener: React.FC = () => {
   const dispatch = useAppDispatch();
 
   // Function to fetch user profile from Firestore
-  const fetchUserProfile = useCallback(async (user: any) => {
+  const fetchUserProfile = useCallback(async (user: User) => {
     if (!user) {
       console.log('No user provided to fetchUserProfile');
       return;
@@ -111,15 +111,15 @@ const AuthListener: React.FC = () => {
 
   // Set up auth state listener
   useEffect(() => {
+    console.log('AuthListener: Setting up auth state listener');
     let mounted = true;
     
     try {
-      console.log('Setting up auth state listener');
       dispatch(setLoading(true));
       
       // Set up auth state listener
       const unsubscribe = onAuthStateChanged(auth, async (user) => {
-        console.log('Auth State Changed. User:', user ? {
+        console.log('AuthListener: Auth State Changed. User:', user ? {
           uid: user.uid,
           email: user.email,
           displayName: user.displayName
@@ -150,11 +150,12 @@ const AuthListener: React.FC = () => {
       });
       
       return () => {
+        console.log('AuthListener: Cleaning up auth state listener');
         mounted = false;
         unsubscribe();
       };
     } catch (error) {
-      console.error('Error setting up auth listener:', error);
+      console.error('AuthListener: Error setting up auth listener:', error);
       if (mounted) {
         dispatch(setError('Failed to initialize authentication. Please refresh the page.'));
         dispatch(setLoading(false));

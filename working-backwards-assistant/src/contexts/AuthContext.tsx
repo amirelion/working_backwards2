@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auth } from '../lib/firebase/firebase';
 import { User } from 'firebase/auth';
 import { AuthContextType, UserProfile, UserRole } from '../types/auth';
@@ -53,6 +53,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Store the actual Firebase User object for auth operations
   // This isn't stored in Redux since it's not serializable
   const [firebaseUser, setFirebaseUser] = useState<User | null>(auth.currentUser);
+  
+  // Keep firebaseUser in sync with auth.currentUser
+  useEffect(() => {
+    console.log('AuthProvider: Syncing firebaseUser with auth.currentUser');
+    
+    // Update firebaseUser whenever auth.currentUser changes
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      console.log('AuthProvider: Auth state changed, updating firebaseUser', 
+        user ? `User: ${user.email}` : 'No user');
+      setFirebaseUser(user);
+    });
+    
+    return () => {
+      console.log('AuthProvider: Cleaning up auth state listener');
+      unsubscribe();
+    };
+  }, []);
   
   // Check if user can create a new session (respecting limits)
   const canCreateSession = async () => {
