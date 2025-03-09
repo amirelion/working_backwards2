@@ -1,4 +1,4 @@
-import { store } from '../store';
+import { store } from '../store/rootStore';
 
 /**
  * Logs the current Redux state to the console

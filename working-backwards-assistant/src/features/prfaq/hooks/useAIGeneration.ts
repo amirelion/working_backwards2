@@ -1,3 +1,4 @@
+// Remove all unused imports
 import { 
   getAIResponse, 
   getHeadlinePrompt,
@@ -15,7 +16,7 @@ import {
 } from '../../../services/aiService';
 import { PRFAQState, updatePRFAQTitle, updatePRFAQPressRelease, addCustomerFAQ, addStakeholderFAQ } from '../../../store/prfaqSlice';
 import { PRFAQ, WorkingBackwardsResponses, AIRequest } from '../../../types';
-import { store } from '../../../store';
+import { store } from '../../../store/rootStore';
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 
