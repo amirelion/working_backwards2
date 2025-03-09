@@ -29,6 +29,8 @@ export const useFormState = () => {
   // Get state from Redux
   const questions = useAppSelector(selectQuestions);
   const showSummary = useAppSelector(selectShowSummary);
+  // We're not using this value directly, but keeping it for future reference
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const reduxCurrentStep = useAppSelector(selectCurrentStep);
   const initialThoughts = useAppSelector(selectInitialThoughts);
   const skipInitialThoughts = useAppSelector(selectSkipInitialThoughts);
