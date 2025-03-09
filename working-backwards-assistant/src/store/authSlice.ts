@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { UserProfile, UserRole } from '../types/auth';
-import { RootState } from './rootStore';
+import { UserRole } from '../types/auth';
 
 // Create a serializable version of the Firebase User
 interface SerializableUser {
