@@ -44,7 +44,7 @@ import { RootState } from '../store';
 import { addExperiment, updateExperiment, removeExperiment } from '../features/session/sessionSlice';
 import { getAIResponse, getExperimentSuggestionsPrompt } from '../services/aiService';
 import { Experiment, FAQ, Assumption } from '../types';
-import { useCurrentProcess } from '../features/working-backwards/contexts/CurrentProcessContext';
+import { useCurrentProcess } from '../hooks/useCurrentProcess';
 import { format } from 'date-fns';
 import { backwardCompatSelectors } from '../store/compatUtils';
 import { useAppSelector } from '../store/hooks';

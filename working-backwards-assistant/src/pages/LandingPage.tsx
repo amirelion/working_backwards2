@@ -29,8 +29,8 @@ import {
   CheckCircle,
   QuestionAnswer,
 } from '@mui/icons-material';
-import { useProcessList } from '../features/working-backwards/contexts/ProcessListContext';
-import { useAuth } from '../contexts/AuthContext';
+import { useProcessList } from '../hooks/useProcessList';
+import { useAuth } from '../hooks/useAuth';
 
 export default function LandingPage() {
   const navigate = useNavigate();

@@ -20,7 +20,7 @@ import CustomSnackbar from '../components/CustomSnackbar';
 import { processInitialThoughts } from '../utils/aiProcessing';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
-import { useCurrentProcess } from '../features/working-backwards/contexts/CurrentProcessContext';
+import { useCurrentProcess } from '../hooks/useCurrentProcess';
 import ClearIcon from '@mui/icons-material/Clear';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { 

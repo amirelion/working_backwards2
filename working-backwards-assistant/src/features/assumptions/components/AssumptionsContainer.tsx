@@ -27,7 +27,7 @@ import { useAssumptionFiltering } from '../hooks/useAssumptionFiltering';
 import { useAIGeneration } from '../hooks/useAIGeneration';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AssumptionCategory } from '../types';
-import { useCurrentProcess } from '../../../features/working-backwards/contexts/CurrentProcessContext';
+import { useCurrentProcess } from '../../../hooks/useCurrentProcess';
 import { useAppSelector } from '../../../store/hooks';
 import { 
   selectCurrentProcessId, 
