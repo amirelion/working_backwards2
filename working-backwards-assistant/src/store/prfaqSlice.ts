@@ -151,6 +151,11 @@ export const prfaqSlice = createSlice({
     setStakeholderFAQs: (state, action: PayloadAction<FAQ[]>) => {
       state.stakeholderFaqs = action.payload;
     },
+    
+    // Add a reset action to clear the state
+    resetPrfaq: () => {
+      return initialState;
+    }
   },
 });
 
@@ -171,6 +176,7 @@ export const {
   updateStakeholderFAQ,
   removeStakeholderFAQ,
   setStakeholderFAQs,
+  resetPrfaq
 } = prfaqSlice.actions;
 
 // Export reducer

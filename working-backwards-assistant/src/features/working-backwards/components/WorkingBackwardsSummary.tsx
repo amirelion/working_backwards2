@@ -7,7 +7,7 @@ import {
   Button
 } from '@mui/material';
 import { ArrowBack, ArrowForward, Edit } from '@mui/icons-material';
-import { WorkingBackwardsQuestionsState } from '../../../atoms/workingBackwardsQuestionsState';
+import { WorkingBackwardsQuestionsState } from '../../../types/WorkingBackwardsQuestionsState';
 import { WorkingBackwardsQuestion } from '../constants/questions';
 
 interface WorkingBackwardsSummaryProps {

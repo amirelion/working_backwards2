@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useProcessList } from '../../../features/working-backwards/contexts/ProcessListContext';
-import { useCurrentProcess } from '../../../features/working-backwards/contexts/CurrentProcessContext';
+import { useAppDispatch } from '../../../store/hooks';
+import { resetProcessState } from '../../../store/resetState';
+import { useProcessList } from '../../../hooks/useProcessList';
+import { useCurrentProcess } from '../../../hooks/useCurrentProcess';
 import * as workingBackwardsService from '../../../services/workingBackwardsService';
 import * as saveService from '../../../services/saveService';
 
@@ -10,6 +12,7 @@ import * as saveService from '../../../services/saveService';
  */
 const useProcessDialogs = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const { createNewProcess, deleteProcess, processes } = useProcessList();
   const { loadProcess } = useCurrentProcess();
 
@@ -47,6 +50,9 @@ const useProcessDialogs = () => {
 
     setIsCreating(true);
     try {
+      // Reset all process-related state
+      resetProcessState(dispatch);
+      
       const processId = await createNewProcess(newProcessTitle);
       setOpenNewDialog(false);
       setNewProcessTitle('');
@@ -65,10 +71,13 @@ const useProcessDialogs = () => {
    */
   const handleOpenProcess = async (processId: string) => {
     try {
+      // Reset all process-related state before loading new process
+      resetProcessState(dispatch);
+      
       await loadProcess(processId);
       navigate(`/initial-thoughts?process=${processId}`);
     } catch (error) {
-      console.error('Error loading process:', error);
+      console.error('Error opening process:', error);
     }
   };
 

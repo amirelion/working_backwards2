@@ -12,7 +12,7 @@ import {
 import { UserProfile } from '../types/auth';
 import UserManagementTable from '../components/UserManagementTable';
 import { ProtectedRoute } from '../components/ProtectedRoute';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);

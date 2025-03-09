@@ -27,20 +27,26 @@ import { useAssumptionFiltering } from '../hooks/useAssumptionFiltering';
 import { useAIGeneration } from '../hooks/useAIGeneration';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AssumptionCategory } from '../types';
-import { useCurrentProcess } from '../../../features/working-backwards/contexts/CurrentProcessContext';
+import { useCurrentProcess } from '../../../hooks/useCurrentProcess';
+import { useAppSelector } from '../../../store/hooks';
+import { 
+  selectCurrentProcessId, 
+  selectIsSaving, 
+  selectCurrentProcessError 
+} from '../../../store/processManagementSlice';
 
 const AssumptionsContainer: React.FC = () => {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<'list' | 'matrix'>('list');
   const [showAddForm, setShowAddForm] = useState(false);
   
-  // Get context and hooks
-  const { 
-    currentProcessId, 
-    saveCurrentProcess, 
-    isSaving, 
-    error: processError
-  } = useCurrentProcess();
+  // Get process state from Redux
+  const currentProcessId = useAppSelector(selectCurrentProcessId);
+  const isSaving = useAppSelector(selectIsSaving);
+  const processError = useAppSelector(selectCurrentProcessError);
+  
+  // Keep using the context for the save method
+  const { saveCurrentProcess } = useCurrentProcess();
   
   const {
     assumptions,

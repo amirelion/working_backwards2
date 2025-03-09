@@ -1,22 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { useRecoilState, atom } from 'recoil';
-import { workingBackwardsQuestionsState } from '../../../atoms/workingBackwardsQuestionsState';
 import { updateWorkingBackwardsResponse } from '../../../features/session/sessionSlice';
 import { WorkingBackwardsResponses } from '../../../types';
 import { WorkingBackwardsQuestion, questionsList } from '../constants/questions';
-import { useAppSelector } from '../../../store/hooks';
+import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { 
   selectInitialThoughts, 
   selectSkipInitialThoughts
 } from '../../../store/initialThoughtsSlice';
-
-// Creating a shared Recoil atom for the showSummary state
-export const showSummaryState = atom({
-  key: 'workingBackwardsShowSummaryState',
-  default: false
-});
+import {
+  selectQuestions,
+  selectShowSummary,
+  selectCurrentStep,
+  updateQuestionField,
+  setShowSummary,
+  setCurrentStep
+} from '../../../store/workingBackwardsSlice';
 
 /**
  * Custom hook for managing form state in the Working Backwards process
@@ -24,12 +24,18 @@ export const showSummaryState = atom({
 export const useFormState = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [questionsState, setQuestionsState] = useRecoilState(workingBackwardsQuestionsState);
+  const appDispatch = useAppDispatch();
+  
+  // Get state from Redux
+  const questions = useAppSelector(selectQuestions);
+  const showSummary = useAppSelector(selectShowSummary);
+  // We're not using this value directly, but keeping it for future reference
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const reduxCurrentStep = useAppSelector(selectCurrentStep);
   const initialThoughts = useAppSelector(selectInitialThoughts);
   const skipInitialThoughts = useAppSelector(selectSkipInitialThoughts);
-  const [showSummary, setShowSummary] = useRecoilState(showSummaryState);
   
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStepLocal] = useState(0);
   const [currentResponse, setCurrentResponse] = useState('');
   const [currentQuestion, setCurrentQuestion] = useState<WorkingBackwardsQuestion>(questionsList[0]);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
@@ -37,16 +43,21 @@ export const useFormState = () => {
   // Reset summary view on mount to ensure users start with the questions
   useEffect(() => {
     // Always start with the question form rather than summary when the component mounts
-    setShowSummary(false);
-  }, [setShowSummary]);
+    appDispatch(setShowSummary(false));
+  }, [appDispatch]);
 
-  // Initialize current response from Recoil state when active step changes
+  // Initialize current response from state when active step changes
   useEffect(() => {
     if (!showSummary) {
       const question = questionsList[currentStep];
       setCurrentQuestion(question);
       const questionId = question.id;
-      setCurrentResponse(questionsState[questionId] || '');
+      
+      // Read from Redux
+      setCurrentResponse(questions[questionId] || '');
+      
+      // Sync current step to Redux
+      appDispatch(setCurrentStep(currentStep));
       
       // Check if we're coming directly to the Working Backwards page 
       // and need to load AI suggestions
@@ -55,19 +66,19 @@ export const useFormState = () => {
         console.log('First load with initial thoughts - preparing for AI suggestions');
       }
     }
-  }, [currentStep, questionsState, showSummary, isFirstLoad, skipInitialThoughts, initialThoughts, setIsFirstLoad]);
+  }, [currentStep, questions, showSummary, isFirstLoad, skipInitialThoughts, initialThoughts, setIsFirstLoad, appDispatch]);
 
   /**
    * Handle moving to the next step or to the summary
    */
   const handleNext = useCallback(() => {
-    // Save current response to Recoil state
-    setQuestionsState(prev => ({
-      ...prev,
-      [currentQuestion.id]: currentResponse
+    // Update Redux store
+    appDispatch(updateQuestionField({
+      field: currentQuestion.id,
+      value: currentResponse
     }));
 
-    // Also update Redux store
+    // Also update session slice for backward compatibility
     dispatch(updateWorkingBackwardsResponse({
       field: currentQuestion.id as keyof WorkingBackwardsResponses,
       value: currentResponse
@@ -76,23 +87,23 @@ export const useFormState = () => {
     // Move to next step or show summary
     if (currentStep === questionsList.length - 1) {
       console.log('Setting showSummary to true');
-      setShowSummary(true);
+      appDispatch(setShowSummary(true));
     } else {
-      setCurrentStep(currentStep + 1);
+      setCurrentStepLocal(currentStep + 1);
     }
-  }, [currentQuestion.id, currentResponse, currentStep, dispatch, setQuestionsState, setShowSummary]);
+  }, [currentQuestion.id, currentResponse, currentStep, dispatch, appDispatch]);
 
   /**
    * Handle moving to the previous step or back from summary
    */
   const handleBack = useCallback(() => {
-    // Save current response to Recoil state
-    setQuestionsState(prev => ({
-      ...prev,
-      [currentQuestion.id]: currentResponse
+    // Update Redux store
+    appDispatch(updateQuestionField({
+      field: currentQuestion.id,
+      value: currentResponse
     }));
 
-    // Also update Redux store
+    // Also update session slice for backward compatibility
     dispatch(updateWorkingBackwardsResponse({
       field: currentQuestion.id as keyof WorkingBackwardsResponses,
       value: currentResponse
@@ -100,17 +111,20 @@ export const useFormState = () => {
 
     // Move to previous step or hide summary
     if (showSummary) {
-      setShowSummary(false);
+      appDispatch(setShowSummary(false));
     } else if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+      setCurrentStepLocal(currentStep - 1);
+    } else {
+      // If at first step, go back to initial thoughts
+      navigate('/initial-thoughts');
     }
-  }, [currentQuestion.id, currentResponse, currentStep, dispatch, setQuestionsState, showSummary, setShowSummary]);
+  }, [currentQuestion.id, currentResponse, currentStep, dispatch, appDispatch, showSummary, navigate]);
 
   /**
-   * Handle changes to the response textarea
+   * Handle text input changes
    */
-  const handleResponseChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    setCurrentResponse(event.target.value);
+  const handleResponseChange = useCallback((value: string) => {
+    setCurrentResponse(value);
   }, []);
 
   /**
@@ -118,18 +132,30 @@ export const useFormState = () => {
    */
   const handleContinueToPRFAQ = useCallback(() => {
     // Make sure all responses are saved to Redux before navigating
-    Object.entries(questionsState).forEach(([key, value]) => {
+    Object.entries(questions).forEach(([key, value]) => {
       // Skip aiSuggestions
-      if (key !== 'aiSuggestions') {
+      if (key !== 'aiSuggestions' && typeof value === 'string') {
         dispatch(updateWorkingBackwardsResponse({
           field: key as keyof WorkingBackwardsResponses,
-          value: value as string
+          value: value
         }));
+        
+        // Also update the Redux working backwards slice
+        if (key !== 'aiSuggestions') {
+          // Only use allowed field keys
+          if (key === 'customer' || key === 'problem' || key === 'benefit' || 
+              key === 'validation' || key === 'experience') {
+            appDispatch(updateQuestionField({
+              field: key,
+              value: value
+            }));
+          }
+        }
       }
     });
     
     navigate('/prfaq');
-  }, [dispatch, navigate, questionsState]);
+  }, [dispatch, appDispatch, navigate, questions]);
 
   /**
    * Handle going back to the initial thoughts page
@@ -139,40 +165,49 @@ export const useFormState = () => {
   }, [navigate]);
 
   /**
-   * Apply an AI suggestion to the current response
+   * Use an AI suggestion as the response
    */
   const handleUseSuggestion = useCallback((suggestion: string) => {
     if (suggestion) {
       // Update the current response
       setCurrentResponse(suggestion);
       
-      // Update the questionsState in Recoil
-      setQuestionsState(prev => ({
-        ...prev,
-        [currentQuestion.id]: suggestion
+      // Update Redux
+      appDispatch(updateQuestionField({
+        field: currentQuestion.id,
+        value: suggestion
+      }));
+      
+      // Also update session slice for backward compatibility
+      dispatch(updateWorkingBackwardsResponse({
+        field: currentQuestion.id as keyof WorkingBackwardsResponses,
+        value: suggestion
       }));
     }
-  }, [currentQuestion.id, setQuestionsState]);
+  }, [currentQuestion.id, appDispatch, dispatch]);
+
+  /**
+   * Navigate to a specific route
+   */
+  const handleNavigateToRoute = useCallback((route: string) => {
+    navigate(route);
+  }, [navigate]);
 
   return {
     currentStep,
-    setCurrentStep,
-    currentResponse,
-    setCurrentResponse,
     currentQuestion,
-    setCurrentQuestion,
-    showSummary,
-    setShowSummary,
+    currentResponse,
     isFirstLoad,
+    showSummary,
+    questions, // Now using Redux version
     setIsFirstLoad,
-    questionsState,
-    initialThoughts,
+    handleResponseChange,
     handleNext,
     handleBack,
-    handleResponseChange,
     handleContinueToPRFAQ,
     handleBackToInitialThoughts,
-    handleUseSuggestion
+    handleUseSuggestion,
+    handleNavigateToRoute
   };
 };
 

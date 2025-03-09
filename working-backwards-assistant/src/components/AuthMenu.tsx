@@ -8,7 +8,7 @@ import {
   Button,
   Tooltip,
 } from '@mui/material';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { auth } from '../lib/firebase/firebase';
 import { useNavigate } from 'react-router-dom';

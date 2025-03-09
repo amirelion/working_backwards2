@@ -19,6 +19,23 @@ import { WorkingBackwardsProcess, WorkingBackwardsProcessSummary } from '../type
 const processesCollection = collection(db, 'workingBackwardsProcesses');
 
 /**
+ * Helper function to convert a Date or string to a timestamp
+ */
+const getTimestamp = (dateOrString: Date | string): number => {
+  if (dateOrString instanceof Date) {
+    return isNaN(dateOrString.getTime()) ? 0 : dateOrString.getTime();
+  }
+  
+  try {
+    const date = new Date(dateOrString);
+    return isNaN(date.getTime()) ? 0 : date.getTime();
+  } catch (e) {
+    console.error('Invalid date value:', dateOrString);
+    return 0; // Return a default timestamp for invalid dates
+  }
+};
+
+/**
  * Create a new Working Backwards process
  */
 export const createProcess = async (userId: string, title: string, initialThoughts: string = ''): Promise<string> => {
@@ -85,7 +102,7 @@ export const getUserProcesses = async (userId: string): Promise<WorkingBackwards
     });
     
     // Sort the results in memory instead of using orderBy in the query
-    return processes.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+    return processes.sort((a, b) => getTimestamp(b.updatedAt) - getTimestamp(a.updatedAt));
   } catch (error) {
     console.error('Error getting user processes:', error);
     throw new Error(`Failed to get user processes: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -251,7 +268,7 @@ export const subscribeToUserProcesses = (
       });
       
       // Sort the results in memory
-      processes.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+      processes.sort((a, b) => getTimestamp(b.updatedAt) - getTimestamp(a.updatedAt));
       onUpdate(processes);
     },
     (error) => {

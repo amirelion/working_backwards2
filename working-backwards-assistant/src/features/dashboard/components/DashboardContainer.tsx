@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Container, Typography, CircularProgress, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../../contexts/AuthContext';
-import { useProcessList } from '../../../features/working-backwards/contexts/ProcessListContext';
+import { useAuth } from '../../../hooks/useAuth';
+import { useProcessList } from '../../../hooks/useProcessList';
 
 import ProcessFilters from './ProcessFilters';
 import ProcessGrid from './ProcessGrid';

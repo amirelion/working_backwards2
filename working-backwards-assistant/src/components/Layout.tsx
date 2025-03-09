@@ -19,7 +19,14 @@ import {
   AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
 import AuthMenu from './AuthMenu';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
+import { useAppSelector } from '../store/hooks';
+import { 
+  selectCurrentUser, 
+  selectUserProfile, 
+  selectIsAdmin, 
+  selectLoading 
+} from '../store/authSlice';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -28,7 +35,13 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { userProfile, isAdmin, currentUser, loading: authLoading } = useAuth();
+  
+  // Use both context for backward compatibility and Redux directly
+  const { currentUser } = useAuth(); // Keep this for the Firebase User object
+  const userProfile = useAppSelector(selectUserProfile);
+  const isAdmin = useAppSelector(selectIsAdmin);
+  const authLoading = useAppSelector(selectLoading);
+  const reduxUser = useAppSelector(selectCurrentUser);
 
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -87,7 +100,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* Debug info */}
             <Typography variant="caption" sx={{ mr: 2, color: 'white' }}>
               {authLoading ? 'Auth loading...' : 
-               currentUser ? `Logged in: ${currentUser.email}` : 'Not logged in'}
+               reduxUser ? `Logged in: ${reduxUser.email}` : 'Not logged in'}
             </Typography>
             <AuthMenu />
           </Box>

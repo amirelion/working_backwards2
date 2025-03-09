@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { Box, Typography, Paper, Container, CircularProgress } from '@mui/material';
 
 interface ProtectedRouteProps {

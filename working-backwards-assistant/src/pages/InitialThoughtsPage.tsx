@@ -13,16 +13,14 @@ import {
   CircularProgress,
   Snackbar,
 } from '@mui/material';
-import { useRecoilState } from 'recoil';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { workingBackwardsQuestionsState } from '../atoms/workingBackwardsQuestionsState';
 import VoiceTranscriber from '../components/VoiceTranscriber';
 import CustomSnackbar from '../components/CustomSnackbar';
 import { processInitialThoughts } from '../utils/aiProcessing';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SkipNextIcon from '@mui/icons-material/SkipNext';
-import { useCurrentProcess } from '../features/working-backwards/contexts/CurrentProcessContext';
+import { useCurrentProcess } from '../hooks/useCurrentProcess';
 import ClearIcon from '@mui/icons-material/Clear';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { 
@@ -32,6 +30,10 @@ import {
   setSkipInitialThoughts,
   clearInitialThoughts
 } from '../store/initialThoughtsSlice';
+import {
+  updateQuestionField,
+  setAISuggestions
+} from '../store/workingBackwardsSlice';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -58,7 +60,6 @@ function TabPanel(props: TabPanelProps) {
 function InitialThoughtsPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [, setWorkingBackwardsQuestions] = useRecoilState(workingBackwardsQuestionsState);
   
   const initialThoughts = useAppSelector(selectInitialThoughts);
   const dispatch = useAppDispatch();
@@ -138,19 +139,27 @@ function InitialThoughtsPage() {
       const processedQuestions = await processInitialThoughts(initialThoughts);
       console.log('Processed questions:', processedQuestions);
       
-      // Update the working backwards questions state with the processed data
-      await setWorkingBackwardsQuestions(prev => ({
-        ...prev,
-        customer: processedQuestions.customer || prev.customer,
-        problem: processedQuestions.problem || prev.problem,
-        benefit: processedQuestions.benefit || prev.benefit,
-        validation: processedQuestions.validation || prev.validation,
-        experience: processedQuestions.experience || prev.experience,
-        aiSuggestions: {
-          ...prev.aiSuggestions,
-          ...processedQuestions.aiSuggestions
-        }
-      }));
+      // Update the working backwards questions state with the processed data using Redux
+      if (processedQuestions.customer) {
+        dispatch(updateQuestionField({ field: 'customer', value: processedQuestions.customer }));
+      }
+      if (processedQuestions.problem) {
+        dispatch(updateQuestionField({ field: 'problem', value: processedQuestions.problem }));
+      }
+      if (processedQuestions.benefit) {
+        dispatch(updateQuestionField({ field: 'benefit', value: processedQuestions.benefit }));
+      }
+      if (processedQuestions.validation) {
+        dispatch(updateQuestionField({ field: 'validation', value: processedQuestions.validation }));
+      }
+      if (processedQuestions.experience) {
+        dispatch(updateQuestionField({ field: 'experience', value: processedQuestions.experience }));
+      }
+      
+      // Update AI suggestions using Redux
+      if (processedQuestions.aiSuggestions) {
+        dispatch(setAISuggestions(processedQuestions.aiSuggestions));
+      }
       
       // Save the current process
       if (currentProcessId) {

@@ -4,6 +4,23 @@ import { FilterType, SortOrder } from '../types';
 import { SelectChangeEvent } from '@mui/material';
 
 /**
+ * Helper function to convert a Date or string to a timestamp
+ */
+const getTimestamp = (dateOrString: Date | string): number => {
+  if (dateOrString instanceof Date) {
+    return isNaN(dateOrString.getTime()) ? 0 : dateOrString.getTime();
+  }
+  
+  try {
+    const date = new Date(dateOrString);
+    return isNaN(date.getTime()) ? 0 : date.getTime();
+  } catch (e) {
+    console.error('Invalid date value:', dateOrString);
+    return 0; // Return a default timestamp for invalid dates
+  }
+};
+
+/**
  * Custom hook to handle process filtering, sorting, and searching
  */
 const useProcessFiltering = (processes: WorkingBackwardsProcessSummary[]) => {
@@ -47,7 +64,7 @@ const useProcessFiltering = (processes: WorkingBackwardsProcessSummary[]) => {
         // Apply type filter
         if (filterType === 'all') return matchesSearch;
         if (filterType === 'recent') {
-          const isRecent = new Date().getTime() - process.updatedAt.getTime() < 7 * 24 * 60 * 60 * 1000; // 7 days
+          const isRecent = new Date().getTime() - getTimestamp(process.updatedAt) < 7 * 24 * 60 * 60 * 1000; // 7 days
           return matchesSearch && isRecent;
         }
         // For 'completed' we would need to add a completion status to the process type
@@ -56,11 +73,11 @@ const useProcessFiltering = (processes: WorkingBackwardsProcessSummary[]) => {
       })
       .sort((a, b) => {
         if (sortOrder === 'newest') {
-          return b.createdAt.getTime() - a.createdAt.getTime();
+          return getTimestamp(b.createdAt) - getTimestamp(a.createdAt);
         } else if (sortOrder === 'oldest') {
-          return a.createdAt.getTime() - b.createdAt.getTime();
+          return getTimestamp(a.createdAt) - getTimestamp(b.createdAt);
         } else if (sortOrder === 'lastUpdated') {
-          return b.updatedAt.getTime() - a.updatedAt.getTime();
+          return getTimestamp(b.updatedAt) - getTimestamp(a.updatedAt);
         } else {
           return a.title.localeCompare(b.title);
         }
