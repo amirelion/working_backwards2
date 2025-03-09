@@ -93,6 +93,16 @@ export const processManagementSlice = createSlice({
     },
     setIsModified: (state, action: PayloadAction<boolean>) => {
       state.isModified = action.payload;
+    },
+    
+    // Add a clear current process action
+    clearCurrentProcess: (state) => {
+      state.currentProcessId = null;
+      state.currentProcess = null;
+      state.isSaving = false;
+      state.lastSaved = null;
+      state.currentProcessError = null;
+      state.isModified = false;
     }
   }
 });
@@ -110,7 +120,10 @@ export const {
   setIsSaving,
   setLastSaved,
   setCurrentProcessError,
-  setIsModified
+  setIsModified,
+  
+  // Add a clear current process action
+  clearCurrentProcess
 } = processManagementSlice.actions;
 
 // Export selectors

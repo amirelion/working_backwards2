@@ -71,6 +71,11 @@ export const workingBackwardsSlice = createSlice({
     // Set all questions data at once (useful for loading from storage)
     setQuestionsData: (state, action: PayloadAction<WorkingBackwardsQuestionsState>) => {
       state.questions = action.payload;
+    },
+
+    // Add a reset action to clear the state
+    resetWorkingBackwards: () => {
+      return initialState;
     }
   }
 });
@@ -82,7 +87,8 @@ export const {
   setAISuggestions, 
   setShowSummary, 
   setCurrentStep,
-  setQuestionsData
+  setQuestionsData,
+  resetWorkingBackwards
 } = workingBackwardsSlice.actions;
 
 // Export selectors

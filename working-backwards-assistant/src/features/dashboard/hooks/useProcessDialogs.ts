@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../../../store/hooks';
-import { clearInitialThoughts } from '../../../store/initialThoughtsSlice';
+import { resetProcessState } from '../../../store/resetState';
 import { useProcessList } from '../../../hooks/useProcessList';
 import { useCurrentProcess } from '../../../hooks/useCurrentProcess';
 import * as workingBackwardsService from '../../../services/workingBackwardsService';
@@ -50,8 +50,8 @@ const useProcessDialogs = () => {
 
     setIsCreating(true);
     try {
-      // Clear initial thoughts before creating a new process
-      dispatch(clearInitialThoughts());
+      // Reset all process-related state
+      resetProcessState(dispatch);
       
       const processId = await createNewProcess(newProcessTitle);
       setOpenNewDialog(false);
@@ -71,10 +71,13 @@ const useProcessDialogs = () => {
    */
   const handleOpenProcess = async (processId: string) => {
     try {
+      // Reset all process-related state before loading new process
+      resetProcessState(dispatch);
+      
       await loadProcess(processId);
       navigate(`/initial-thoughts?process=${processId}`);
     } catch (error) {
-      console.error('Error loading process:', error);
+      console.error('Error opening process:', error);
     }
   };
 

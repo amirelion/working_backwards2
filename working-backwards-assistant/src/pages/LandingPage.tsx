@@ -35,7 +35,7 @@ import { useProcessList } from '../hooks/useProcessList';
 import { useAuth } from '../hooks/useAuth';
 import CustomSnackbar from '../components/CustomSnackbar';
 import { useAppDispatch } from '../store/hooks';
-import { clearInitialThoughts } from '../store/initialThoughtsSlice';
+import { resetProcessState } from '../store/resetState';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -53,38 +53,12 @@ export default function LandingPage() {
 
   const handleStartNow = () => {
     if (currentUser) {
-      setShowNameDialog(true);
+      // If user is logged in, show the dialog to create a process
+      setDialogOpen(true);
     } else {
-      // Clear initial thoughts before navigating to the initial thoughts page
-      dispatch(clearInitialThoughts());
-      
-      // If not logged in, just navigate to initial thoughts
+      // If not logged in, reset all process-related state and navigate to initial thoughts
+      resetProcessState(dispatch);
       navigate('/initial-thoughts');
-    }
-  };
-
-  const createProcessWithDefaultName = async () => {
-    setIsCreating(true);
-    try {
-      // Clear initial thoughts before creating a new process
-      dispatch(clearInitialThoughts());
-      
-      const defaultTitle = "New Working Backwards";
-      const processId = await createNewProcess(defaultTitle);
-      
-      if (!processId) {
-        throw new Error("Failed to create process - no process ID returned");
-      }
-      
-      // Navigate to the initial thoughts page with the new process ID
-      navigate(`/initial-thoughts?process=${processId}`);
-    } catch (error) {
-      console.error('Error creating process:', error);
-      setSnackbarMessage('Failed to create process. Please try again.');
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
-    } finally {
-      setIsCreating(false);
     }
   };
 
@@ -98,6 +72,10 @@ export default function LandingPage() {
 
     setIsCreating(true);
     try {
+      // Reset all process-related state
+      resetProcessState(dispatch);
+      
+      // Create a new process
       const processId = await createNewProcess(processTitle);
       setDialogOpen(false);
       setProcessTitle('');

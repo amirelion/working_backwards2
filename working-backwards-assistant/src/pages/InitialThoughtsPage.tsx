@@ -34,6 +34,7 @@ import {
   updateQuestionField,
   setAISuggestions
 } from '../store/workingBackwardsSlice';
+import { resetProcessState } from '../store/resetState';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -92,8 +93,8 @@ function InitialThoughtsPage() {
     const loadProcessFromUrl = async () => {
       if (processId && processId !== currentProcessId) {
         try {
-          // Clear initial thoughts when loading a new process
-          dispatch(clearInitialThoughts());
+          // Reset all process-related state before loading the process
+          resetProcessState(dispatch);
           await loadProcess(processId);
         } catch (error) {
           console.error('Error loading process:', error);
