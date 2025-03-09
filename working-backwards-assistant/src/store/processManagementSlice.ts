@@ -185,10 +185,45 @@ export const selectCurrentProcess = (state: { processManagement: ProcessManageme
   const process = state.processManagement.currentProcess;
   // Convert ISO date strings back to Date objects when retrieving from the store
   if (process) {
+    // Handle date types in a way that's compatible with WorkingBackwardsProcess
+    let createdAt: Date | string | null = null;
+    if (process.createdAt) {
+      // If it's already a valid date string, keep it as is
+      createdAt = process.createdAt;
+      
+      // Also try to convert to Date object (the type allows both formats)
+      try {
+        const dateObj = new Date(process.createdAt);
+        if (!isNaN(dateObj.getTime())) {
+          createdAt = dateObj;
+        }
+      } catch (e) {
+        // If conversion fails, keep the original string
+        console.warn('Failed to convert createdAt to Date:', process.createdAt);
+      }
+    }
+    
+    let updatedAt: Date | string | null = null;
+    if (process.updatedAt) {
+      // If it's already a valid date string, keep it as is
+      updatedAt = process.updatedAt;
+      
+      // Also try to convert to Date object (the type allows both formats)
+      try {
+        const dateObj = new Date(process.updatedAt);
+        if (!isNaN(dateObj.getTime())) {
+          updatedAt = dateObj;
+        }
+      } catch (e) {
+        // If conversion fails, keep the original string
+        console.warn('Failed to convert updatedAt to Date:', process.updatedAt);
+      }
+    }
+    
     return {
       ...process,
-      createdAt: process.createdAt ? new Date(process.createdAt) : null,
-      updatedAt: process.updatedAt ? new Date(process.updatedAt) : null
+      createdAt,
+      updatedAt
     };
   }
   return null;
