@@ -11,7 +11,7 @@ import { questionsList } from './constants/questions';
 const WorkingBackwardsPage: React.FC = () => {
   const {
     showSummary,
-    questionsState,
+    questions,
     handleBack,
     handleContinueToPRFAQ,
     handleBackToInitialThoughts
@@ -24,7 +24,7 @@ const WorkingBackwardsPage: React.FC = () => {
           <WorkingBackwardsForm />
         ) : (
           <WorkingBackwardsSummary
-            questionsState={questionsState}
+            questionsState={questions}
             questionsList={questionsList}
             onBack={handleBack}
             onContinueToPRFAQ={handleContinueToPRFAQ}

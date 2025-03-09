@@ -2,12 +2,14 @@ import { configureStore } from '@reduxjs/toolkit';
 import prfaqReducer from './prfaqSlice';
 import sessionReducer from '../features/session/sessionSlice';
 import initialThoughtsReducer from './initialThoughtsSlice';
+import workingBackwardsReducer from './workingBackwardsSlice';
 
 export const store = configureStore({
   reducer: {
     session: sessionReducer,
     prfaq: prfaqReducer,
     initialThoughts: initialThoughtsReducer,
+    workingBackwards: workingBackwardsReducer,
     // We'll add more reducers incrementally
   },
   middleware: (getDefaultMiddleware) => 

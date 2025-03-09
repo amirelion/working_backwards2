@@ -3,17 +3,21 @@ import { useRecoilState } from 'recoil';
 import { workingBackwardsQuestionsState } from '../../../atoms/workingBackwardsQuestionsState';
 import { getAIResponse, getWorkingBackwardsPrompt } from '../../../services/aiService';
 import { WorkingBackwardsQuestion } from '../constants/questions';
-import { useAppSelector } from '../../../store/hooks';
+import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { 
   selectInitialThoughts, 
   selectSkipInitialThoughts
 } from '../../../store/initialThoughtsSlice';
+import {
+  addAISuggestion
+} from '../../../store/workingBackwardsSlice';
 
 /**
  * Custom hook for managing AI suggestions in the Working Backwards process
  */
 export const useAISuggestions = () => {
   const [questionsState, setQuestionsState] = useRecoilState(workingBackwardsQuestionsState);
+  const appDispatch = useAppDispatch();
   const initialThoughts = useAppSelector(selectInitialThoughts);
   const skipInitialThoughts = useAppSelector(selectSkipInitialThoughts);
   const [aiSuggestion, setAiSuggestion] = useState('');
@@ -56,13 +60,21 @@ export const useAISuggestions = () => {
       } else {
         setAiSuggestion(response.content);
         
-        // Store the suggestion in the questionsState
+        const fullQuestionKey = `${currentStep + 1}. ${currentQuestion.label}`;
+        
+        // Store the suggestion in both Recoil and Redux
         setQuestionsState(prev => ({
           ...prev,
           aiSuggestions: {
             ...prev.aiSuggestions,
-            [`${currentStep + 1}. ${currentQuestion.label}`]: response.content
+            [fullQuestionKey]: response.content
           }
+        }));
+        
+        // Also update Redux store
+        appDispatch(addAISuggestion({
+          question: fullQuestionKey,
+          suggestion: response.content
         }));
       }
     } catch (error) {
@@ -71,7 +83,7 @@ export const useAISuggestions = () => {
     } finally {
       setIsGeneratingSuggestion(false);
     }
-  }, [initialThoughts, questionsState, setQuestionsState, skipInitialThoughts]);
+  }, [initialThoughts, questionsState, setQuestionsState, skipInitialThoughts, appDispatch]);
 
   /**
    * Generate initial AI suggestions for all questions
@@ -108,13 +120,19 @@ export const useAISuggestions = () => {
           suggestions[fullQuestionKey] = response.content;
           contextObj[question.id] = response.content;
           
-          // Update suggestions in state as they come in
+          // Update suggestions in both Recoil and Redux state
           setQuestionsState(prev => ({
             ...prev,
             aiSuggestions: {
               ...prev.aiSuggestions,
               [fullQuestionKey]: response.content
             }
+          }));
+          
+          // Also update Redux store
+          appDispatch(addAISuggestion({
+            question: fullQuestionKey,
+            suggestion: response.content
           }));
           
           // If this is the first question and we're still on it, show the suggestion
@@ -128,7 +146,7 @@ export const useAISuggestions = () => {
     } finally {
       setIsLoadingFirstSuggestion(false);
     }
-  }, [initialThoughts, setQuestionsState, skipInitialThoughts]);
+  }, [initialThoughts, setQuestionsState, skipInitialThoughts, appDispatch]);
 
   /**
    * Load a suggestion for the current question from state

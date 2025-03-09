@@ -73,6 +73,11 @@ const WorkingBackwardsForm: React.FC = () => {
     skipInitialThoughts
   ]);
 
+  // Handle text input changes - need to adapt from the new signature
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    handleResponseChange(event.target.value);
+  };
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -113,7 +118,7 @@ const WorkingBackwardsForm: React.FC = () => {
                     (isLoadingFirstSuggestion && index === 0) || 
                     (isGeneratingSuggestion && index === currentStep)
                   }
-                  onResponseChange={handleResponseChange}
+                  onResponseChange={handleInputChange}
                   onNext={handleNext}
                   onBack={handleBack}
                   onUseSuggestion={() => handleUseSuggestion(aiSuggestion)}
