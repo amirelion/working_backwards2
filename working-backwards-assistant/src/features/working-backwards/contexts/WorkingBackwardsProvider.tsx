@@ -9,7 +9,7 @@ import { workingBackwardsQuestionsState } from '../../../atoms/workingBackwardsQ
 import { updatePRFAQTitle, updatePRFAQPressRelease, setFAQs, setCustomerFAQs, setStakeholderFAQs } from '../../../store/prfaqSlice';
 import { RootState } from '../../../store';
 import { backwardCompatSelectors } from '../../../store/compatUtils';
-import { useAppSelector, useAppDispatch } from '../../../store/hooks';
+import { useAppDispatch } from '../../../store/hooks';
 import { selectInitialThoughts, setInitialThoughts } from '../../../store/initialThoughtsSlice';
 import { store } from '../../../store/rootStore';
 
