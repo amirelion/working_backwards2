@@ -16,6 +16,7 @@ import {
 } from '../store/processManagementSlice';
 import * as processService from '../services/workingBackwardsService';
 import { useAuth } from './useAuth';
+import { clearInitialThoughts } from '../store/initialThoughtsSlice';
 
 /**
  * Custom hook providing current process state and operations from Redux
@@ -52,6 +53,9 @@ export const useCurrentProcess = () => {
     try {
       dispatch(setIsSaving(true));
       dispatch(setCurrentProcessError(null));
+      
+      // Clear initial thoughts when loading a process
+      dispatch(clearInitialThoughts());
       
       // Load process from service
       const process = await processService.getProcessById(processId);

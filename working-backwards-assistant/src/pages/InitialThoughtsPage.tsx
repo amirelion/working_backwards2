@@ -92,6 +92,8 @@ function InitialThoughtsPage() {
     const loadProcessFromUrl = async () => {
       if (processId && processId !== currentProcessId) {
         try {
+          // Clear initial thoughts when loading a new process
+          dispatch(clearInitialThoughts());
           await loadProcess(processId);
         } catch (error) {
           console.error('Error loading process:', error);
@@ -100,7 +102,7 @@ function InitialThoughtsPage() {
     };
     
     loadProcessFromUrl();
-  }, [processId, currentProcessId, loadProcess]);
+  }, [processId, currentProcessId, loadProcess, dispatch]);
   
   // Set current process ID when component mounts
   useEffect(() => {

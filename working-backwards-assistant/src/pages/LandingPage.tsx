@@ -20,7 +20,9 @@ import {
   TextField,
   CircularProgress,
   Snackbar,
-  Alert
+  Alert,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import {
   Description,
@@ -31,11 +33,17 @@ import {
 } from '@mui/icons-material';
 import { useProcessList } from '../hooks/useProcessList';
 import { useAuth } from '../hooks/useAuth';
+import CustomSnackbar from '../components/CustomSnackbar';
+import { useAppDispatch } from '../store/hooks';
+import { clearInitialThoughts } from '../store/initialThoughtsSlice';
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { createNewProcess } = useProcessList();
   const { currentUser } = useAuth();
+  const dispatch = useAppDispatch();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [processTitle, setProcessTitle] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -43,11 +51,13 @@ export default function LandingPage() {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('info');
 
-  const handleGetStarted = () => {
+  const handleStartNow = () => {
     if (currentUser) {
-      // Create a new process with default name instead of showing dialog
-      createProcessWithDefaultName();
+      setShowNameDialog(true);
     } else {
+      // Clear initial thoughts before navigating to the initial thoughts page
+      dispatch(clearInitialThoughts());
+      
       // If not logged in, just navigate to initial thoughts
       navigate('/initial-thoughts');
     }
@@ -56,6 +66,9 @@ export default function LandingPage() {
   const createProcessWithDefaultName = async () => {
     setIsCreating(true);
     try {
+      // Clear initial thoughts before creating a new process
+      dispatch(clearInitialThoughts());
+      
       const defaultTitle = "New Working Backwards";
       const processId = await createNewProcess(defaultTitle);
       
@@ -70,8 +83,6 @@ export default function LandingPage() {
       setSnackbarMessage('Failed to create process. Please try again.');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
-      // If process creation fails, still navigate to initial thoughts
-      navigate('/initial-thoughts');
     } finally {
       setIsCreating(false);
     }
@@ -139,7 +150,7 @@ export default function LandingPage() {
               variant="contained"
               color="secondary"
               size="large"
-              onClick={handleGetStarted}
+              onClick={handleStartNow}
               endIcon={<ArrowForward />}
               sx={{ mt: 4, fontWeight: 'bold', px: 4, py: 1.5 }}
             >
@@ -270,7 +281,7 @@ export default function LandingPage() {
             variant="contained"
             color="secondary"
             size="large"
-            onClick={handleGetStarted}
+            onClick={handleStartNow}
             endIcon={<ArrowForward />}
             sx={{ mt: 2, fontWeight: 'bold', px: 4, py: 1.5 }}
           >
