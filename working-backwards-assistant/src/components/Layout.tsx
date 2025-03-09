@@ -19,7 +19,7 @@ import {
   AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
 import AuthMenu from './AuthMenu';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { useAppSelector } from '../store/hooks';
 import { 
   selectCurrentUser, 

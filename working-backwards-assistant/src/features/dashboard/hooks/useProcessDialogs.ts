@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useProcessList } from '../../../features/working-backwards/contexts/ProcessListContext';
-import { useCurrentProcess } from '../../../features/working-backwards/contexts/CurrentProcessContext';
+import { useProcessList } from '../../../hooks/useProcessList';
+import { useCurrentProcess } from '../../../hooks/useCurrentProcess';
 import * as workingBackwardsService from '../../../services/workingBackwardsService';
 import * as saveService from '../../../services/saveService';
 

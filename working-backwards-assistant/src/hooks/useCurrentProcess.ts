@@ -115,8 +115,8 @@ export const useCurrentProcess = () => {
         updatedAt: new Date() // Use fresh date
       };
       
-      // Save the process via service
-      await processService.updateProcess(processData);
+      // Save the process via service - need to pass the processId and data
+      await processService.updateProcess(currentProcessId, processData);
       
       // Update lastSaved timestamp
       const now = new Date();

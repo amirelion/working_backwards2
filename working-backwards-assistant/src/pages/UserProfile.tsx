@@ -10,7 +10,7 @@ import {
   Avatar,
   Divider
 } from '@mui/material';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { usePermissions } from '../utils/permissions';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { useNavigate } from 'react-router-dom';

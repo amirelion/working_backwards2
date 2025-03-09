@@ -1,4 +1,4 @@
-import { WorkingBackwardsQuestionsState } from '../../../atoms/workingBackwardsQuestionsState';
+import { WorkingBackwardsQuestionsState } from '../../../types/WorkingBackwardsQuestionsState';
 
 // Define the type for working backwards questions
 export interface WorkingBackwardsQuestion {

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { isEqual } from 'lodash';
 import { PRFAQState } from '../../../store/prfaqSlice';
-import { useCurrentProcess } from '../../working-backwards/contexts/CurrentProcessContext';
-import { useProcessSync } from '../../working-backwards/contexts/ProcessSyncContext';
+import { useCurrentProcess } from '../../../hooks/useCurrentProcess';
+import { useProcessSync } from '../../../hooks/useProcessSync';
 
 /**
  * Custom hook to manage auto-save functionality for the PRFAQ component

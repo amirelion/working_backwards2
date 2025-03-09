@@ -26,9 +26,9 @@ import {
 /* eslint-disable-next-line import/no-unresolved */
 import 'react-quill-new/dist/quill.snow.css';
 import { RootState } from '../../store';
-import { useCurrentProcess } from '../working-backwards/contexts/CurrentProcessContext';
+import { useCurrentProcess } from '../../hooks/useCurrentProcess';
 import { format } from 'date-fns';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { ExportFormat } from '../../types';
 import { useAppSelector } from '../../store/hooks';
 import { selectQuestions } from '../../store/workingBackwardsSlice';

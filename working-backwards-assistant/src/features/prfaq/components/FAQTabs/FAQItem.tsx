@@ -14,7 +14,7 @@ import {
   Save as SaveIcon,
 } from '@mui/icons-material';
 import { FAQ } from '../../../../types';
-import { useCurrentProcess } from '../../../working-backwards/contexts/CurrentProcessContext';
+import { useCurrentProcess } from '../../../../hooks/useCurrentProcess';
 
 // Lazy load ReactQuill
 const LazyReactQuill = lazy(() => import('react-quill-new'));

@@ -1,4 +1,4 @@
-import { WorkingBackwardsQuestionsState } from '../atoms/workingBackwardsQuestionsState';
+import { WorkingBackwardsQuestionsState } from './WorkingBackwardsQuestionsState';
 import { Assumption } from '.';
 
 // Define structure for a saved Working Backwards process
