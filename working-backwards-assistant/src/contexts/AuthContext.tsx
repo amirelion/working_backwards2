@@ -1,9 +1,25 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { auth, db } from '../lib/firebase/firebase';
 import { User } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { AuthContextType, UserProfile, UserRole } from '../types/auth';
 import { onAuthStateChanged } from 'firebase/auth';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import {
+  setCurrentUser,
+  setUserProfile,
+  setLoading,
+  setError,
+  selectCurrentUser,
+  selectUserProfile,
+  selectLoading,
+  selectError,
+  selectUserRole,
+  selectIsAdmin,
+  selectIsPremium,
+  selectIsTrial,
+  selectIsTrialExpired
+} from '../store/authSlice';
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -29,21 +45,24 @@ export function useAuth(): AuthContextType {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Using Redux state instead of local state
+  const dispatch = useAppDispatch();
+  const currentUser = useAppSelector(selectCurrentUser);
+  const userProfile = useAppSelector(selectUserProfile);
+  const loading = useAppSelector(selectLoading);
+  const error = useAppSelector(selectError);
+  const userRole = useAppSelector(selectUserRole);
+  const isAdmin = useAppSelector(selectIsAdmin);
+  const isPremium = useAppSelector(selectIsPremium);
+  const isTrial = useAppSelector(selectIsTrial);
+  const isTrialExpired = useAppSelector(selectIsTrialExpired);
   
-  // Derived state
-  const userRole = userProfile?.role || 'free';
-  const isAdmin = userRole === 'admin';
-  const isPremium = userRole === 'premium';
-  const isTrial = userRole === 'trial';
-  const isTrialExpired = isTrial && userProfile?.trialEndDate ? 
-    userProfile.trialEndDate < new Date() : false;
+  // Store the actual Firebase User object for auth operations
+  // This isn't stored in Redux since it's not serializable
+  const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
 
   // Function to fetch user profile
-  const fetchUserProfile = async (user: User) => {
+  const fetchUserProfile = useCallback(async (user: User) => {
     if (!user) {
       console.log('No user provided to fetchUserProfile');
       return;
@@ -58,6 +77,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('User document exists:', userDoc.id);
         const data = userDoc.data();
         console.log('User data:', data);
+        
+        // Convert from Firestore data to UserProfile
         const profile: UserProfile = {
           uid: userDoc.id,
           email: data.email || '',
@@ -69,8 +90,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           sessionCount: data.sessionCount || 0,
           maxSessions: data.maxSessions || 3
         };
+        
+        // Add trial dates if they exist
+        if (data.trialStartDate) {
+          profile.trialStartDate = data.trialStartDate.toDate();
+        }
+        if (data.trialEndDate) {
+          profile.trialEndDate = data.trialEndDate.toDate();
+        }
+        
         console.log('Setting user profile with role:', profile.role);
-        setUserProfile(profile);
+        
+        // Convert dates to strings for Redux
+        const serializedProfile = {
+          ...profile,
+          createdAt: profile.createdAt.toISOString(),
+          lastLoginAt: profile.lastLoginAt.toISOString(),
+          trialStartDate: profile.trialStartDate?.toISOString(),
+          trialEndDate: profile.trialEndDate?.toISOString()
+        };
+        
+        dispatch(setUserProfile(serializedProfile));
       } else {
         console.log('No existing user document found for:', user.uid);
         console.log('Creating new user profile...');
@@ -90,23 +130,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('Attempting to create user document:', newUser);
           await setDoc(userRef, newUser);
           console.log('User document created successfully');
-          setUserProfile(newUser);
+          
+          // Convert dates to strings for Redux
+          const serializedProfile = {
+            ...newUser,
+            createdAt: newUser.createdAt.toISOString(),
+            lastLoginAt: newUser.lastLoginAt.toISOString()
+          };
+          
+          dispatch(setUserProfile(serializedProfile));
         } catch (error) {
           console.error('Error creating user document:', error);
-          setError('Failed to create user profile. Please try again.');
+          dispatch(setError('Failed to create user profile. Please try again.'));
         }
       }
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
-      setError('Failed to load user profile. Please try again.');
+      dispatch(setError('Failed to load user profile. Please try again.'));
     }
-  };
+  }, [dispatch]);
   
   useEffect(() => {
     let mounted = true;
     
     try {
       console.log('Setting up auth state listener');
+      dispatch(setLoading(true));
       
       // Set up auth state listener
       const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -117,17 +166,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } : 'No user');
         
         if (user && mounted) {
-          setCurrentUser(user);
+          // Store the actual Firebase User object for auth operations
+          setFirebaseUser(user);
+          
+          // Create a serializable version for Redux
+          const serializedUser = {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            emailVerified: user.emailVerified
+          };
+          
+          dispatch(setCurrentUser(serializedUser));
           await fetchUserProfile(user);
         } else {
           if (mounted) {
-            setCurrentUser(null);
-            setUserProfile(null);
+            setFirebaseUser(null);
+            dispatch(setCurrentUser(null));
+            dispatch(setUserProfile(null));
           }
         }
         
         if (mounted) {
-          setLoading(false);
+          dispatch(setLoading(false));
         }
       });
       
@@ -138,11 +200,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error setting up auth listener:', error);
       if (mounted) {
-        setError('Failed to initialize authentication. Please refresh the page.');
-        setLoading(false);
+        dispatch(setError('Failed to initialize authentication. Please refresh the page.'));
+        dispatch(setLoading(false));
       }
     }
-  }, []);
+  }, [dispatch, fetchUserProfile]);
   
   // Check if user can create a new session (respecting limits)
   const canCreateSession = async () => {
@@ -155,8 +217,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
   
   const value = {
-    currentUser,
-    userProfile,
+    // For compatibility, provide the Firebase User object through context
+    currentUser: firebaseUser,
+    userProfile: userProfile ? {
+      ...userProfile,
+      createdAt: new Date(userProfile.createdAt),
+      lastLoginAt: new Date(userProfile.lastLoginAt),
+      trialStartDate: userProfile.trialStartDate ? new Date(userProfile.trialStartDate) : undefined,
+      trialEndDate: userProfile.trialEndDate ? new Date(userProfile.trialEndDate) : undefined
+    } : null,
     userRole,
     isAdmin,
     isPremium,

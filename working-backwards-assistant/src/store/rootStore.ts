@@ -4,6 +4,7 @@ import sessionReducer from '../features/session/sessionSlice';
 import initialThoughtsReducer from './initialThoughtsSlice';
 import workingBackwardsReducer from './workingBackwardsSlice';
 import processManagementReducer from './processManagementSlice';
+import authReducer from './authSlice';
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     initialThoughts: initialThoughtsReducer,
     workingBackwards: workingBackwardsReducer,
     processManagement: processManagementReducer,
+    auth: authReducer,
     // We'll add more reducers incrementally
   },
   middleware: (getDefaultMiddleware) => 
@@ -21,13 +23,17 @@ export const store = configureStore({
         ignoredActions: [
           'processManagement/setProcesses', 
           'processManagement/setCurrentProcess',
-          'processManagement/setLastSaved'
+          'processManagement/setLastSaved',
+          'auth/setCurrentUser',
+          'auth/setUserProfile'
         ],
         // Ignore these paths in the state
         ignoredPaths: [
           'processManagement.processes',
           'processManagement.currentProcess',
-          'processManagement.lastSaved'
+          'processManagement.lastSaved',
+          'auth.currentUser',
+          'auth.userProfile'
         ],
       },
     }),
