@@ -179,7 +179,7 @@ export const useFormState = () => {
       }
     });
     
-    navigate('/pr-faq');
+    navigate('/prfaq');
   }, [dispatch, appDispatch, navigate, questionsState]);
 
   /**
