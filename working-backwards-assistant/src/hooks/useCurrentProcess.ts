@@ -147,8 +147,16 @@ export const useCurrentProcess = () => {
         updatedAt: new Date() // Use fresh date
       };
       
+      // Transform data to handle null values - convert them to undefined for compatibility
+      // with Partial<WorkingBackwardsProcess> which expects string | Date | undefined (not null)
+      const processDataForUpdate = {
+        ...processData,
+        createdAt: processData.createdAt === null ? undefined : processData.createdAt,
+        updatedAt: processData.updatedAt === null ? undefined : processData.updatedAt
+      };
+      
       // Save the process via service - need to pass the processId and data
-      await processService.updateProcess(currentProcessId, processData);
+      await processService.updateProcess(currentProcessId, processDataForUpdate);
       
       // Update lastSaved timestamp
       const now = new Date();
