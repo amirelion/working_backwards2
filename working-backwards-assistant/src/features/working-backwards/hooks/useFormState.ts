@@ -177,8 +177,14 @@ export const useFormState = () => {
         field: currentQuestion.id,
         value: suggestion
       }));
+      
+      // Also update session slice for backward compatibility
+      dispatch(updateWorkingBackwardsResponse({
+        field: currentQuestion.id as keyof WorkingBackwardsResponses,
+        value: suggestion
+      }));
     }
-  }, [currentQuestion.id, appDispatch]);
+  }, [currentQuestion.id, appDispatch, dispatch]);
 
   /**
    * Navigate to a specific route

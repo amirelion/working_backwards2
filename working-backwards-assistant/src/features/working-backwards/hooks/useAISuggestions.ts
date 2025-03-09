@@ -29,7 +29,7 @@ export const useAISuggestions = () => {
   /**
    * Get a suggestion for a single question
    */
-  const getSuggestion = useCallback(async (question: WorkingBackwardsQuestion, initialThoughtsInput: string) => {
+  const getSuggestion = useCallback(async (question: WorkingBackwardsQuestion, currentStep: number, initialThoughtsInput: string) => {
     if (!question) return;
     
     setLoading(true);
@@ -47,14 +47,14 @@ export const useAISuggestions = () => {
           }
         });
       
-      // Generate the prompt - call with the correct separate parameters
+      // Generate the prompt with context
       const prompt = getWorkingBackwardsPrompt(
         question.aiPrompt,
         contextObj,
         initialThoughtsInput
       );
       
-      // Get response from AI service with correct parameters
+      // Get response from AI service
       const response = await getAIResponse({
         prompt,
         model: process.env.REACT_APP_AI_MODEL || 'gpt-4o-mini',
@@ -62,15 +62,19 @@ export const useAISuggestions = () => {
       });
       
       if (!response.error) {
+        // Format the key like in the main branch for consistency
+        const fullQuestionKey = `${currentStep + 1}. ${question.label}`;
+        
         // Store the AI suggestion in Redux and local state
         const updatedSuggestions = {
           ...questionsState.aiSuggestions,
-          [question.id]: response.content
+          [fullQuestionKey]: response.content
         };
         
         setAiSuggestion(response.content);
         dispatch(setAISuggestions(updatedSuggestions));
       } else {
+        console.error('AI suggestion error:', response.error);
         setError(response.error);
         setAiSuggestion('Sorry, I couldn\'t generate a suggestion at this time. Please try again later.');
       }
@@ -87,9 +91,12 @@ export const useAISuggestions = () => {
   /**
    * Use a suggestion as the response to a question
    */
-  const useSuggestion = useCallback((questionId: string) => {
+  const useSuggestion = useCallback((questionId: string, step: number, questionLabel: string) => {
+    // Format key like in main branch
+    const fullQuestionKey = `${step + 1}. ${questionLabel}`;
+    
     // Get the suggestion for this question
-    const suggestion = questionsState.aiSuggestions[questionId];
+    const suggestion = questionsState.aiSuggestions[fullQuestionKey];
     if (!suggestion) return;
     
     // Update the question field
@@ -100,7 +107,7 @@ export const useAISuggestions = () => {
   }, [questionsState.aiSuggestions, dispatch]);
 
   /**
-   * Generate suggestions for all questions that don't have answers yet
+   * Generate suggestions for all questions sequentially with context building
    */
   const generateAllSuggestions = useCallback(async (initialThoughtsInput: string, questions: WorkingBackwardsQuestion[]) => {
     if (!initialThoughtsInput.trim() || !questions.length || skipInitialThoughts) return;
@@ -110,58 +117,75 @@ export const useAISuggestions = () => {
     setError(null);
     
     try {
-      // Find questions without answers
-      const unansweredQuestions = questions.filter(q => 
-        !questionsState[q.id] || !questionsState[q.id].trim()
-      );
-      
-      if (!unansweredQuestions.length) {
-        setLoading(false);
-        setIsLoadingFirstSuggestion(false);
-        return;
-      }
-      
-      // Generate the full context for all questions
+      // Create context object from existing responses
       const contextObj: Record<string, string> = {};
+      
+      // Important: Get existing answers to build initial context
       for (const q of questions) {
         if (questionsState[q.id] && questionsState[q.id].trim()) {
           contextObj[q.id] = questionsState[q.id];
         }
       }
       
-      // Create a fresh empty object for suggestions to avoid the "not extensible" error
-      const suggestions: Record<string, string> = {};
+      // Create a fresh empty object for all suggestions
+      const allSuggestions: Record<string, string> = { ...questionsState.aiSuggestions };
       
-      // Process each unanswered question
-      for (const question of unansweredQuestions) {
-        const fullQuestionKey = question.id;
+      // Process each question sequentially to build context
+      for (let i = 0; i < questions.length; i++) {
+        const question = questions[i];
+        const questionNumber = i + 1;
+        const fullQuestionKey = `${questionNumber}. ${question.label}`;
         
-        // Generate the prompt - call with the correct separate parameters
-        const prompt = getWorkingBackwardsPrompt(
-          question.aiPrompt,
-          contextObj,
-          initialThoughtsInput
-        );
+        // Skip questions that already have answers
+        if (questionsState[question.id] && questionsState[question.id].trim()) {
+          continue;
+        }
         
-        // Get response from AI service with correct parameters
-        const response = await getAIResponse({
-          prompt,
-          model: process.env.REACT_APP_AI_MODEL || 'gpt-4o-mini',
-          provider: process.env.REACT_APP_AI_PROVIDER || 'openai'
-        });
-        
-        if (!response.error) {
-          suggestions[fullQuestionKey] = response.content;
-          // Update suggestions in Redux state
-          dispatch(setAISuggestions(suggestions));
-        } else {
-          setError(response.error);
+        try {
+          console.log(`Generating suggestion for question: ${question.label}`);
+          
+          // Generate the prompt using accumulated context
+          const prompt = getWorkingBackwardsPrompt(
+            question.aiPrompt,
+            contextObj,
+            initialThoughtsInput
+          );
+          
+          // Get response from AI service
+          const response = await getAIResponse({
+            prompt,
+            model: process.env.REACT_APP_AI_MODEL || 'gpt-4o-mini',
+            provider: process.env.REACT_APP_AI_PROVIDER || 'openai'
+          });
+          
+          if (!response.error) {
+            // Store suggestion in our local object
+            allSuggestions[fullQuestionKey] = response.content;
+            
+            // Key aspect: Add this suggestion to context for next questions
+            contextObj[question.id] = response.content;
+            
+            // Update Redux state with all suggestions so far
+            dispatch(setAISuggestions({...allSuggestions}));
+            
+            // Show the suggestion for the current active question
+            if (i === 0) {
+              setAiSuggestion(response.content);
+            }
+          } else {
+            console.error('Error generating suggestion:', response.error);
+            setError(`Error generating suggestions: ${response.error}`);
+            break;
+          }
+        } catch (err) {
+          console.error('Error in suggestion generation loop:', err);
+          setError(`Error generating suggestions: ${err instanceof Error ? err.message : String(err)}`);
           break;
         }
       }
     } catch (err) {
-      console.error('Error generating suggestions:', err);
-      setError('Failed to generate AI suggestions. Please try again.');
+      console.error('Error in generateAllSuggestions:', err);
+      setError(`Error generating suggestions: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setLoading(false);
       setIsLoadingFirstSuggestion(false);
@@ -194,8 +218,17 @@ export const useAISuggestions = () => {
       return;
     }
     
-    getSuggestion(currentQuestion, initialThoughts);
-  }, [skipInitialThoughts, initialThoughts, getSuggestion]);
+    // Format key like in main branch
+    const fullQuestionKey = `${currentStep + 1}. ${currentQuestion.label}`;
+    
+    // Check if we already have a suggestion for this question
+    if (questionsState.aiSuggestions && questionsState.aiSuggestions[fullQuestionKey]) {
+      setAiSuggestion(questionsState.aiSuggestions[fullQuestionKey]);
+    } else {
+      // Generate suggestion if we don't have one yet
+      getSuggestion(currentQuestion, currentStep, initialThoughts);
+    }
+  }, [skipInitialThoughts, initialThoughts, getSuggestion, questionsState.aiSuggestions]);
 
   return {
     loading,
@@ -209,4 +242,7 @@ export const useAISuggestions = () => {
     generateInitialSuggestions,
     loadSuggestionForQuestion
   };
-}; 
+};
+
+// Add default export for backward compatibility
+export default useAISuggestions; 
