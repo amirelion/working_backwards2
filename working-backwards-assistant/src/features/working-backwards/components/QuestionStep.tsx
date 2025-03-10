@@ -12,7 +12,7 @@ interface QuestionStepProps {
   totalSteps: number;
   aiSuggestion: string;
   isLoadingSuggestion: boolean;
-  onResponseChange: (value: string) => void;
+  onResponseChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onNext: () => void;
   onBack: () => void;
   onUseSuggestion: () => void;
@@ -38,11 +38,6 @@ const QuestionStep: React.FC<QuestionStepProps> = ({
     return null;
   }
 
-  // Handle text field changes by extracting the value
-  const handleTextFieldChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    onResponseChange(event.target.value);
-  };
-
   return (
     <Box sx={{ mb: 2 }}>
       <Typography variant="body2" color="textSecondary" gutterBottom>
@@ -56,7 +51,7 @@ const QuestionStep: React.FC<QuestionStepProps> = ({
         variant="outlined"
         placeholder={question.placeholder}
         value={currentResponse}
-        onChange={handleTextFieldChange}
+        onChange={onResponseChange}
         sx={{ mb: 2 }}
       />
       

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { updateWorkingBackwardsResponse } from '../../../features/session/sessionSlice';
@@ -17,6 +18,7 @@ import {
   setShowSummary,
   setCurrentStep
 } from '../../../store/workingBackwardsSlice';
+import { useCurrentProcess } from '../../../hooks/useCurrentProcess';
 
 /**
  * Custom hook for managing form state in the Working Backwards process
@@ -35,10 +37,16 @@ export const useFormState = () => {
   const initialThoughts = useAppSelector(selectInitialThoughts);
   const skipInitialThoughts = useAppSelector(selectSkipInitialThoughts);
   
+  // Get process functions
+  const { saveCurrentProcess, setIsModified } = useCurrentProcess();
+  
   const [currentStep, setCurrentStepLocal] = useState(0);
   const [currentResponse, setCurrentResponse] = useState('');
   const [currentQuestion, setCurrentQuestion] = useState<WorkingBackwardsQuestion>(questionsList[0]);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  
+  // Auto-save timer
+  const [lastChangeTime, setLastChangeTime] = useState<number>(0);
 
   // Reset summary view on mount to ensure users start with the questions
   useEffect(() => {
@@ -67,11 +75,32 @@ export const useFormState = () => {
       }
     }
   }, [currentStep, questions, showSummary, isFirstLoad, skipInitialThoughts, initialThoughts, setIsFirstLoad, appDispatch]);
+  
+  // Auto-save effect
+  useEffect(() => {
+    if (lastChangeTime === 0) return;
+    
+    // Auto-save after 3 seconds of inactivity
+    const AUTOSAVE_DELAY = 3000;
+    
+    const timerId = setTimeout(async () => {
+      console.log('Auto-saving working backwards data...');
+      try {
+        await saveCurrentProcess();
+        console.log('Auto-save completed successfully');
+      } catch (error) {
+        console.error('Error in auto-save:', error);
+      }
+    }, AUTOSAVE_DELAY);
+    
+    // Clean up timer
+    return () => clearTimeout(timerId);
+  }, [lastChangeTime, saveCurrentProcess]);
 
   /**
    * Handle moving to the next step or to the summary
    */
-  const handleNext = useCallback(() => {
+  const handleNext = useCallback(async () => {
     // Update Redux store
     appDispatch(updateQuestionField({
       field: currentQuestion.id,
@@ -83,6 +112,16 @@ export const useFormState = () => {
       field: currentQuestion.id as keyof WorkingBackwardsResponses,
       value: currentResponse
     }));
+    
+    // Mark as modified
+    setIsModified(true);
+    
+    // Save current process
+    try {
+      await saveCurrentProcess();
+    } catch (error) {
+      console.error('Error saving during next step:', error);
+    }
 
     // Move to next step or show summary
     if (currentStep === questionsList.length - 1) {
@@ -91,12 +130,12 @@ export const useFormState = () => {
     } else {
       setCurrentStepLocal(currentStep + 1);
     }
-  }, [currentQuestion.id, currentResponse, currentStep, dispatch, appDispatch]);
+  }, [currentQuestion.id, currentResponse, currentStep, dispatch, appDispatch, setIsModified, saveCurrentProcess]);
 
   /**
    * Handle moving to the previous step or back from summary
    */
-  const handleBack = useCallback(() => {
+  const handleBack = useCallback(async () => {
     // Update Redux store
     appDispatch(updateQuestionField({
       field: currentQuestion.id,
@@ -108,6 +147,16 @@ export const useFormState = () => {
       field: currentQuestion.id as keyof WorkingBackwardsResponses,
       value: currentResponse
     }));
+    
+    // Mark as modified
+    setIsModified(true);
+    
+    // Save current process
+    try {
+      await saveCurrentProcess();
+    } catch (error) {
+      console.error('Error saving during back step:', error);
+    }
 
     // Move to previous step or hide summary
     if (showSummary) {
@@ -118,19 +167,25 @@ export const useFormState = () => {
       // If at first step, go back to initial thoughts
       navigate('/initial-thoughts');
     }
-  }, [currentQuestion.id, currentResponse, currentStep, dispatch, appDispatch, showSummary, navigate]);
+  }, [currentQuestion.id, currentResponse, currentStep, dispatch, appDispatch, showSummary, navigate, setIsModified, saveCurrentProcess]);
 
   /**
    * Handle text input changes
    */
-  const handleResponseChange = useCallback((value: string) => {
-    setCurrentResponse(value);
-  }, []);
+  const handleResponseChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setCurrentResponse(event.target.value);
+    
+    // Update last change time to trigger auto-save
+    setLastChangeTime(Date.now());
+    
+    // Mark as modified
+    setIsModified(true);
+  }, [setIsModified]);
 
   /**
    * Navigate to the PR/FAQ page after saving all responses
    */
-  const handleContinueToPRFAQ = useCallback(() => {
+  const handleContinueToPRFAQ = useCallback(async () => {
     // Make sure all responses are saved to Redux before navigating
     Object.entries(questions).forEach(([key, value]) => {
       // Skip aiSuggestions
@@ -154,15 +209,34 @@ export const useFormState = () => {
       }
     });
     
+    // Mark as modified
+    setIsModified(true);
+    
+    // Save all responses to Firestore
+    try {
+      await saveCurrentProcess();
+      console.log('Successfully saved before navigating to PRFAQ');
+    } catch (error) {
+      console.error('Error saving before navigating to PRFAQ:', error);
+    }
+    
     navigate('/prfaq');
-  }, [dispatch, appDispatch, navigate, questions]);
+  }, [dispatch, appDispatch, navigate, questions, setIsModified, saveCurrentProcess]);
 
   /**
    * Handle going back to the initial thoughts page
    */
-  const handleBackToInitialThoughts = useCallback(() => {
+  const handleBackToInitialThoughts = useCallback(async () => {
+    // Save before navigating
+    try {
+      await saveCurrentProcess();
+      console.log('Successfully saved before returning to initial thoughts');
+    } catch (error) {
+      console.error('Error saving before returning to initial thoughts:', error);
+    }
+    
     navigate('/initial-thoughts');
-  }, [navigate]);
+  }, [navigate, saveCurrentProcess]);
 
   /**
    * Use an AI suggestion as the response
@@ -178,13 +252,13 @@ export const useFormState = () => {
         value: suggestion
       }));
       
-      // Also update session slice for backward compatibility
-      dispatch(updateWorkingBackwardsResponse({
-        field: currentQuestion.id as keyof WorkingBackwardsResponses,
-        value: suggestion
-      }));
+      // Mark as modified
+      setIsModified(true);
+      
+      // Update last change time to trigger auto-save
+      setLastChangeTime(Date.now());
     }
-  }, [currentQuestion.id, appDispatch, dispatch]);
+  }, [currentQuestion.id, appDispatch, setIsModified]);
 
   /**
    * Navigate to a specific route

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Box, 
@@ -69,6 +69,7 @@ function InitialThoughtsPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingError, setProcessingError] = useState<React.ReactNode | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [lastChangeTime, setLastChangeTime] = useState<number>(0);
   
   // Add state for snackbar
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -84,7 +85,8 @@ function InitialThoughtsPage() {
     currentProcessId, 
     setCurrentProcessId, 
     loadProcess, 
-    saveCurrentProcess 
+    saveCurrentProcess,
+    setIsModified
   } = useCurrentProcess();
   
   // Load process if ID is in URL but not loaded yet
@@ -92,6 +94,8 @@ function InitialThoughtsPage() {
     const loadProcessFromUrl = async () => {
       if (processId && processId !== currentProcessId) {
         try {
+          // Clear initial thoughts when loading a new process
+          dispatch(clearInitialThoughts());
           await loadProcess(processId);
         } catch (error) {
           console.error('Error loading process:', error);
@@ -100,7 +104,7 @@ function InitialThoughtsPage() {
     };
     
     loadProcessFromUrl();
-  }, [processId, currentProcessId, loadProcess]);
+  }, [processId, currentProcessId, loadProcess, dispatch]);
   
   // Set current process ID when component mounts
   useEffect(() => {
@@ -108,18 +112,51 @@ function InitialThoughtsPage() {
       setCurrentProcessId(processId);
     }
   }, [processId, setCurrentProcessId]);
+  
+  // Auto-save effect
+  useEffect(() => {
+    if (lastChangeTime === 0) return;
+    
+    // Auto-save after 3 seconds of inactivity
+    const AUTOSAVE_DELAY = 3000;
+    
+    const timerId = setTimeout(async () => {
+      console.log('Auto-saving initial thoughts...');
+      try {
+        await saveCurrentProcess();
+        console.log('Auto-save completed successfully');
+      } catch (error) {
+        console.error('Error in auto-save:', error);
+      }
+    }, AUTOSAVE_DELAY);
+    
+    // Clean up timer
+    return () => clearTimeout(timerId);
+  }, [lastChangeTime, saveCurrentProcess]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
-  const handleInitialThoughtsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInitialThoughtsChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     dispatch(setInitialThoughts(event.target.value));
-  };
+    
+    // Mark the process as modified
+    setIsModified(true);
+    
+    // Update last change time to trigger auto-save
+    setLastChangeTime(Date.now());
+  }, [dispatch, setIsModified]);
 
-  const handleVoiceInput = (transcription: string) => {
+  const handleVoiceInput = useCallback((transcription: string) => {
     dispatch(appendToInitialThoughts(transcription));
-  };
+    
+    // Mark the process as modified
+    setIsModified(true);
+    
+    // Update last change time to trigger auto-save
+    setLastChangeTime(Date.now());
+  }, [dispatch, setIsModified]);
 
   const handleProcessInitialThoughts = async () => {
     if (!initialThoughts.trim()) {

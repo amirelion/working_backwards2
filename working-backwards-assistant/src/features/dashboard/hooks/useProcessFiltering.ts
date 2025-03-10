@@ -6,7 +6,11 @@ import { SelectChangeEvent } from '@mui/material';
 /**
  * Helper function to convert a Date or string to a timestamp
  */
-const getTimestamp = (dateOrString: Date | string): number => {
+const getTimestamp = (dateOrString: Date | string | null): number => {
+  if (!dateOrString) {
+    return 0; // Return 0 for null or undefined values
+  }
+  
   if (dateOrString instanceof Date) {
     return isNaN(dateOrString.getTime()) ? 0 : dateOrString.getTime();
   }

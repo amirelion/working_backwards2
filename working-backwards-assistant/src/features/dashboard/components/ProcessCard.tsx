@@ -85,14 +85,14 @@ const ProcessCard: React.FC<ProcessCardProps> = ({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <CalendarIcon fontSize="small" color="action" />
             <Typography variant="body2" color="text.secondary">
-              Created: {format(process.createdAt, 'MMM d, yyyy')}
+              Created: {process.createdAt ? format(new Date(process.createdAt), 'MMM d, yyyy') : 'Unknown date'}
             </Typography>
           </Box>
           
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <UpdateIcon fontSize="small" color="action" />
             <Typography variant="body2" color="text.secondary">
-              Updated: {formatDistanceToNow(process.updatedAt, { addSuffix: true })}
+              Updated: {process.updatedAt ? formatDistanceToNow(new Date(process.updatedAt), { addSuffix: true }) : 'Unknown'}
             </Typography>
           </Box>
         </Box>
