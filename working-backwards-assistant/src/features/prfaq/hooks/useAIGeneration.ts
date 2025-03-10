@@ -28,7 +28,6 @@ const AI_MODEL = process.env.REACT_APP_AI_MODEL || 'gpt-4o-mini';
 const convertPRFAQStateToPartialPRFAQ = (state: PRFAQState): Partial<PRFAQ> => {
   return {
     title: state.title,
-    date: state.pressRelease.date,
     pressRelease: {
       summary: state.pressRelease.introduction,
       problem: state.pressRelease.problemStatement,
@@ -50,7 +49,6 @@ const convertPRFAQStateToPartialPRFAQ = (state: PRFAQState): Partial<PRFAQ> => {
 const convertPRFAQStateToBackendPRFAQ = (prfaq: PRFAQState): Partial<PRFAQ> => {
   return {
     title: prfaq.title,
-    date: new Date().toISOString(),
     pressRelease: {
       summary: prfaq.pressRelease.introduction,
       problem: prfaq.pressRelease.problemStatement,

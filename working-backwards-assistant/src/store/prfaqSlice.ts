@@ -10,10 +10,7 @@ export interface FAQ {
 export interface PRFAQState {
   title: string;
   pressRelease: {
-    date: string;
-    location: string;
     headline: string;
-    subheadline: string;
     introduction: string;
     problemStatement: string;
     solution: string;
@@ -21,7 +18,6 @@ export interface PRFAQState {
     stakeholderQuote: string;
     customerJourney: string;
     callToAction: string;
-    aboutCompany: string;
   };
   faqs: FAQ[];
   customerFaqs: FAQ[];
@@ -32,10 +28,7 @@ export interface PRFAQState {
 const initialState: PRFAQState = {
   title: '',
   pressRelease: {
-    date: new Date().toISOString().split('T')[0],
-    location: 'SEATTLE',
     headline: '',
-    subheadline: '',
     introduction: '',
     problemStatement: '',
     solution: '',
@@ -43,7 +36,6 @@ const initialState: PRFAQState = {
     stakeholderQuote: '',
     customerJourney: '',
     callToAction: '',
-    aboutCompany: 'Amazon is guided by four principles: customer obsession rather than competitor focus, passion for invention, commitment to operational excellence, and long-term thinking.',
   },
   faqs: [],
   customerFaqs: [],

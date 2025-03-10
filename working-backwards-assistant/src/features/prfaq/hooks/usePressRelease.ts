@@ -62,10 +62,7 @@ export const usePressRelease = () => {
     
     // Check if any press release field has content
     return !Object.values(pressRelease).some(value => 
-      typeof value === 'string' && value.trim().length > 0 && 
-      value !== pressRelease.date && 
-      value !== pressRelease.location &&
-      value !== pressRelease.aboutCompany
+      typeof value === 'string' && value.trim().length > 0
     );
   };
 
