@@ -2,12 +2,11 @@ import { PRFAQ, ExportFormat } from '../types';
 
 // Helper function to convert PRFAQ to plain text
 const prfaqToText = (prfaq: PRFAQ): string => {
-  const { title, date, pressRelease, faq, customerFaqs, stakeholderFaqs } = prfaq;
+  const { title, pressRelease, faq, customerFaqs, stakeholderFaqs } = prfaq;
   
   // Format press release
   const pressReleaseText = `
 # ${title}
-Date: ${date}
 
 ## Press Release
 
@@ -90,30 +89,25 @@ export const exportAsTxt = (prfaq: PRFAQ): void => {
 
 // Export PRFAQ as PDF (using browser print functionality)
 export const exportAsPdf = (prfaq: PRFAQ): void => {
-  // Create a temporary div to hold the formatted content
-  const tempDiv = document.createElement('div');
-  tempDiv.style.display = 'none';
-  document.body.appendChild(tempDiv);
-  
-  // Format the content with basic styling
-  tempDiv.innerHTML = `
+  try {
+    // Create HTML content for PDF
+    const htmlContent = `
+    <!DOCTYPE html>
     <html>
       <head>
-        <title>${prfaq.title} - PRFAQ</title>
+        <meta charset="utf-8">
+        <title>${prfaq.title}</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 40px; }
-          h1 { color: #232F3E; }
-          h2 { color: #232F3E; margin-top: 20px; }
-          h3 { color: #232F3E; }
-          .date { color: #555; margin-bottom: 20px; }
-          .section { margin-bottom: 15px; }
-          .faq-item { margin-bottom: 15px; }
-          .question { font-weight: bold; }
+          h1 { color: #333; text-align: center; }
+          h2 { color: #555; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+          .section { margin-bottom: 20px; }
+          .question { font-weight: bold; margin-top: 15px; }
+          .answer { margin-left: 20px; }
         </style>
       </head>
       <body>
         <h1>${prfaq.title}</h1>
-        <div class="date">Date: ${prfaq.date}</div>
         
         <h2>Press Release</h2>
         
@@ -177,7 +171,7 @@ export const exportAsPdf = (prfaq: PRFAQ): void => {
   document.body.appendChild(iframe);
   
   iframe.contentWindow?.document.open();
-  iframe.contentWindow?.document.write(tempDiv.innerHTML);
+  iframe.contentWindow?.document.write(htmlContent);
   iframe.contentWindow?.document.close();
   
   // Wait for content to load before printing
@@ -185,42 +179,35 @@ export const exportAsPdf = (prfaq: PRFAQ): void => {
     iframe.contentWindow?.print();
     
     // Clean up
-    document.body.removeChild(tempDiv);
     document.body.removeChild(iframe);
   }, 500);
+  } catch (error) {
+    console.error('Error in exportAsPdf:', error);
+  }
 };
 
 // Export PRFAQ as DOCX (simplified version - creates HTML and prompts download)
 export const exportAsDocx = (prfaq: PRFAQ): void => {
-  // For a proper DOCX export, you would typically use a library like docx.js
-  // This is a simplified version that creates HTML with MS Word compatibility
-  
-  const htmlContent = `
-    <html xmlns:o="urn:schemas-microsoft-com:office:office" 
-          xmlns:w="urn:schemas-microsoft-com:office:word" 
-          xmlns="http://www.w3.org/TR/REC-html40">
+  try {
+    // Create HTML content for Word
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html>
       <head>
         <meta charset="utf-8">
-        <title>${prfaq.title} - PRFAQ</title>
-        <!--[if gte mso 9]>
-        <xml>
-          <w:WordDocument>
-            <w:View>Print</w:View>
-            <w:Zoom>90</w:Zoom>
-            <w:DoNotOptimizeForBrowser/>
-          </w:WordDocument>
-        </xml>
-        <![endif]-->
+        <title>${prfaq.title}</title>
         <style>
-          body { font-family: 'Calibri', sans-serif; }
-          h1 { color: #232F3E; }
-          h2 { color: #232F3E; margin-top: 20px; }
-          h3 { color: #232F3E; }
+          /* Basic styling for Word export */
+          body { font-family: Calibri, Arial, sans-serif; margin: 20px; }
+          h1 { font-size: 18pt; color: #2F5496; }
+          h2 { font-size: 16pt; color: #2F5496; margin-top: 20px; }
+          h3 { font-size: 14pt; color: #2F5496; }
+          p { font-size: 11pt; line-height: 1.5; }
+          .question { font-weight: bold; }
         </style>
       </head>
       <body>
         <h1>${prfaq.title}</h1>
-        <p>Date: ${prfaq.date}</p>
         
         <h2>Press Release</h2>
         
@@ -281,6 +268,9 @@ export const exportAsDocx = (prfaq: PRFAQ): void => {
   link.click();
   
   URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Error in exportAsDocx:', error);
+  }
 };
 
 // Send PRFAQ via email
@@ -317,10 +307,10 @@ export const exportAsMarkdown = (prfaq: PRFAQ): void => {
 
 // Main export function
 export const exportPRFAQ = (prfaq: PRFAQ, format: ExportFormat): void => {
-  console.log('exportPRFAQ called with format:', format);
+  // For debugging
+  console.log('Exporting PRFAQ in format:', format);
   console.log('PRFAQ data:', {
     title: prfaq.title,
-    date: prfaq.date,
     pressReleaseKeys: Object.keys(prfaq.pressRelease || {}),
     faqCount: prfaq.faq?.length || 0,
     customerFaqCount: prfaq.customerFaqs?.length || 0,

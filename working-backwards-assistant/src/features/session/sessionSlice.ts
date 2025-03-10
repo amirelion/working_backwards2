@@ -20,7 +20,6 @@ import {
 // Initial empty PRFAQ
 const initialPRFAQ: PRFAQ = {
   title: '',
-  date: new Date().toISOString().split('T')[0],
   pressRelease: {
     summary: '',
     problem: '',
