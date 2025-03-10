@@ -4,18 +4,22 @@ import {
   updatePRFAQPressRelease,
   PRFAQState
 } from '../../../store/prfaqSlice';
+import { useProcessSync } from '../../../hooks/useProcessSync';
 
 /**
  * Custom hook for managing press release state and operations
  */
 export const usePressRelease = () => {
   const dispatch = useDispatch();
+  const { setIsModified } = useProcessSync();
 
   /**
    * Handle changes to the PRFAQ title
    */
   const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     dispatch(updatePRFAQTitle(event.target.value));
+    // Directly mark as modified when title changes
+    setIsModified(true);
   };
 
   /**
@@ -23,6 +27,8 @@ export const usePressRelease = () => {
    */
   const handlePressReleaseChange = (field: keyof PRFAQState['pressRelease'], value: string) => {
     dispatch(updatePRFAQPressRelease({ field, value }));
+    // Directly mark as modified when press release changes
+    setIsModified(true);
   };
 
   /**

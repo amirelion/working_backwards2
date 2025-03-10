@@ -9,12 +9,14 @@ import {
   removeStakeholderFAQ
 } from '../../../store/prfaqSlice';
 import { FAQ } from '../../../types';
+import { useProcessSync } from '../../../hooks/useProcessSync';
 
 /**
  * Custom hook for managing FAQ state and operations
  */
 export const useFAQs = () => {
   const dispatch = useDispatch();
+  const { setIsModified } = useProcessSync();
   
   // State for new FAQs
   const [newCustomerFAQ, setNewCustomerFAQ] = useState<FAQ>({ question: '', answer: '' });
@@ -41,10 +43,12 @@ export const useFAQs = () => {
     if (editingCustomerFAQIndex >= 0) {
       // We're done editing, reset the editing index
       setEditingCustomerFAQIndex(-1);
+      setIsModified(true); // Mark modified when done editing
     } else if (newCustomerFAQ.question.trim() && newCustomerFAQ.answer.trim()) {
       // Add new FAQ
       dispatch(addCustomerFAQ(newCustomerFAQ));
       setNewCustomerFAQ({ question: '', answer: '' });
+      setIsModified(true); // Mark modified when adding
     }
   };
 
@@ -54,6 +58,7 @@ export const useFAQs = () => {
 
   const handleDeleteCustomerFAQ = (index: number) => {
     dispatch(removeCustomerFAQ(index));
+    setIsModified(true); // Mark modified when deleting
     
     // If we're editing this FAQ, reset the editing state
     if (editingCustomerFAQIndex === index) {
@@ -70,6 +75,7 @@ export const useFAQs = () => {
       index, 
       [field]: value 
     }));
+    setIsModified(true); // Mark modified when updating
   };
 
   // Stakeholder FAQ handlers
@@ -85,10 +91,12 @@ export const useFAQs = () => {
     if (editingStakeholderFAQIndex >= 0) {
       // We're done editing, reset the editing index
       setEditingStakeholderFAQIndex(-1);
+      setIsModified(true); // Mark modified when done editing
     } else if (newStakeholderFAQ.question.trim() && newStakeholderFAQ.answer.trim()) {
       // Add new FAQ
       dispatch(addStakeholderFAQ(newStakeholderFAQ));
       setNewStakeholderFAQ({ question: '', answer: '' });
+      setIsModified(true); // Mark modified when adding
     }
   };
 
@@ -98,6 +106,7 @@ export const useFAQs = () => {
 
   const handleDeleteStakeholderFAQ = (index: number) => {
     dispatch(removeStakeholderFAQ(index));
+    setIsModified(true); // Mark modified when deleting
     
     // If we're editing this FAQ, reset the editing state
     if (editingStakeholderFAQIndex === index) {
@@ -114,6 +123,7 @@ export const useFAQs = () => {
       index, 
       [field]: value 
     }));
+    setIsModified(true); // Mark modified when updating
   };
 
   return {

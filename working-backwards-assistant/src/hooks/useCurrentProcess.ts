@@ -153,7 +153,21 @@ export const useCurrentProcess = () => {
       }
       
       // Add PRFAQ data that we retrieved at the top level of the hook
-      processData.prfaq = prfaqData;
+      processData.prfaq = {
+        title: prfaqData.title,
+        pressRelease: {
+          // Explicitly map Redux fields to Firestore fields
+          summary: prfaqData.pressRelease.introduction,
+          problem: prfaqData.pressRelease.problemStatement,
+          solution: prfaqData.pressRelease.solution,
+          executiveQuote: prfaqData.pressRelease.stakeholderQuote,
+          customerJourney: prfaqData.pressRelease.customerJourney,
+          customerQuote: prfaqData.pressRelease.customerQuote,
+          gettingStarted: prfaqData.pressRelease.callToAction
+        },
+        customerFaqs: prfaqData.customerFaqs,
+        stakeholderFaqs: prfaqData.stakeholderFaqs
+      };
       
       // Always update the timestamp
       processData.updatedAt = new Date();
