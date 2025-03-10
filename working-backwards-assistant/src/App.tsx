@@ -3,13 +3,11 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Provider } from 'react-redux';
-import { RecoilRoot } from 'recoil';
 import { store } from './store/rootStore';
-import { AuthProvider } from './contexts/AuthContext';
-import { WorkingBackwardsProvider } from './features/working-backwards/contexts/WorkingBackwardsProvider';
 import { Toaster } from 'react-hot-toast';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
+import AuthListener from './components/AuthListener';
 
 // Import components
 import Layout from './components/Layout';
@@ -151,37 +149,33 @@ const theme = createTheme({
 
 function App() {
   return (
-    <RecoilRoot>
-      <Provider store={store}>
-        <AuthProvider>
-          <Router>
-            <WorkingBackwardsProvider>
-              <ThemeProvider theme={theme}>
-                <CssBaseline />
-                <Layout>
-                  <Suspense fallback={<LoadingFallback />}>
-                    <Routes>
-                      <Route path="/" element={<LandingPage />} />
-                      <Route path="/dashboard" element={<DashboardPage />} />
-                      <Route path="/initial-thoughts" element={<InitialThoughtsPage />} />
-                      <Route path="/working-backwards" element={<WorkingBackwardsPage />} />
-                      <Route path="/prfaq" element={<PRFAQPage />} />
-                      <Route path="/assumptions" element={<AssumptionsPage />} />
-                      <Route path="/experiments" element={<ExperimentsPage />} />
-                      <Route path="/profile" element={<UserProfile />} />
-                      <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-                      <Route path="/test" element={<TestPage />} />
-                      <Route path="*" element={<NotFoundPage />} />
-                    </Routes>
-                  </Suspense>
-                </Layout>
-                <Toaster position="top-right" />
-              </ThemeProvider>
-            </WorkingBackwardsProvider>
-          </Router>
-        </AuthProvider>
-      </Provider>
-    </RecoilRoot>
+    <Provider store={store}>
+      {/* AuthListener sets up auth state in Redux */}
+      <AuthListener />
+      <Router>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <Layout>
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/initial-thoughts" element={<InitialThoughtsPage />} />
+                <Route path="/working-backwards" element={<WorkingBackwardsPage />} />
+                <Route path="/prfaq" element={<PRFAQPage />} />
+                <Route path="/assumptions" element={<AssumptionsPage />} />
+                <Route path="/experiments" element={<ExperimentsPage />} />
+                <Route path="/profile" element={<UserProfile />} />
+                <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                <Route path="/test" element={<TestPage />} />
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </Suspense>
+          </Layout>
+          <Toaster position="top-right" />
+        </ThemeProvider>
+      </Router>
+    </Provider>
   );
 }
 

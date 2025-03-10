@@ -93,6 +93,12 @@ const performSave = async (
     
     console.log('[saveService] Final data being written to Firestore:', {
       ...updateData,
+      prfaq: updateData.prfaq ? {
+        title: updateData.prfaq.title,
+        pressRelease: Object.keys(updateData.prfaq.pressRelease || {}).join(', '),
+        customerFaqs: updateData.prfaq.customerFaqs?.length || 0,
+        stakeholderFaqs: updateData.prfaq.stakeholderFaqs?.length || 0,
+      } : 'none',
       assumptions: updateData.assumptions ? `${updateData.assumptions.length} assumptions` : 'none',
       experiments: updateData.experiments ? `${updateData.experiments.length} experiments` : 'none'
     });

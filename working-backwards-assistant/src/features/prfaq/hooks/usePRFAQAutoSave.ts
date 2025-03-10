@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { isEqual } from 'lodash';
+// Removing unused import
+// import { isEqual } from 'lodash';
 import { PRFAQState } from '../../../store/prfaqSlice';
-import { useCurrentProcess } from '../../working-backwards/contexts/CurrentProcessContext';
-import { useProcessSync } from '../../working-backwards/contexts/ProcessSyncContext';
+import { useCurrentProcess } from '../../../hooks/useCurrentProcess';
+import { useProcessSync } from '../../../hooks/useProcessSync';
 
 /**
  * Custom hook to manage auto-save functionality for the PRFAQ component
@@ -28,7 +29,12 @@ export const usePRFAQAutoSave = (
   // Function to check if there are actual changes - wrapped in useCallback to use in dependencies
   const hasChanges = useCallback(() => {
     if (!lastSavedState.current) return true;
-    return !isEqual(prfaq, lastSavedState.current);
+    
+    // Use deep comparison with JSON stringification for more reliable detection
+    const currentPrfaqString = JSON.stringify(prfaq);
+    const lastSavedPrfaqString = JSON.stringify(lastSavedState.current);
+    
+    return currentPrfaqString !== lastSavedPrfaqString;
   }, [prfaq, lastSavedState]);
   
   // Schedule auto-save with debounce - wrapped in useCallback to use in dependencies

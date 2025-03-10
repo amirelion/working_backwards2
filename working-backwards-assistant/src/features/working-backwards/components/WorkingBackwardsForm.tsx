@@ -19,7 +19,7 @@ import {
 import { questionsList } from '../constants/questions';
 import QuestionStep from './QuestionStep';
 import useFormState from '../hooks/useFormState';
-import useAISuggestions from '../hooks/useAISuggestions';
+import { useAISuggestions } from '../hooks/useAISuggestions';
 
 /**
  * Form component with stepper for the Working Backwards process

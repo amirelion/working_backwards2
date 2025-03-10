@@ -1,7 +1,6 @@
 import React, { useState, lazy, Suspense, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { useRecoilValue } from 'recoil';
 import {
   Container,
   Paper,
@@ -27,17 +26,18 @@ import {
 /* eslint-disable-next-line import/no-unresolved */
 import 'react-quill-new/dist/quill.snow.css';
 import { RootState } from '../../store';
-import { useCurrentProcess } from '../working-backwards/contexts/CurrentProcessContext';
+import { useCurrentProcess } from '../../hooks/useCurrentProcess';
 import { format } from 'date-fns';
-import { workingBackwardsQuestionsState } from '../../atoms/workingBackwardsQuestionsState';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { ExportFormat } from '../../types';
+import { useAppSelector } from '../../store/hooks';
+import { selectQuestions } from '../../store/workingBackwardsSlice';
 
 // Custom hooks
 import { useAIGeneration } from './hooks/useAIGeneration';
 import { useFAQs } from './hooks/useFAQs';
 import { usePressRelease } from './hooks/usePressRelease';
-import { usePRFAQAutoSave } from './hooks/usePRFAQAutoSave';
+import { useProcessSync } from '../../hooks/useProcessSync';
 
 // Components
 import PressReleaseForm from './components/PressReleaseTab/PressReleaseForm';
@@ -92,7 +92,9 @@ const PRFAQPage: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { currentProcessId, lastSaved: contextLastSaved } = useCurrentProcess();
-  const workingBackwardsResponses = useRecoilValue(workingBackwardsQuestionsState);
+  
+  // Get working backwards questions from Redux instead of Recoil
+  const workingBackwardsResponses = useAppSelector(selectQuestions);
   
   // Get PRFAQ state from Redux
   const prfaq = useSelector((state: RootState) => state.prfaq);
@@ -116,14 +118,14 @@ const PRFAQPage: React.FC = () => {
   } = usePressRelease();
   
   // Use our new auto-save hook
-  const { isSaving, saveNow, hasUnsavedChanges: checkUnsavedChanges } = usePRFAQAutoSave(
-    prfaq,
-    isGenerating,
-    currentProcessId
-  );
+  const { setIsModified, isModified } = useProcessSync();
+  const { saveCurrentProcess, isSaving } = useCurrentProcess();
   
   // Derived state
-  const hasUnsavedChanges = checkUnsavedChanges();
+  const hasUnsavedChanges = useCallback(() => {
+    // Use the isModified flag from ProcessSync
+    return isModified;
+  }, [isModified]);
   const prfaqIsEmpty = checkIfPRFAQEmpty(prfaq);
   
   const {
@@ -165,24 +167,28 @@ const PRFAQPage: React.FC = () => {
     handleUpdateStakeholderFAQ,
   } = useFAQs();
   
-  // Handle manual save
-  const handleManualSave = useCallback(async () => {
-    if (!currentProcessId) return;
+  // Update the handleSaveClick function
+  const handleSaveClick = useCallback(async () => {
+    if (!currentProcessId) {
+      setSnackbarMessage('No active process to save');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+      return;
+    }
     
     try {
-      await saveNow();
+      await saveCurrentProcess();
       
       setSnackbarMessage('PRFAQ saved successfully');
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
     } catch (error) {
       console.error('Error saving PRFAQ:', error);
-      
       setSnackbarMessage('Failed to save PRFAQ');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     }
-  }, [currentProcessId, saveNow, setSnackbarMessage, setSnackbarSeverity, setSnackbarOpen]);
+  }, [currentProcessId, saveCurrentProcess, setSnackbarMessage, setSnackbarSeverity, setSnackbarOpen]);
   
   // Handle tab change
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -283,6 +289,36 @@ const PRFAQPage: React.FC = () => {
     }
   }, [generatingSection, generationStep]);
 
+  // Add an effect to watch for changes in the PRFAQ state
+  useEffect(() => {
+    // Mark as modified whenever PRFAQ state changes
+    setIsModified(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prfaq]);
+
+  // Add auto-save effect similar to Working Backwards
+  useEffect(() => {
+    const AUTOSAVE_DELAY = 3000; // 3 seconds
+    
+    // Only setup auto-save if we have a process ID
+    if (!currentProcessId) return;
+    
+    const autoSaveInterval = setInterval(async () => {
+      // Only save if modified and not currently generating content
+      if (isModified && !isGenerating) {
+        try {
+          await saveCurrentProcess();
+          console.log('Auto-saved PRFAQ data');
+        } catch (error) {
+          console.error('Failed to auto-save PRFAQ:', error);
+        }
+      }
+    }, AUTOSAVE_DELAY);
+    
+    // Clean up on unmount
+    return () => clearInterval(autoSaveInterval);
+  }, [currentProcessId, isModified, isGenerating, saveCurrentProcess]);
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Snackbar 
@@ -339,7 +375,7 @@ const PRFAQPage: React.FC = () => {
               />
             )}
             
-            {!isSaving && contextLastSaved && !hasUnsavedChanges && (
+            {!isSaving && contextLastSaved && !hasUnsavedChanges() && (
               <Chip 
                 label={`Saved at ${format(new Date(contextLastSaved), 'h:mm a')}`} 
                 size="small" 
@@ -347,14 +383,14 @@ const PRFAQPage: React.FC = () => {
               />
             )}
             
-            {!isSaving && hasUnsavedChanges && (
+            {!isSaving && hasUnsavedChanges() && (
               <Tooltip title="Save your work">
                 <Button 
                   size="small" 
                   variant="contained" 
                   color="success" 
                   startIcon={<SaveIcon />} 
-                  onClick={handleManualSave}
+                  onClick={handleSaveClick}
                 >
                   Save
                 </Button>

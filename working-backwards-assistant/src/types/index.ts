@@ -21,7 +21,6 @@ export interface WorkingBackwardsResponses {
 // PRFAQ Types
 export interface PRFAQ {
   title: string;
-  date: string;
   pressRelease: {
     summary: string;
     problem: string;

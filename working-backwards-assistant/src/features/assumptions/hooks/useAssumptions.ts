@@ -17,7 +17,7 @@ import {
 import { AssumptionFormState } from '../types';
 import { RootState } from '../../../store';
 import { logAssumptions } from '../../../utils/debugUtils';
-import { useProcessSync } from '../../../features/working-backwards/contexts/ProcessSyncContext';
+import { useProcessSync } from '../../../hooks/useProcessSync';
 
 export const useAssumptions = () => {
   const dispatch = useDispatch();

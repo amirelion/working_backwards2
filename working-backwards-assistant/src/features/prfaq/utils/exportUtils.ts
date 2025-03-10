@@ -9,7 +9,6 @@ export const handleExport = (prfaq: PRFAQState, format: ExportFormat): void => {
   // Convert from Redux state format to the backend format expected by exportPRFAQ
   const backendPRFAQ: BackendPRFAQ = {
     title: prfaq.title,
-    date: new Date().toISOString(),
     pressRelease: {
       summary: prfaq.pressRelease.introduction,
       problem: prfaq.pressRelease.problemStatement,
