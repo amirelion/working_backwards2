@@ -156,14 +156,14 @@ export const useCurrentProcess = () => {
       processData.prfaq = {
         title: prfaqData.title,
         pressRelease: {
-          // Explicitly map Redux fields to Firestore fields
-          summary: prfaqData.pressRelease.introduction,
-          problem: prfaqData.pressRelease.problemStatement,
+          // Use Redux field names directly with no mapping
+          introduction: prfaqData.pressRelease.introduction,
+          problemStatement: prfaqData.pressRelease.problemStatement,
           solution: prfaqData.pressRelease.solution,
-          executiveQuote: prfaqData.pressRelease.stakeholderQuote,
+          stakeholderQuote: prfaqData.pressRelease.stakeholderQuote,
           customerJourney: prfaqData.pressRelease.customerJourney,
           customerQuote: prfaqData.pressRelease.customerQuote,
-          gettingStarted: prfaqData.pressRelease.callToAction
+          callToAction: prfaqData.pressRelease.callToAction
         },
         customerFaqs: prfaqData.customerFaqs,
         stakeholderFaqs: prfaqData.stakeholderFaqs
