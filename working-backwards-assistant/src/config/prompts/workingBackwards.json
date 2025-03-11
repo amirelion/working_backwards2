@@ -20,5 +20,62 @@
     },
     "template": "You are an expert in Amazon's Working Backwards innovation methodology.\n\n{{context}}\n\nBased on the information provided about this product/service, provide a suggestion for the following working backwards question:\n\n{{question}}\n\n{{#if userComment}}\nAdditional instructions: {{userComment}}\n{{/if}}\n\nProvide a clear, concise, and helpful answer that addresses the question completely while maintaining a professional and strategic focus.",
     "contextVariables": ["context", "question", "userComment"]
+  },
+  "questionPrompts": {
+    "customer": {
+      "id": "customerPrompt",
+      "description": "Prompt for customer question",
+      "defaults": {
+        "provider": "openai",
+        "model": "gpt-4o",
+        "temperature": 0.7
+      },
+      "template": "Based on the initial thoughts, identify ONLY the target customer for this idea. Provide a specific, detailed description of the customer profile, including demographics, needs, and characteristics. Consider the time, place, and situation where this customer exists.\n\nYour answer should:\n- Be specific and focused (1-3 sentences only)\n- Identify the customer that represents the biggest problem you want to solve\n- Include relevant characteristics that make this customer segment unique\n- NOT mention any problem, solution, or benefit yet\n\nExamples of good answers:\n1. Swedish residents who manage their family's digital affairs, particularly parents with young children who need to coordinate multiple household services.\n2. Chief Information Officers at large enterprises in traditional industries who oversee hundreds of business applications and manage IT teams of 50+ people.\n3. Recent technical university graduates with theoretical knowledge but no practical work experience in their field of study.\n\nFormat your response as a direct answer without any prefixes or explanations. Focus ONLY on describing who the customer is.",
+      "contextVariables": []
+    },
+    "problem": {
+      "id": "problemPrompt",
+      "description": "Prompt for problem question",
+      "defaults": {
+        "provider": "openai",
+        "model": "gpt-4o",
+        "temperature": 0.7
+      },
+      "template": "Based on the initial thoughts and the identified customer, define ONLY the specific problem or opportunity that exists. Focus exclusively on describing the pain points, challenges, or unmet needs that exist in the market.\n\nYour answer should:\n- Be specific and focused (1-3 sentences only)\n- Clearly articulate the core problem or missed opportunity\n- Include the size or impact of the problem when possible\n- NOT discuss or mention any product, service, or solution\n\nExamples of good answers:\n1. Swedish families waste 30+ hours annually navigating different login methods across banking, healthcare, education, and government services, creating frustration and security risks.\n2. CIOs lack real-time visibility into application performance across their enterprise, leaving critical business systems vulnerable to undetected issues that cost an average of $1.2M per major outage.\n3. Technical graduates face a 65% rejection rate when applying for entry-level positions due to their inability to demonstrate practical skills, creating a significant employment gap in the tech industry.\n\nFormat your response as a direct answer focusing ONLY on the problem or opportunity itself, not potential solutions.",
+      "contextVariables": []
+    },
+    "benefit": {
+      "id": "benefitPrompt",
+      "description": "Prompt for benefit question",
+      "defaults": {
+        "provider": "openai",
+        "model": "gpt-4o",
+        "temperature": 0.7
+      },
+      "template": "Based on the initial thoughts, the identified customer, and the problem described, identify ONLY the single most important benefit that would address this problem. Weigh different possible benefits and select the one that matters most to the customer.\n\nYour answer should:\n- Be specific and focused (1 sentence only)\n- Identify the single most compelling benefit\n- Focus on one core value (like simplicity, peace of mind, access, etc.)\n- NOT describe implementation details or features - focus only on outcomes\n\nExamples of good answers:\n1. Simplicity in managing digital identity across all family services.\n2. Control over IT systems that prevents costly business disruptions.\n3. Opportunity to demonstrate practical skills without prior work experience.\n\nFormat your response as a direct answer focusing ONLY on the primary benefit, not how it would be implemented.",
+      "contextVariables": []
+    },
+    "validation": {
+      "id": "validationPrompt",
+      "description": "Prompt for validation question",
+      "defaults": {
+        "provider": "openai",
+        "model": "gpt-4o",
+        "temperature": 0.7
+      },
+      "template": "Based on the initial thoughts, customer, problem, and benefit identified, suggest ONLY concrete methods to validate that this problem truly exists and that customers value the proposed benefit. If the initial thoughts contain evidence, highlight it; otherwise, suggest validation approaches.\n\nYour answer should:\n- Be specific and focused (1-3 sentences only)\n- Describe specific, actionable research methods or existing evidence\n- Include metrics that would indicate strong customer need\n- Suggest how to gather confirmation of the problem and desired benefit\n\nExamples of good answers:\n1. Surveys of 500+ Swedish households show 87% report frustration with multiple login systems, while usage data confirms the average family uses 12+ password-protected services monthly, with 40% experiencing lockouts.\n2. Interviews with 25 Fortune 500 CIOs revealed unanimous dissatisfaction with current monitoring tools, and industry reports show that companies with real-time application insights reduce outage costs by 70%.\n3. A pilot program where 100 graduates created skill portfolios resulted in a 3x higher interview rate, and employer surveys confirmed 82% would value demonstrated skills over experience.\n\nFormat your response as a direct answer focusing ONLY on evidence or validation methods.",
+      "contextVariables": []
+    },
+    "experience": {
+      "id": "experiencePrompt",
+      "description": "Prompt for experience question",
+      "defaults": {
+        "provider": "openai",
+        "model": "gpt-4o",
+        "temperature": 0.7
+      },
+      "template": "Based on the customer, problem, benefit, and validation methods identified, describe ONLY what the ideal customer experience would look like. Walk through the customer journey, focusing exclusively on the experience from the customer's perspective.\n\nYour answer should:\n- Be 3-4 sentences long\n- Highlight key touchpoints and moments that matter most to the customer\n- Focus on outcomes and emotional responses rather than technical details\n- Create a compelling vision of the transformed customer experience\n\nExamples of good answers:\n1. A Swedish parent opens any essential service app and authenticates once with a fingerprint, gaining immediate access to all their family's digital services. When accessing their child's school portal, healthcare records, or banking services, they move seamlessly between systems without re-authenticating. The experience feels secure yet effortless, eliminating the frustration of forgotten passwords and reducing access time from minutes to seconds.\n2. The CIO opens a unified dashboard showing the real-time health of all critical business applications with emerging issues flagged before users notice problems. When potential disruptions are detected, the system automatically identifies the root cause and suggests remediation steps based on historical patterns. The CIO feels confident making decisions with accurate information and can demonstrate IT's business value through metrics showing prevented outages and improved performance.\n3. The graduate creates a portfolio of practical projects that automatically verify their technical skills against industry standards. When applying for jobs, they share a credential link that lets employers see validated capabilities rather than just academic achievements. Employers can confidently evaluate candidates based on demonstrated abilities, while graduates receive suggestions for skill development that directly align with market demands.\n\nFormat your response as a direct description of the customer experience without any prefixes or explanations.",
+      "contextVariables": []
+    }
   }
 }

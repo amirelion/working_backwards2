@@ -13,7 +13,7 @@ export interface PromptConfig {
 }
 
 export interface PromptCategory {
-  [key: string]: PromptConfig;
+  [key: string]: PromptConfig | { [subKey: string]: PromptConfig };
 }
 
 export interface PromptError extends Error {

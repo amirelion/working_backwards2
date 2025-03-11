@@ -1,46 +1,50 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Box, 
-  Button, 
-  Container, 
-  Paper, 
-  TextField, 
-  Typography, 
-  Tab, 
-  Tabs, 
-  Alert,
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import {
+  Box,
+  Container,
+  Typography,
+  TextField,
+  Button,
   CircularProgress,
+  Paper,
+  Alert,
+  Tabs,
+  Tab,
   Snackbar,
 } from '@mui/material';
-import { useSelector } from 'react-redux';
-import { RootState } from '../store';
-import VoiceTranscriber from '../components/VoiceTranscriber';
-import CustomSnackbar from '../components/CustomSnackbar';
-import { processInitialThoughts } from '../utils/aiProcessing';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import SkipNextIcon from '@mui/icons-material/SkipNext';
-import { useCurrentProcess } from '../hooks/useCurrentProcess';
 import ClearIcon from '@mui/icons-material/Clear';
-import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { 
-  selectInitialThoughts,
+import SkipNextIcon from '@mui/icons-material/SkipNext';
+import SaveIcon from '@mui/icons-material/Save';
+import MicIcon from '@mui/icons-material/Mic';
+import { useAppSelector } from '../store/hooks';
+import {
   setInitialThoughts,
   appendToInitialThoughts,
-  setSkipInitialThoughts,
-  clearInitialThoughts
+  selectInitialThoughts,
+  setSkipInitialThoughts
 } from '../store/initialThoughtsSlice';
-import {
-  updateQuestionField,
-  setAISuggestions
-} from '../store/workingBackwardsSlice';
+import VoiceTranscriber from '../components/VoiceTranscriber';
+import { useAuth } from '../hooks/useAuth';
+import { useCurrentProcess } from '../hooks/useCurrentProcess';
 
+// Helper function to determine if we can continue based on text length
+const canContinue = (text: string) => text.trim().length >= 50;
+
+/**
+ * Tab panel props interface
+ */
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
   value: number;
 }
 
+/**
+ * TabPanel Component - renders content for a tab
+ */
 function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
 
@@ -57,69 +61,78 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-function InitialThoughtsPage() {
+/**
+ * Initial Thoughts Page Component
+ * This page allows users to enter their initial thoughts about a product idea
+ */
+const InitialThoughtsPage: React.FC = () => {
+  const { processId } = useParams<{ processId: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
-  
+  const dispatch = useDispatch();
+  const { currentUser } = useAuth();
   const initialThoughts = useAppSelector(selectInitialThoughts);
-  const dispatch = useAppDispatch();
   
-  const prfaq = useSelector((state: RootState) => state.prfaq);
-  const [tabValue, setTabValue] = useState(0);
+  const {
+    currentProcessId,
+    setCurrentProcessId,
+    saveCurrentProcess,
+    setIsModified
+  } = useCurrentProcess();
+  
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingError, setProcessingError] = useState<React.ReactNode | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [tabValue, setTabValue] = useState(0);
+  const [lastChangeTime, setLastChangeTime] = useState<number>(0);
   
-  // Add state for snackbar
+  // Snackbar state
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'info' | 'warning' | 'error'>('info');
-  
-  // Get process ID from URL query params
-  const queryParams = new URLSearchParams(location.search);
-  const processId = queryParams.get('process');
-  
-  // Working Backwards context
-  const { 
-    currentProcessId, 
-    setCurrentProcessId, 
-    loadProcess, 
-    saveCurrentProcess 
-  } = useCurrentProcess();
-  
-  // Load process if ID is in URL but not loaded yet
+
+  // Auto-save effect
   useEffect(() => {
-    const loadProcessFromUrl = async () => {
-      if (processId && processId !== currentProcessId) {
-        try {
-          await loadProcess(processId);
-        } catch (error) {
-          console.error('Error loading process:', error);
-        }
-      }
-    };
+    if (lastChangeTime === 0) return;
     
-    loadProcessFromUrl();
-  }, [processId, currentProcessId, loadProcess]);
-  
-  // Set current process ID when component mounts
-  useEffect(() => {
-    if (processId) {
-      setCurrentProcessId(processId);
-    }
-  }, [processId, setCurrentProcessId]);
+    // Auto-save after 3 seconds of inactivity
+    const AUTOSAVE_DELAY = 3000;
+    
+    const timerId = setTimeout(async () => {
+      console.log('Auto-saving initial thoughts...');
+      try {
+        await saveCurrentProcess();
+        console.log('Auto-save completed successfully');
+      } catch (error) {
+        console.error('Error in auto-save:', error);
+      }
+    }, AUTOSAVE_DELAY);
+    
+    // Clean up timer
+    return () => clearTimeout(timerId);
+  }, [lastChangeTime, saveCurrentProcess]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
-  const handleInitialThoughtsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInitialThoughtsChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     dispatch(setInitialThoughts(event.target.value));
-  };
+    
+    // Mark the process as modified
+    setIsModified(true);
+    
+    // Update last change time to trigger auto-save
+    setLastChangeTime(Date.now());
+  }, [dispatch, setIsModified]);
 
-  const handleVoiceInput = (transcription: string) => {
+  const handleVoiceInput = useCallback((transcription: string) => {
     dispatch(appendToInitialThoughts(transcription));
-  };
+    
+    // Mark the process as modified
+    setIsModified(true);
+    
+    // Update last change time to trigger auto-save
+    setLastChangeTime(Date.now());
+  }, [dispatch, setIsModified]);
 
   const handleProcessInitialThoughts = async () => {
     if (!initialThoughts.trim()) {
@@ -131,37 +144,11 @@ function InitialThoughtsPage() {
 
     try {
       // Show a loading message with snackbar
-      setSnackbarMessage('Processing your initial thoughts with AI...');
+      setSnackbarMessage('Preparing your Working Backwards document...');
       setSnackbarSeverity('info');
       setSnackbarOpen(true);
-
-      // Process the initial thoughts
-      const processedQuestions = await processInitialThoughts(initialThoughts);
-      console.log('Processed questions:', processedQuestions);
       
-      // Update the working backwards questions state with the processed data using Redux
-      if (processedQuestions.customer) {
-        dispatch(updateQuestionField({ field: 'customer', value: processedQuestions.customer }));
-      }
-      if (processedQuestions.problem) {
-        dispatch(updateQuestionField({ field: 'problem', value: processedQuestions.problem }));
-      }
-      if (processedQuestions.benefit) {
-        dispatch(updateQuestionField({ field: 'benefit', value: processedQuestions.benefit }));
-      }
-      if (processedQuestions.validation) {
-        dispatch(updateQuestionField({ field: 'validation', value: processedQuestions.validation }));
-      }
-      if (processedQuestions.experience) {
-        dispatch(updateQuestionField({ field: 'experience', value: processedQuestions.experience }));
-      }
-      
-      // Update AI suggestions using Redux
-      if (processedQuestions.aiSuggestions) {
-        dispatch(setAISuggestions(processedQuestions.aiSuggestions));
-      }
-      
-      // Save the current process
+      // Skip the AI processing step and just save the current process
       if (currentProcessId) {
         try {
           await saveCurrentProcess();
@@ -172,7 +159,7 @@ function InitialThoughtsPage() {
       }
       
       // Show success message
-      setSnackbarMessage('Initial thoughts processed successfully!');
+      setSnackbarMessage('Moving to Working Backwards questions!');
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
       
@@ -181,119 +168,117 @@ function InitialThoughtsPage() {
         // Navigation should happen last, after all state updates
         try {
           navigate('/working-backwards');
-        } catch (navError) {
-          console.error('Navigation error:', navError);
-          setProcessingError('Error navigating to Working Backwards page. Please try manually clicking "Working Backwards" in the menu.');
+        } catch (navigateError) {
+          console.error('Navigation error:', navigateError);
+          setProcessingError('Failed to navigate to the Working Backwards page. Please try again.');
+          setIsProcessing(false);
         }
-      }, 100);
+      }, 500);
     } catch (error) {
-      console.error('Error processing initial thoughts:', error);
-      
-      const errorMessage = error instanceof Error ? error.message : 'Failed to process your initial thoughts. Please try again.';
-      
-      // Check if it's the Lambda function specific error
-      const isLambdaError = errorMessage.includes('AI service is temporarily unavailable');
-      
-      // Show error message
-      setSnackbarMessage(errorMessage);
+      console.error('Error in processing:', error);
+      setProcessingError(`An error occurred: ${error instanceof Error ? error.message : String(error)}`);
+      setSnackbarMessage('Error processing initial thoughts.');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
-      
-      setProcessingError(errorMessage);
-      
-      // For Lambda invocation errors, we'll save what we have and offer to continue
-      if (isLambdaError || errorMessage.includes('Server error') || errorMessage.includes('invalid JSON')) {
-        // Still save the initial thoughts
-        if (currentProcessId) {
-          try {
-            await saveCurrentProcess();
-          } catch (saveError) {
-            console.error('Error saving current process after AI failure:', saveError);
-          }
-        }
-        
-        // Add a button to the error message that allows continuing without AI suggestions
-        setProcessingError(
-          <>
-            {errorMessage}
-            <Box sx={{ mt: 2 }}>
-              <Button 
-                variant="outlined" 
-                onClick={() => {
-                  dispatch(setSkipInitialThoughts(true));
-                  navigate('/working-backwards');
-                }}
-                sx={{ mr: 1 }}
-              >
-                Continue Without AI Suggestions
-              </Button>
-              <Button 
-                variant="contained"
-                onClick={() => setProcessingError(null)}
-              >
-                Try Again
-              </Button>
-            </Box>
-          </>
-        );
-      }
-    } finally {
       setIsProcessing(false);
     }
   };
 
-  // Add handler for closing snackbar
-  const handleSnackbarClose = () => {
-    setSnackbarOpen(false);
+  const handleSkip = () => {
+    dispatch(setSkipInitialThoughts(true));
+    
+    // Save the process if we have an ID
+    if (currentProcessId) {
+      saveCurrentProcess()
+        .then(() => {
+          navigate('/working-backwards');
+        })
+        .catch(error => {
+          console.error('Error saving process during skip:', error);
+          navigate('/working-backwards');
+        });
+    } else {
+      navigate('/working-backwards');
+    }
   };
 
-  const handleSkip = () => {
-    // Set the skipInitialThoughts flag to true when skipping
-    dispatch(setSkipInitialThoughts(true));
-    navigate('/working-backwards');
+  const handleSave = async () => {
+    try {
+      await saveCurrentProcess();
+      
+      // Show success message
+      setSnackbarMessage('Initial thoughts saved successfully!');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error('Error saving initial thoughts:', error);
+      setSnackbarMessage('Error saving initial thoughts.');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
   };
-  
+
   const handleClear = () => {
-    dispatch(clearInitialThoughts());
-    setSnackbarMessage('Initial thoughts cleared');
-    setSnackbarSeverity('info');
-    setSnackbarOpen(true);
+    dispatch(setInitialThoughts(''));
+    setIsModified(true);
+  };
+
+  // Set the process ID from the route if provided
+  useEffect(() => {
+    if (processId && processId !== currentProcessId) {
+      setCurrentProcessId(processId);
+    }
+  }, [processId, setCurrentProcessId, currentProcessId]);
+
+  // Get some info about the length of the input
+  const charCount = initialThoughts.length;
+  const wordCount = initialThoughts.trim() 
+    ? initialThoughts.trim().split(/\s+/).length 
+    : 0;
+
+  // Snackbar close handler
+  const handleCloseSnackbar = (_event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbarOpen(false);
   };
 
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-      <CustomSnackbar
-        open={snackbarOpen}
-        message={snackbarMessage}
-        severity={snackbarSeverity}
-        onClose={handleSnackbarClose}
-        variant="filled"
-      />
-
-      <Paper elevation={2} sx={{ p: 0 }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={tabValue} onChange={handleTabChange} aria-label="initial thoughts tabs">
-            <Tab label="Initial Thoughts" />
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Initial Thoughts
+        </Typography>
+        <Typography variant="subtitle1" color="text.secondary">
+          Share your initial thoughts about your product or feature idea.
+        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<SaveIcon />}
+            onClick={handleSave}
+            disabled={!initialThoughts.trim()}
+          >
+            Save
+          </Button>
+        </Box>
+      </Box>
+      
+      <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+          <Tabs value={tabValue} onChange={handleTabChange} aria-label="Input method tabs">
+            <Tab label="Text Input" />
             <Tab label="Voice Input" />
           </Tabs>
         </Box>
         
-        {/* Process title display */}
-        {currentProcessId && (
-          <Box sx={{ p: 2, bgcolor: 'primary.light', color: 'white' }}>
-            <Typography variant="subtitle1">
-              Working on: {prfaq.title || 'Untitled Process'}
-            </Typography>
-          </Box>
-        )}
-        
         <TabPanel value={tabValue} index={0}>
           <Typography variant="h5" gutterBottom>
-            Capture Your Initial Thoughts
+            Text Input
           </Typography>
           <Typography variant="body1" paragraph>
-            Start by writing down your initial thoughts about your product, service, or feature. 
-            What problem are you trying to solve? Who is your customer? What benefits will they receive?
+            Describe your initial product idea in as much detail as possible. What problem does it solve? Who are the users? What makes it unique?
           </Typography>
           <TextField
             label="Initial Thoughts"
@@ -302,13 +287,24 @@ function InitialThoughtsPage() {
             fullWidth
             value={initialThoughts}
             onChange={handleInitialThoughtsChange}
-            placeholder="Start typing your initial thoughts here..."
             variant="outlined"
+            placeholder="Start typing your initial thoughts about your product idea..."
             sx={{ mb: 3 }}
           />
           
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              {charCount} characters | {wordCount} words
+            </Typography>
+            {!canContinue(initialThoughts) && (
+              <Typography variant="body2" color="text.secondary">
+                Add more details to continue
+              </Typography>
+            )}
+          </Box>
+          
           {processingError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert severity="error" sx={{ mb: 3 }}>
               {processingError}
             </Alert>
           )}
@@ -402,21 +398,14 @@ function InitialThoughtsPage() {
         </TabPanel>
       </Paper>
       
-      {/* Success snackbar - also fix this one */}
-      {saveSuccess && (
-        <Snackbar
-          open={saveSuccess}
-          autoHideDuration={3000}
-          onClose={() => setSaveSuccess(false)}
-          slotProps={{
-            content: {
-              children: "Progress saved successfully"
-            }
-          }}
-        />
-      )}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        message={snackbarMessage}
+      />
     </Container>
   );
-}
+};
 
 export default InitialThoughtsPage; 
