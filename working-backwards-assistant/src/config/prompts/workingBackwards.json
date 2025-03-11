@@ -7,7 +7,7 @@
       "model": "gpt-4o",
       "temperature": 0.7
     },
-    "template": "You are helping a product team work through the \"Working Backwards\" process to develop a new product or feature.\n\n{{#if initialThoughts}}The team has shared these initial thoughts about their idea:\n{{initialThoughts}}\n\n{{/if}}{{#if context}}{{context}}\n\n{{/if}}Please answer the following question about the product idea:\n{{question}}\n\nYour response should be concise (1-3 sentences), specific, and focused on the question.\nFormat your response as a direct answer without any prefixes or explanations.\nDo not include phrases like \"Based on the information provided\" or \"I would suggest\".\nJust provide a clear, direct response that the team can use in their working backwards document.",
+    "template": "You are helping a product team work through the \"Working Backwards\" process to develop a new product or feature.\n\n{{#if initialThoughts}}The team has shared these initial thoughts about their idea:\n{{initialThoughts}}\n\n{{/if}}{{#if context}}{{context}}\n\n{{/if}}Please answer the following question about the product idea:\n{{question}}\n\nYour response should be concise (1-3 sentences), specific, and ONLY address the exact question asked.\nFormat your response as a direct answer without any prefixes or explanations.\nDo not include phrases like \"Based on the information provided\" or \"I would suggest\".\nFocus solely on the specific aspect requested (customer, problem, benefit, etc.) without mentioning implementation details or solutions unless explicitly asked.\nProvide a clear, direct response that the team can use in their working backwards document.",
     "contextVariables": ["question", "initialThoughts", "context"]
   },
   "generateSuggestion": {
@@ -20,5 +20,62 @@
     },
     "template": "You are an expert in Amazon's Working Backwards innovation methodology.\n\n{{context}}\n\nBased on the information provided about this product/service, provide a suggestion for the following working backwards question:\n\n{{question}}\n\n{{#if userComment}}\nAdditional instructions: {{userComment}}\n{{/if}}\n\nProvide a clear, concise, and helpful answer that addresses the question completely while maintaining a professional and strategic focus.",
     "contextVariables": ["context", "question", "userComment"]
+  },
+  "questionPrompts": {
+    "customer": {
+      "id": "customerPrompt",
+      "description": "Prompt for customer question",
+      "defaults": {
+        "provider": "openai",
+        "model": "gpt-4o",
+        "temperature": 0.7
+      },
+      "template": "Based on the initial thoughts, who would be the target customer for this product or service? Please provide a detailed description of the customer profile, including their needs, pain points, and characteristics.",
+      "contextVariables": []
+    },
+    "problem": {
+      "id": "problemPrompt",
+      "description": "Prompt for problem question",
+      "defaults": {
+        "provider": "openai",
+        "model": "gpt-4o",
+        "temperature": 0.7
+      },
+      "template": "Based on the initial thoughts and the identified customer, what specific problem or opportunity does this product or service address? Please describe the pain points, challenges, or unmet needs that exist in the market.",
+      "contextVariables": []
+    },
+    "benefit": {
+      "id": "benefitPrompt",
+      "description": "Prompt for benefit question",
+      "defaults": {
+        "provider": "openai",
+        "model": "gpt-4o",
+        "temperature": 0.7
+      },
+      "template": "Based on the initial thoughts, the identified customer, and the problem described, what is the most important benefit that this product or service provides to the customer? Focus on the primary value proposition that would be most compelling to the customer.",
+      "contextVariables": []
+    },
+    "validation": {
+      "id": "validationPrompt",
+      "description": "Prompt for validation question",
+      "defaults": {
+        "provider": "openai",
+        "model": "gpt-4o",
+        "temperature": 0.7
+      },
+      "template": "Based on the information provided so far, how might you validate that customers actually need or want this solution? What research methods, experiments, or evidence could be gathered to confirm the customer need? If you were advising a product team, what validation approach would you recommend?",
+      "contextVariables": []
+    },
+    "experience": {
+      "id": "experiencePrompt",
+      "description": "Prompt for experience question",
+      "defaults": {
+        "provider": "openai",
+        "model": "gpt-4o",
+        "temperature": 0.7
+      },
+      "template": "Based on all the information provided so far, describe what the customer experience would look like when using this product or service. Walk through the customer journey from discovery to adoption and ongoing usage. What would be the key touchpoints and moments that matter in this experience?",
+      "contextVariables": []
+    }
   }
 }

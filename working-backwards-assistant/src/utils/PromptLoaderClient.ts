@@ -22,7 +22,7 @@ export interface PromptConfig {
 }
 
 export interface PromptCategory {
-  [promptId: string]: PromptConfig;
+  [promptId: string]: PromptConfig | { [subKey: string]: PromptConfig };
 }
 
 /**
@@ -56,12 +56,35 @@ export class PromptLoaderClient {
       throw new Error(`Unknown prompt category: ${category}`);
     }
 
+    // Handle nested paths like 'questionPrompts.customer'
+    if (promptId.includes('.')) {
+      const [section, id] = promptId.split('.');
+      
+      if (!this.promptConfigs[category][section]) {
+        throw new Error(`Unknown section '${section}' in category '${category}'`);
+      }
+      
+      const nestedConfig = (this.promptConfigs[category][section] as Record<string, PromptConfig>)[id];
+      
+      if (!nestedConfig) {
+        throw new Error(`Unknown prompt ID '${id}' in section '${section}' of category '${category}'`);
+      }
+      
+      return nestedConfig;
+    }
+    
+    // Handle regular non-nested prompts
     const config = this.promptConfigs[category][promptId];
     if (!config) {
       throw new Error(`Unknown prompt ID '${promptId}' in category '${category}'`);
     }
+    
+    // Only return if it's a PromptConfig (not a nested object)
+    if (!config.template || !config.id) {
+      throw new Error(`Invalid prompt configuration for '${promptId}' in category '${category}'`);
+    }
 
-    return config;
+    return config as PromptConfig;
   }
 
   public buildPrompt(
