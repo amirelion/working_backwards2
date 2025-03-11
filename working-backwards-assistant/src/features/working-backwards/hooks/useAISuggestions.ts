@@ -30,8 +30,8 @@ export const useAISuggestions = () => {
    * Get an AI suggestion for a specific question
    */
   const getAISuggestion = useCallback(async (currentQuestion: WorkingBackwardsQuestion, currentStep: number) => {
-    // Don't generate suggestions if the user skipped initial thoughts
-    if (skipInitialThoughts) {
+    // Don't generate suggestions if the user skipped initial thoughts or there are no initial thoughts
+    if (skipInitialThoughts || !initialThoughts.trim()) {
       return;
     }
     
@@ -48,6 +48,8 @@ export const useAISuggestions = () => {
         });
       
       const promptText = getWorkingBackwardsPrompt(currentQuestion.aiPrompt, contextObj, initialThoughts);
+      
+      console.log(`Generating suggestion for question: ${currentQuestion.label}`);
       
       // Call the AI service
       const response = await getAIResponse({
@@ -69,12 +71,15 @@ export const useAISuggestions = () => {
           suggestion: response.content 
         }));
         
+        console.log(`Suggestion generated and stored for: ${questionKey}`);
+        
         // Mark as modified
         setIsModified(true);
         
-        // Try to save the process after generating a suggestion
+        // Always save to Firestore after generating a suggestion
         try {
           await saveCurrentProcess();
+          console.log('Suggestion saved to Firestore');
         } catch (error) {
           console.error('Error saving process after generating suggestion:', error);
         }
@@ -93,9 +98,11 @@ export const useAISuggestions = () => {
   const generateInitialSuggestions = useCallback(async (questionsList: WorkingBackwardsQuestion[], currentStep: number) => {
     // Don't generate suggestions if the user skipped initial thoughts or if there are no initial thoughts
     if (skipInitialThoughts || !initialThoughts.trim()) {
+      console.log('Skipping initial suggestions - no initial thoughts or user opted to skip');
       return;
     }
     
+    console.log('Starting to generate initial suggestions for all questions');
     setIsLoadingFirstSuggestion(true);
     
     try {
@@ -103,11 +110,13 @@ export const useAISuggestions = () => {
       const contextObj: Record<string, string> = {};
       const suggestions: Record<string, string> = {};
       
-      // Generate suggestions in the background without affecting UI
+      // Generate suggestions in sequence, building context as we go
       for (let i = 0; i < questionsList.length; i++) {
         const question = questionsList[i];
         const questionNumber = i + 1;
         const fullQuestionKey = `${questionNumber}. ${question.label}`;
+        
+        console.log(`Generating suggestion for question ${i+1}/${questionsList.length}: ${question.label}`);
         
         // Call the AI service
         const promptText = getWorkingBackwardsPrompt(question.aiPrompt, contextObj, initialThoughts);
@@ -120,6 +129,8 @@ export const useAISuggestions = () => {
         
         if (!response.error) {
           suggestions[fullQuestionKey] = response.content;
+          
+          // Add this suggestion to context for next questions
           contextObj[question.id] = response.content;
           
           // Update suggestions in state using Redux dispatch
@@ -128,21 +139,33 @@ export const useAISuggestions = () => {
             suggestion: response.content 
           }));
           
-          // Mark as modified
-          setIsModified(true);
-          
           // If this is the first question and we're still on it, show the suggestion
           if (i === 0 && currentStep === 0) {
             setAiSuggestion(response.content);
           }
+          
+          // Save after each suggestion to ensure they're not lost
+          setIsModified(true);
+          // We don't await this to avoid slowing down the generation process
+          if (i % 2 === 0) { // Save every couple of questions to reduce Firebase writes
+            try {
+              await saveCurrentProcess();
+              console.log(`Saved progress after generating suggestion ${i+1}`);
+            } catch (error) {
+              console.error(`Error saving after suggestion ${i+1}:`, error);
+            }
+          }
+        } else {
+          console.error('Error generating suggestion:', response.error);
         }
       }
       
-      // Save after generating all suggestions
+      // Final save after all suggestions are generated
       try {
         await saveCurrentProcess();
+        console.log('All suggestions generated and saved to Firestore');
       } catch (error) {
-        console.error('Error saving process after generating initial suggestions:', error);
+        console.error('Error in final save after generating all suggestions:', error);
       }
     } catch (error) {
       console.error('Error generating initial AI suggestions:', error);
@@ -150,7 +173,7 @@ export const useAISuggestions = () => {
       setIsLoadingFirstSuggestion(false);
     }
   }, [initialThoughts, dispatch, skipInitialThoughts, setIsModified, saveCurrentProcess]);
-
+  
   /**
    * Load a suggestion for the current question from state
    */

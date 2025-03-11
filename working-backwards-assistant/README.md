@@ -38,3 +38,22 @@ The service runs on port 3001 and acts as a proxy to OpenAI's Whisper API.
 - Redux for state management
 - Material UI for components
 - OpenAI API for AI assistance
+
+## Recent Improvements
+
+### Form State and Suggestions Optimization
+
+The app has been optimized to improve the Working Backwards flow:
+
+1. **Streamlined Process Flow**: Removed redundant initial thoughts processing step. Users can now proceed directly from initial thoughts to Working Backwards questions.
+
+2. **Enhanced AI Suggestions**:
+   - AI suggestions are now generated per question with proper context from previous answers
+   - All suggestions are automatically saved to Firestore for persistence
+   - Improved error handling and logging for suggestion generation
+
+3. **Auto-save Improvements**:
+   - More reliable auto-saving for form state
+   - Progressive saving during lengthy operations to prevent data loss
+
+These changes make the Working Backwards process more efficient while ensuring all data is properly persisted.
