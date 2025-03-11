@@ -27,11 +27,8 @@ import {
   setSkipInitialThoughts
 } from '../store/initialThoughtsSlice';
 import VoiceTranscriber from '../components/VoiceTranscriber';
-import { TabPanel } from '../components/TabPanel';
 import { useAuth } from '../hooks/useAuth';
 import { useCurrentProcess } from '../hooks/useCurrentProcess';
-import { PageTitle } from '../components/PageTitle';
-import { getDateString } from '../utils/dateFormatter';
 
 // Helper function to determine if we can continue based on text length
 const canContinue = (text: string) => text.trim().length >= 50;
@@ -43,6 +40,25 @@ interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
   value: number;
+}
+
+/**
+ * TabPanel Component - renders content for a tab
+ */
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`initial-thoughts-tabpanel-${index}`}
+      aria-labelledby={`initial-thoughts-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+    </div>
+  );
 }
 
 /**
@@ -230,10 +246,14 @@ const InitialThoughtsPage: React.FC = () => {
 
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-      <PageTitle 
-        title="Initial Thoughts" 
-        subtitle="Share your initial thoughts about your product or feature idea."
-        actionButton={
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Initial Thoughts
+        </Typography>
+        <Typography variant="subtitle1" color="text.secondary">
+          Share your initial thoughts about your product or feature idea.
+        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
           <Button
             variant="outlined"
             startIcon={<SaveIcon />}
@@ -242,8 +262,8 @@ const InitialThoughtsPage: React.FC = () => {
           >
             Save
           </Button>
-        }
-      />
+        </Box>
+      </Box>
       
       <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
