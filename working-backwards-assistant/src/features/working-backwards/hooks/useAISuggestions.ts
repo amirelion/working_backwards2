@@ -22,6 +22,7 @@ export const useAISuggestions = () => {
   const skipInitialThoughts = useAppSelector(selectSkipInitialThoughts);
   const questionsState = useAppSelector((state: any) => state.workingBackwards.questions);
   const { setIsModified, saveCurrentProcess } = useCurrentProcess();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [aiSuggestion, setAiSuggestion] = useState<string>('');
@@ -178,7 +179,7 @@ export const useAISuggestions = () => {
     } finally {
       setIsLoadingFirstSuggestion(false);
     }
-  }, [skipInitialThoughts, initialThoughts, generateAllSuggestions]);
+  }, [skipInitialThoughts, generateAllSuggestions]);
 
   /**
    * Load a suggestion for the current question from state
